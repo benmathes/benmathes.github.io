@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Musical Looper</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter font for a modern look -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
+    <!-- Tone.js for audio processing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <!-- LZ-String for URL compression -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c; /* Dark background */
+            color: #e2e8f0; /* Light text */
+        }
+        /* Custom styles for canvas to ensure it fits responsively */
+        canvas {
+            display: block;
+            background-color: #2d3748; /* Slightly lighter dark background for canvas */
+            border: 2px solid #4a5568;
+            border-radius: 0.5rem; /* Rounded corners */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        .loop-item-canvas {
+            border: 1px solid #4a5568;
+            border-radius: 0.25rem;
+            background-color: #2d3748;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8 flex flex-col items-center justify-center min-h-screen">
+    <div class="container max-w-7xl mx-auto bg-gray-800 p-6 sm:p-8 rounded-lg shadow-xl flex flex-col lg:flex-row gap-8">
+
+        <!-- Left/Main Section: Main Canvas and Controls -->
+        <div class="flex-1 flex flex-col items-center">
+            <h2 class="text-2xl font-bold mb-4 text-white">Draw loops on the musical canvas</h2>
+            <div class="relative w-full max-w-xl">
+                <canvas id="mainCanvas" class="w-full aspect-video cursor-crosshair"></canvas>
+                <!-- Staff lines overlay (conceptual, drawn in JS) -->
+                <div class="absolute inset-0 pointer-events-none flex flex-col justify-around py-4">
+                    <div class="h-px bg-gray-500 w-full"></div>
+                    <div class="h-px bg-gray-500 w-full"></div>
+                    <div class="h-px bg-gray-500 w-full"></div>
+                    <div class="h-px bg-gray-500 w-full"></div>
+                    <div class="h-px bg-gray-500 w-full"></div>
+                </div>
+            </div>
+
+            <!-- New wrapper for save button and message box -->
+            <div class="relative mt-6">
+                <button id="saveButton" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-full shadow-lg transition duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-75">
+                    Save Latest Loop
+                </button>
+                <div id="messageBox" class="absolute left-full ml-4 p-3 bg-blue-700 rounded-md text-sm hidden w-64 top-1/2 -translate-y-1/2 z-10"></div>
+            </div>
+
+            <!-- Advanced Controls Section -->
+            <div class="mt-8 pt-4 border-t border-gray-700 w-full max-w-xl flex flex-col items-center">
+                <h3 class="text-xl font-semibold mb-4 text-white">Advanced Controls</h3>
+                <!-- Play Music Checkbox -->
+                <div class="flex items-center mb-4">
+                    <input type="checkbox" id="playMusicCheckbox" class="form-checkbox h-5 w-5 text-green-600 rounded focus:ring-green-500" checked>
+                    <label for="playMusicCheckbox" class="ml-2 text-gray-300">Play Music</label>
+                </div>
+
+                <!-- Global Get Idea Button -->
+                <button id="globalIdeaButton" class="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-full shadow-lg transition duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-75" disabled>
+                    ✨ Get Idea for Canvas
+                </button>
+            </div>
+        </div>
+
+        <!-- Right Section: Loop List -->
+        <div class="flex-1 flex flex-col items-center">
+            <h2 class="text-2xl font-bold mb-4 text-white">Saved Loops</h2>
+            <div id="savedLoopsContainer" class="w-full max-w-xl bg-gray-700 p-4 rounded-lg shadow-inner overflow-y-auto max-h-96">
+                <!-- Saved loops will be appended here -->
+                <p id="noLoopsMessage" class="text-gray-400 text-center">No loops saved yet. Start drawing!</p>
+            </div>
+             <!-- Shareable Link -->
+            <div class="mt-4 flex items-center">
+                <a id="shareLink" class="text-blue-400 hover:text-blue-200 text-sm" href="#">Shareable Link</a>
+                <span id="shareMessage" class="ml-2 text-xs text-yellow-400 hidden">URL might be long!</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Horizontal line before the prompt -->
+    <hr class="w-full max-w-7xl mx-auto mt-12 mb-8 border-gray-700">
+
+    <!-- App Generation Prompt -->
+    <div class="w-full max-w-7xl mx-auto p-4 bg-gray-800 rounded-lg shadow-xl text-center text-xs text-gray-500 opacity-75 mb-8">
+        <p class="mb-2 font-semibold">To generate this application, you could use a prompt similar to this:</p>
+        <p class="text-left leading-relaxed">
+            "Generate a single-page web application that functions as a **Musical Looper**. The app should use **HTML**, **Tailwind CSS** for styling, **Tone.js** for audio synthesis and sequencing, **LZ-String** for URL compression, and the **Gemini API** for LLM interaction.
+            <br><br>
+            **Core Functionality:**
+            The application should feature a **single large musical canvas** where users can draw musical loops by dragging their mouse or finger. When a drawing is completed, it's immediately quantized to musical notes (soft piano sound) and harmonically snapped to any existing loops, or to a C Major scale if no loops are present.
+            <br><br>
+            **UI Elements:**
+            - A main **Musical Canvas** for drawing.
+            - A **"Save Latest Loop" button** below the canvas to add the current drawing to the composition. The current drawing should be visibly **thicker** than saved loops.
+            - A **"Saved Loops" section** on the right side of the page, displaying a list of all saved loops. Each list item should include a miniature visual representation of the loop, an **"Isolate" button** (which plays only that loop and makes its line **bold** on the main canvas during playback), and a **"Delete" button**.
+            - A **vertical highlight bar** should move left-to-right across the main musical canvas, synchronized with the overall music playback. This bar should be hidden when music is not playing.
+            - An **"Advanced Controls" section** at the bottom-left of the page.
+            - Inside "Advanced Controls": a **"Play Music" checkbox** to globally toggle all audio output (including highlight bar movement).
+            - Inside "Advanced Controls": a **"✨ Get Idea for Canvas" button**, which is disabled unless at least one loop is saved. When clicked, it uses the Gemini API to generate a harmonically complementary drawing path on the canvas, based on the existing composition.
+            - A **"Shareable Link"** below the "Saved Loops" list. This link's URL parameters should be compressed using LZ-String and encode the saved loops, allowing users to share their compositions. The app should load loops from this URL on page load.
+            <br><br>
+            **Visuals & UX:**
+            - Maintain a dark theme with rounded corners on elements.
+            - Ensure the layout is fully responsive and adaptable to different screen sizes.
+            - Provide subtle visual feedback for actions (e.g., message box hovering to the right of the save button).
+            - Avoid temporary status messages for routine actions.
+            - Ensure Tone.js context starts on first user interaction.
+            - All vertical staff lines should be removed from the canvas; only horizontal staff lines should be visible.
+            - Implement robust error handling for API calls and drawing logic.
+            "
+        </p>
+    </div>
+
+    <script>
+        // Global UI element references (will be initialized in setupUI)
+        let mainCanvas, mainCtx;
+        let savedLoopsContainer;
+        let noLoopsMessageElement;
+        let globalIdeaButton;
+        let playMusicCheckbox;
+        let messageBox;
+
+        // Tone.js audio components
+        let synth, reverb;
+
+        // Drawing state
+        let isDrawing = false;
+        let currentPath = [];
+
+        // Colors for loops
+        const colors = [
+            '#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899'
+        ];
+        let colorIndex = 0; // Tracks next color to use
+
+        // Highlight bar animation
+        let highlightAnimationId = null;
+        let highlightX = 0;
+
+        // --- LoopManager: Encapsulates all loop and playback logic ---
+        const loopManager = {
+            savedLoops: [],
+            harmonicPool: [],
+            isMusicPlaying: true, // Master toggle for all audio
+            loopPlayer: null, // Tone.Part for the main composition
+            lastPlayedSequence: null, // Tone.Sequence for the current scratchpad drawing preview
+            playingLoopId: null, // ID of the loop currently being isolated (for highlighting)
+
+            // Initializes Tone.js and sets up master transport
+            async setupAudio() {
+                reverb = new Tone.Reverb({
+                    decay: 2,
+                    preDelay: 0.01,
+                    wet: 0.4
+                }).toDestination();
+
+                synth = new Tone.PolySynth(Tone.FMSynth, {
+                    harmonicity: 3.01,
+                    modulationIndex: 14,
+                    envelope: {
+                        attack: 0.01,
+                        decay: 0.2,
+                        sustain: 0.05,
+                        release: 1.2
+                    },
+                    modulation: {
+                        type: "sine"
+                    },
+                    modulationEnvelope: {
+                        attack: 0.01,
+                        decay: 0.5,
+                        sustain: 0.05,
+                        release: 0.8
+                    },
+                    volume: -10
+                }).connect(reverb);
+
+                // Start Tone.js context on first user interaction
+                document.documentElement.addEventListener('mousedown', Tone.start, { once: true });
+                document.documentElement.addEventListener('touchstart', Tone.start, { once: true });
+
+                // Set Tone.Transport properties once
+                Tone.Transport.loop = true;
+                Tone.Transport.loopEnd = "2m"; // Two measures loop length
+            },
+
+            // Stops all active Tone.js audio and associated animations/resources
+            // This function stops all currently playing Tone.js parts/sequences and clears related animations.
+            // It does NOT stop the Tone.Transport itself unless specifically instructed by `toggleMusic(false)`.
+            stopAllActiveAudioAndAnimations() {
+                if (this.lastPlayedSequence) {
+                    this.lastPlayedSequence.stop();
+                    this.lastPlayedSequence.dispose();
+                    this.lastPlayedSequence = null;
+                }
+                // Dispose loopPlayer only if it's not going to be immediately resumed
+                // This is a more nuanced stop to avoid ghosting without full transport reset
+                if (this.loopPlayer) {
+                    this.loopPlayer.stop(); // Stop the part, don't dispose unless recreating
+                }
+
+
+                this.playingLoopId = null; // Clear any active highlight for individual loops
+
+                if (highlightAnimationId) {
+                    cancelAnimationFrame(highlightAnimationId);
+                    highlightAnimationId = null;
+                }
+                highlightX = 0; // Reset highlight position
+                drawAllCanvasContent(); // Redraw to clear the highlight
+            },
+
+            // Toggles global music playback and manages Tone.Transport lifecycle
+            toggleMusic(isPlaying) {
+                this.isMusicPlaying = isPlaying;
+                if (!this.isMusicPlaying) {
+                    this.stopAllActiveAudioAndAnimations(); // Stop individual players and animations
+                    Tone.Transport.stop(); // Stop the global transport
+                    Tone.Transport.cancel(); // Cancel all scheduled events on transport
+                } else {
+                    // If music is turned on, ensure transport runs and highlight animation is active
+                    if (Tone.Transport.state !== 'started') {
+                        Tone.Transport.start(); // Start the global transport
+                    }
+                    if (!highlightAnimationId) { // Start highlight animation if not already running
+                        highlightAnimationId = requestAnimationFrame(animateHighlight);
+                    }
+                    this.createCompositionPlayer(); // Re-create/start composition player if notes exist
+                }
+                drawAllCanvasContent(); // Redraw canvas to reflect play state changes
+            },
+
+            // Adds a new loop to the savedLoops array
+            addLoop(path, notes, color) {
+                const loopId = Date.now().toString();
+                const simplifiedPath = simplifyPath(path);
+
+                this.savedLoops.push({
+                    id: loopId,
+                    path: simplifiedPath,
+                    notes: notes,
+                    color: color
+                });
+                colorIndex = (colorIndex + 1) % colors.length; // Cycle through colors
+                this.updateApplicationState(); // Trigger full state update
+            },
+
+            // Deletes a loop by its ID
+            deleteLoop(idToDelete) {
+                // Ensure any isolated playback of this loop is stopped
+                if (this.playingLoopId === idToDelete) {
+                    this.stopAllActiveAudioAndAnimations();
+                }
+
+                this.savedLoops = this.savedLoops.filter(loop => loop.id !== idToDelete);
+                showMessageBox("Loop deleted.", 'info', 1500);
+                this.updateApplicationState(); // Trigger full state update
+            },
+
+            // Creates or updates the main Tone.js Part for the combined composition
+            createCompositionPlayer() {
+                // Always dispose previous main player to prevent ghosting or conflicts
+                if (this.loopPlayer) {
+                    this.loopPlayer.stop(); // Stop before disposing
+                    this.loopPlayer.dispose();
+                    this.loopPlayer = null;
+                }
+                // Ensure no individual highlight is active when main composition is starting
+                this.playingLoopId = null;
+
+                let allNotes = [];
+                this.savedLoops.forEach(loop => {
+                    loop.notes.forEach(note => {
+                        allNotes.push({
+                            ...note,
+                            originalLoopColor: loop.color,
+                            originalLoopId: loop.id
+                        });
+                    });
+                });
+
+                // Sort all notes by their time to ensure correct playback order
+                allNotes.sort((a, b) => Tone.Time(a.time).toSeconds() - Tone.Time(b.time).toSeconds());
+
+                if (allNotes.length > 0 && this.isMusicPlaying) {
+                    this.loopPlayer = new Tone.Part((time, noteInfo) => {
+                        synth.triggerAttackRelease(noteInfo.note, noteInfo.duration, time, noteInfo.velocity);
+                    }, allNotes).start(0); // Start from the beginning of the transport
+                    this.loopPlayer.loop = true;
+                    this.loopPlayer.loopEnd = "2m"; // Loop over two measures
+
+                    // Ensure transport is running if it's not already
+                    if (Tone.Transport.state !== 'started') {
+                        Tone.Transport.start();
+                    }
+                    // Start highlight animation if not already running
+                    if (!highlightAnimationId) {
+                        highlightAnimationId = requestAnimationFrame(animateHighlight);
+                    }
+                } else if (this.isMusicPlaying && Tone.Transport.state !== 'started') {
+                     // If no saved loops, but music is generally on, ensure transport still runs for highlight
+                    Tone.Transport.start();
+                    if (!highlightAnimationId) {
+                        highlightAnimationId = requestAnimationFrame(animateHighlight);
+                    }
+                }
+                drawAllCanvasContent(); // Redraw to reflect changes (e.g., highlight presence/absence)
+            },
+
+            // Plays an individual loop on demand (isolate function)
+            playIsolatedLoop(loopId, notes) {
+                // If the same loop is clicked again, stop it and resume main playback
+                if (this.playingLoopId === loopId && this.lastPlayedSequence) {
+                    this.lastPlayedSequence.stop();
+                    this.lastPlayedSequence.dispose();
+                    this.lastPlayedSequence = null;
+                    this.playingLoopId = null;
+                    // Resume main playback if music is on and loopPlayer exists
+                    if (this.isMusicPlaying && this.loopPlayer) {
+                        this.loopPlayer.start(Tone.Transport.position); // Resume from current position
+                    }
+                    drawAllCanvasContent();
+                    return;
+                }
+
+                // If music is not playing, just show message and return
+                if (!this.isMusicPlaying) {
+                    showMessageBox("Music is muted. Check 'Play Music' in Advanced Controls.", 'info', 3000);
+                    return;
+                }
+
+                // Pause main loop if it's currently active, store its position
+                let currentMainTransportPosition = null;
+                if (this.loopPlayer && this.loopPlayer.state === 'started') {
+                    currentMainTransportPosition = Tone.Transport.position;
+                    this.loopPlayer.stop(); // Stop main player (don't dispose)
+                }
+
+                // Stop any previously playing individual loop (e.g. if user clicks isolate on another loop)
+                if (this.lastPlayedSequence) {
+                    this.lastPlayedSequence.stop();
+                    this.lastPlayedSequence.dispose();
+                    this.lastPlayedSequence = null;
+                }
+
+                // Set the playingLoopId for highlighting
+                this.playingLoopId = loopId;
+                drawAllCanvasContent(); // Redraw immediately to show the highlight
+
+                // Ensure Tone.Transport is running (it should be if isMusicPlaying is true)
+                if (Tone.Transport.state !== 'started') {
+                    Tone.Transport.start();
+                }
+
+                // Reset transport position to 0:0 to sync highlight bar for the isolated loop
+                Tone.Transport.position = "0:0";
+
+                this.lastPlayedSequence = new Tone.Sequence((time, noteInfo) => {
+                    synth.triggerAttackRelease(noteInfo.note, noteInfo.duration, time, noteInfo.velocity);
+                }, notes, "8n").start(0); // Start from transport's 0
+
+                // Schedule a callback to stop the isolated loop and resume main playback
+                const loopDuration = Tone.Time("2m").toSeconds();
+                Tone.Transport.scheduleOnce(() => {
+                    if (this.lastPlayedSequence) {
+                        this.lastPlayedSequence.stop();
+                        this.lastPlayedSequence.dispose();
+                        this.lastPlayedSequence = null;
+                    }
+                    this.playingLoopId = null; // Clear individual loop highlight
+
+                    // Resume main composition playback if it was active and music is still on
+                    if (this.isMusicPlaying) {
+                        if (currentMainTransportPosition !== null && this.loopPlayer) {
+                            Tone.Transport.position = currentMainTransportPosition; // Restore position
+                            this.loopPlayer.start(currentMainTransportPosition); // Resume main player
+                        } else if (Tone.Transport.state !== 'started') {
+                            // If no main loops, but music is generally on, ensure transport still runs for highlight
+                            Tone.Transport.start();
+                        }
+                        if (!highlightAnimationId) {
+                            highlightAnimationId = requestAnimationFrame(animateHighlight);
+                        }
+                    }
+                    drawAllCanvasContent(); // Redraw to remove highlight and reflect new state
+                }, `+${loopDuration}`);
+            },
+
+            // Calculates the pool of unique MIDI notes present in all saved loops.
+            calculateHarmonicPool() {
+                const uniqueMidiNotes = new Set();
+                this.savedLoops.forEach(loop => {
+                    loop.notes.forEach(noteInfo => {
+                        uniqueMidiNotes.add(Tone.Midi(noteInfo.note).toMidi());
+                    });
+                });
+
+                if (uniqueMidiNotes.size === 0) {
+                    const defaultScaleMidi = [60, 62, 64, 67, 69, 72, 74, 76, 79];
+                    defaultScaleMidi.forEach(midi => uniqueMidiNotes.add(midi));
+                }
+                this.harmonicPool = Array.from(uniqueMidiNotes).sort((a, b) => a - b);
+            },
+
+            // Orchestrates all necessary UI and audio updates after a state change
+            updateApplicationState() {
+                this.calculateHarmonicPool();
+                renderSavedLoopsList(this.savedLoops, this.playingLoopId);
+                this.createCompositionPlayer(); // Will ensure player reflects current savedLoops
+                updateShareableLink(this.savedLoops);
+                globalIdeaButton.disabled = this.savedLoops.length === 0;
+            },
+
+            // Initial setup including UI elements, audio, and loading from URL
+            init() {
+                // Initialize UI element references
+                mainCanvas = document.getElementById('mainCanvas');
+                mainCtx = mainCanvas.getContext('2d');
+                savedLoopsContainer = document.getElementById('savedLoopsContainer');
+                noLoopsMessageElement = document.getElementById('noLoopsMessage');
+                globalIdeaButton = document.getElementById('globalIdeaButton');
+                playMusicCheckbox = document.getElementById('playMusicCheckbox');
+                messageBox = document.getElementById('messageBox');
+
+                // Canvas resizing logic
+                const resizeCanvas = () => {
+                    mainCanvas.width = mainCanvas.offsetWidth;
+                    mainCanvas.height = mainCanvas.offsetHeight;
+                    drawAllCanvasContent();
+                };
+                window.addEventListener('resize', resizeCanvas);
+                resizeCanvas();
+
+                // Prevent default touch behavior
+                mainCanvas.addEventListener('touchstart', (e) => {
+                    if (e.targetTouches.length === 1) { e.preventDefault(); }
+                }, { passive: false });
+                mainCanvas.addEventListener('touchmove', (e) => {
+                    if (e.targetTouches.length === 1) { e.preventDefault(); }
+                }, { passive: false });
+
+                // Setup drawing listeners
+                mainCanvas.addEventListener('mousedown', startDrawing);
+                mainCanvas.addEventListener('mousemove', draw);
+                mainCanvas.addEventListener('mouseup', stopDrawing);
+                mainCanvas.addEventListener('mouseleave', stopDrawing);
+                mainCanvas.addEventListener('touchstart', (e) => { startDrawing(e.touches[0]); }, { passive: false });
+                mainCanvas.addEventListener('touchmove', (e) => { draw(e.touches[0]); }, { passive: false });
+                mainCanvas.addEventListener('touchend', stopDrawing);
+                mainCanvas.addEventListener('touchcancel', stopDrawing);
+
+                // Setup audio components
+                this.setupAudio();
+
+                // Setup button listeners
+                document.getElementById('saveButton').addEventListener('click', () => {
+                    if (currentPath.length < 2) {
+                        showMessageBox("Draw a loop first before saving!", 'error');
+                        return;
+                    }
+                    const { notes } = pathToNotes(currentPath, mainCanvas.height, this.harmonicPool);
+                    if (notes.length === 0) {
+                        showMessageBox("Couldn't convert drawing to notes. Please draw again.", 'error');
+                        return;
+                    }
+                    this.addLoop(currentPath, notes, colors[colorIndex]);
+                    currentPath = []; // Clear current path after saving
+                    drawAllCanvasContent(); // Redraw to clear current drawing visual
+                    showMessageBox("Loop saved successfully!", 'info', 2000);
+                });
+
+                globalIdeaButton.addEventListener('click', () => getGlobalMusicalIdea(this.harmonicPool));
+
+                // Global Play Music checkbox listener
+                playMusicCheckbox.checked = this.isMusicPlaying; // Set initial state
+                playMusicCheckbox.addEventListener('change', (event) => {
+                    this.toggleMusic(event.target.checked);
+                });
+
+                // On initial load, ensure Tone.Transport starts if music is enabled
+                if (this.isMusicPlaying) {
+                    Tone.Transport.start(); // Start Transport globally
+                    highlightAnimationId = requestAnimationFrame(animateHighlight);
+                }
+
+                // Load loops from URL (if any)
+                loadLoopsFromUrl(this); // Pass loopManager to loadLoopsFromUrl
+                // Perform initial update after loading to ensure UI/audio reflect loaded state
+                this.updateApplicationState();
+            }
+        };
+
+        // --- UI & Drawing Functions (Outside LoopManager, but interact with it) ---
+        // These functions are kept global as they directly manipulate DOM/Canvas based on LoopManager's state
+
+        // Message box utility
+        function showMessageBox(message, type = 'info', duration = 3000) {
+            messageBox.textContent = message;
+            messageBox.className = `absolute left-full ml-4 p-3 rounded-md text-sm ${type === 'error' ? 'bg-red-700' : 'bg-blue-700'} block w-64 top-1/2 -translate-y-1/2 z-10`;
+            setTimeout(() => {
+                messageBox.classList.add('hidden');
+            }, duration);
+        }
+
+        // Draws the static musical staff lines on a given context
+        function drawMusicalStaff(ctx, width, height) {
+            ctx.clearRect(0, 0, width, height);
+            ctx.strokeStyle = '#a0aec0';
+            ctx.lineWidth = 1;
+            const staffLineSpacing = height / 6;
+            for (let i = 0; i < 5; i++) {
+                const y = staffLineSpacing + i * staffLineSpacing;
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
+        }
+
+        // Helper to get coordinates relative to the canvas
+        function getCanvasCoords(event, canvas) {
+            const rect = canvas.getBoundingClientRect();
+            let x, y;
+            if (event.touches) {
+                x = event.touches[0].clientX - rect.left;
+                y = event.touches[0].clientY - rect.top;
+            } else {
+                x = event.clientX - rect.left;
+                y = event.clientY - rect.top;
+            }
+            return { x, y };
+        }
+
+        // Drawing event handlers
+        function startDrawing(event) {
+            isDrawing = true;
+            currentPath = [];
+            const { x, y } = getCanvasCoords(event, mainCanvas);
+            currentPath.push({ x, y });
+            drawAllCanvasContent();
+        }
+
+        function draw(event) {
+            if (!isDrawing) return;
+            const { x, y } = getCanvasCoords(event, mainCanvas);
+            currentPath.push({ x, y });
+            drawAllCanvasContent();
+        }
+
+        async function stopDrawing() {
+            if (!isDrawing) return;
+            isDrawing = false;
+
+            if (currentPath.length < 2) {
+                currentPath = [];
+                drawAllCanvasContent();
+                showMessageBox("Draw a longer line!", 'error');
+                return;
+            }
+
+            const { notes } = pathToNotes(currentPath, mainCanvas.height, loopManager.harmonicPool);
+
+            // Dispose of the previous scratchpad sequence if it exists
+            if (loopManager.lastPlayedSequence) {
+                loopManager.lastPlayedSequence.stop(); // Stop before disposing
+                loopManager.lastPlayedSequence.dispose();
+                loopManager.lastPlayedSequence = null;
+            }
+
+            // Play preview if global music is enabled
+            if (loopManager.isMusicPlaying) {
+                // Start sequence relative to current Tone.Transport position
+                loopManager.lastPlayedSequence = new Tone.Sequence((time, noteInfo) => {
+                    synth.triggerAttackRelease(noteInfo.note, noteInfo.duration, time, noteInfo.velocity);
+                }, notes, "8n").start(Tone.Transport.position);
+
+                const loopDuration = Tone.Time("2m").toSeconds();
+                Tone.Transport.scheduleOnce(() => {
+                    if (loopManager.lastPlayedSequence) {
+                        loopManager.lastPlayedSequence.stop();
+                        loopManager.lastPlayedSequence.dispose();
+                        loopManager.lastPlayedSequence = null;
+                    }
+                    // No need to stop/start transport here, global toggleMusic handles it.
+                }, `+${loopDuration}`);
+            }
+
+            drawAllCanvasContent();
+        }
+
+        // Simplifies a path for more efficient storage and URL encoding.
+        function simplifyPath(path, maxPoints = 50) {
+            if (path.length <= maxPoints) {
+                return path;
+            }
+            const step = Math.ceil(path.length / maxPoints);
+            const simplified = [];
+            for (let i = 0; i < path.length; i += step) {
+                simplified.push(path[i]);
+            }
+            if (simplified[simplified.length - 1] !== path[path.length - 1]) {
+                simplified.push(path[path.length - 1]);
+            }
+            return simplified;
+        }
+
+        // Converts a drawn path into a sequence of quantized musical notes.
+        function pathToNotes(path, canvasHeight, harmonicPool) {
+            if (path.length === 0) return { notes: [] };
+
+            const notes = [];
+            const totalDurationBars = 2;
+            const totalPixelsX = mainCanvas.width;
+            const beatsPerBar = 4;
+            const subdivisionsPerBeat = 2;
+            const totalSubdivisions = totalDurationBars * beatsPerBar * subdivisionsPerBeat;
+            const xStep = totalPixelsX / totalSubdivisions;
+
+            for (let i = 0; i < path.length; i++) {
+                const point = path[i];
+                const normalizedY = 1 - (point.y / canvasHeight);
+                const rawMidiNote = Tone.Midi("C4").toMidi() + (normalizedY * (Tone.Midi("G5").toMidi() - Tone.Midi("C4").toMidi()));
+
+                let snappedMidi;
+                if (harmonicPool.length === 0) {
+                    const defaultScaleMidi = [60, 62, 64, 65, 67, 69, 71, 72, 74, 76, 77, 79];
+                    snappedMidi = defaultScaleMidi.reduce((prev, curr) => (Math.abs(curr - rawMidiNote) < Math.abs(prev - rawMidiNote) ? curr : prev));
+                } else {
+                    snappedMidi = harmonicPool.reduce((prev, curr) => (Math.abs(curr - rawMidiNote) < Math.abs(prev - rawMidiNote) ? curr : prev));
+                }
+                const noteName = Tone.Midi(snappedMidi).toNote();
+
+                const quantizedXIndex = Math.round(point.x / xStep);
+                const quantizedX = quantizedXIndex * xStep;
+
+                if (notes.length === 0 || quantizedXIndex !== notes[notes.length - 1].quantizedXIndex || noteName !== notes[notes.length - 1].note) {
+                    notes.push({
+                        note: noteName,
+                        duration: "8n",
+                        time: `0:${quantizedXIndex * 0.5}`,
+                        velocity: 0.8,
+                        x: quantizedX,
+                        width: xStep,
+                        quantizedXIndex: quantizedXIndex
+                    });
+                }
+            }
+            if (notes.length === 0 && path.length > 0) {
+                 const initialPoint = path[0];
+                 const normalizedY = 1 - (initialPoint.y / canvasHeight);
+                 const rawMidiNote = Tone.Midi("C4").toMidi() + (normalizedY * (Tone.Midi("G5").toMidi() - Tone.Midi("C4").toMidi()));
+                 let snappedMidi;
+                 if (harmonicPool.length === 0) {
+                     const defaultScaleMidi = [60, 62, 64, 65, 67, 69, 71, 72, 74, 76, 77, 79];
+                     snappedMidi = defaultScaleMidi.reduce((prev, curr) => (Math.abs(curr - rawMidiNote) < Math.abs(prev - rawMidiNote) ? curr : prev));
+                 } else {
+                     snappedMidi = harmonicPool.reduce((prev, curr) => (Math.abs(curr - rawMidiNote) < Math.abs(prev - rawMidiNote) ? curr : prev));
+                 }
+                 notes.push({
+                     note: Tone.Midi(snappedMidi).toNote(),
+                     duration: "8n",
+                     time: "0:0", // First note at the start
+                     velocity: 0.8,
+                     x: 0,
+                     width: xStep,
+                     quantizedXIndex: 0
+                 });
+            }
+            return { notes };
+        }
+
+        // --- Shareable Link Functions ---
+        function updateShareableLink(savedLoopsData) {
+            const shareLink = document.getElementById('shareLink');
+            const shareMessage = document.getElementById('shareMessage');
+            try {
+                const shareableLoops = savedLoopsData.map(loop => ({
+                    path: loop.path,
+                    notes: loop.notes,
+                    color: loop.color
+                }));
+                const compressedLoops = LZString.compressToBase64(JSON.stringify(shareableLoops));
+                const currentBaseUrl = window.location.origin + window.location.pathname;
+                const newUrl = `${currentBaseUrl}?loops=${compressedLoops}`;
+                shareLink.href = newUrl;
+
+                if (newUrl.length > 2000) {
+                    shareMessage.classList.remove('hidden');
+                    shareMessage.textContent = `URL is very long (${newUrl.length} chars)! May not work in all browsers.`;
+                } else {
+                    shareMessage.classList.add('hidden');
+                }
+            } catch (e) {
+                console.error("Error encoding loops for sharing:", e);
+                shareLink.href = "#";
+                shareMessage.classList.remove('hidden');
+                shareMessage.textContent = 'Error creating share link.';
+            }
+        }
+
+        // Loads and decodes loops from the URL parameters on page load.
+        function loadLoopsFromUrl(manager) {
+            const params = new URLSearchParams(window.location.search);
+            const encodedLoops = params.get('loops');
+            if (encodedLoops) {
+                try {
+                    const decompressedString = LZString.decompressFromBase64(encodedLoops);
+                    if (decompressedString === null) {
+                        throw new Error("Decompression failed or invalid data");
+                    }
+                    const decodedLoops = JSON.parse(decompressedString);
+                    manager.savedLoops = decodedLoops.map((loop, index) => ({
+                        id: `loaded-${index}-${Date.now()}`,
+                        path: loop.path,
+                        notes: loop.notes,
+                        color: loop.color
+                    }));
+                    colorIndex = manager.savedLoops.length % colors.length;
+                    showMessageBox("Loops loaded from URL!", 'info', 3000);
+                } catch (e) {
+                    console.error("Error decoding loops from URL:", e);
+                    showMessageBox("Could not load loops from URL. Invalid data or decompression error.", 'error', 5000);
+                    manager.savedLoops = [];
+                }
+            } else {
+                manager.savedLoops = [];
+            }
+        }
+
+        // --- Gemini API Integration: Musical Idea Generator ---
+        async function getGlobalMusicalIdea(harmonicPoolData) {
+            globalIdeaButton.disabled = true;
+            globalIdeaButton.textContent = 'Generating...';
+            showMessageBox("Generating a musical idea for your canvas...", 'info');
+
+            const prompt = `You are an AI assistant specialized in generating musical drawing paths.
+Given the current harmonic pool of MIDI notes in the composition: [${harmonicPoolData.join(', ')}].
+The drawing canvas has a width of ${mainCanvas.width} and a height of ${mainCanvas.height}.
+Generate a single two-bar musical line as a series of {x, y} coordinates.
+The 'x' coordinate should range from 0 to ${mainCanvas.width}.
+The 'y' coordinate should range from 0 to ${mainCanvas.height}.
+The path should represent a melodically and **harmonically pleasing** line that **complements the existing harmonic pool**. Prioritize a "pretty" or "consonant" sound relative to the existing harmony.
+It should be simple enough to be drawn with a mouse or finger. Aim for approximately 15-30 points to represent a smooth curve.
+Output the path as a JSON array of objects, like: [{"x": 10, "y": 50}, {"x": 20, "y": 45}, ...]`;
+
+            let chatHistory = [];
+            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+            const payload = {
+                contents: chatHistory,
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "ARRAY",
+                        items: {
+                            type: "OBJECT",
+                            properties: {
+                                "x": { "type": "NUMBER" },
+                                "y": { "type": "NUMBER" }
+                            },
+                            "required": ["x", "y"]
+                        }
+                    }
+                }
+            };
+            const apiKey = "";
+
+            try {
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-04-17:generateContent?key=${apiKey}`;
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`API error: ${response.status} - ${errorData.error.message}`);
+                }
+
+                const result = await response.json();
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const jsonResponse = JSON.parse(result.candidates[0].content.parts[0].text);
+
+                    if (Array.isArray(jsonResponse) && jsonResponse.every(p => typeof p.x === 'number' && typeof p.y === 'number')) {
+                        currentPath = jsonResponse;
+                        drawAllCanvasContent();
+                        showMessageBox("Generated a new idea on the canvas!", 'info', 5000);
+
+                        if (loopManager.isMusicPlaying) {
+                            const { notes } = pathToNotes(currentPath, mainCanvas.height, loopManager.harmonicPool);
+                            if (loopManager.lastPlayedSequence) {
+                                loopManager.lastPlayedSequence.stop(); // Stop before disposing
+                                loopManager.lastPlayedSequence.dispose();
+                            }
+                            loopManager.lastPlayedSequence = new Tone.Sequence((time, noteInfo) => {
+                                synth.triggerAttackRelease(noteInfo.note, noteInfo.duration, time, noteInfo.velocity);
+                            }, notes, "8n").start(Tone.Transport.position);
+                        }
+                    } else {
+                        showMessageBox("Generated idea was not in the expected format.", 'error');
+                        console.error("LLM returned unexpected format:", jsonResponse);
+                    }
+                } else {
+                    showMessageBox("Could not generate suggestion. Please try again.", 'error');
+                }
+            } catch (error) {
+                console.error("Error calling Gemini API:", error);
+                showMessageBox(`Failed to get suggestion: ${error.message}`, 'error', 7000);
+            } finally {
+                globalIdeaButton.disabled = loopManager.savedLoops.length === 0;
+                globalIdeaButton.innerHTML = '&#10024; Get Idea for Canvas';
+            }
+        }
+
+        // Draws all saved loops and the current drawing onto the main canvas.
+        function drawAllCanvasContent() {
+            mainCtx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
+            drawMusicalStaff(mainCtx, mainCanvas.width, mainCanvas.height);
+
+            // Draw all saved loops
+            loopManager.savedLoops.forEach(loop => {
+                if (loop.path && loop.path.length > 0) {
+                    mainCtx.strokeStyle = loop.color;
+                    mainCtx.lineWidth = (loopManager.playingLoopId === loop.id) ? 4 : 2; // Thicker if playing individually
+                    mainCtx.beginPath();
+                    mainCtx.moveTo(loop.path[0].x, loop.path[0].y);
+                    for (let i = 1; i < loop.path.length; i++) {
+                        mainCtx.lineTo(loop.path[i].x, loop.path[i].y);
+                    }
+                    mainCtx.stroke();
+                }
+            });
+
+            // Draw the currently active drawing (thicker)
+            if (currentPath.length > 0) {
+                mainCtx.strokeStyle = colors[colorIndex];
+                mainCtx.lineWidth = 5;
+                mainCtx.beginPath();
+                mainCtx.moveTo(currentPath[0].x, currentPath[0].y);
+                for (let i = 1; i < currentPath.length; i++) {
+                    mainCtx.lineTo(currentPath[i].x, currentPath[i].y);
+                }
+                mainCtx.stroke();
+            }
+
+            // Draw the highlight bar if music is playing and the animation loop is active
+            if (loopManager.isMusicPlaying && highlightAnimationId) {
+                mainCtx.save();
+                mainCtx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+                mainCtx.lineWidth = 2;
+                mainCtx.beginPath();
+                mainCtx.moveTo(highlightX, 0);
+                mainCtx.lineTo(highlightX, mainCanvas.height);
+                mainCtx.stroke();
+                mainCtx.restore();
+            }
+        }
+
+        // Animation loop for the highlight bar
+        function animateHighlight() {
+            if (loopManager.isMusicPlaying && Tone.Transport.state === 'started') {
+                const progress = Tone.Transport.progress;
+                highlightX = progress * mainCanvas.width;
+                drawAllCanvasContent();
+                highlightAnimationId = requestAnimationFrame(animateHighlight);
+            } else {
+                cancelAnimationFrame(highlightAnimationId);
+                highlightAnimationId = null;
+                highlightX = 0;
+                drawAllCanvasContent();
+            }
+        }
+
+        // Renders all saved loops as clickable elements in the 'Saved Loops' list.
+        function renderSavedLoopsList(savedLoopsData, playingLoopId) {
+            savedLoopsContainer.innerHTML = '';
+
+            if (savedLoopsData.length === 0) {
+                noLoopsMessageElement.classList.remove('hidden');
+            } else {
+                noLoopsMessageElement.classList.add('hidden');
+                savedLoopsData.slice().reverse().forEach(loop => {
+                    const loopDiv = document.createElement('div');
+                    loopDiv.id = `loop-${loop.id}`;
+                    loopDiv.className = `p-3 mb-2 rounded-md flex items-center justify-between transition-all duration-200 ease-in-out transform hover:scale-[1.01] hover:bg-gray-600 border border-gray-600 shadow-md`;
+                    loopDiv.style.backgroundColor = loop.color + '20';
+
+                    const loopDisplay = document.createElement('div');
+                    loopDisplay.className = 'flex items-center space-x-2 w-full';
+
+                    const loopCanvas = document.createElement('canvas');
+                    loopCanvas.width = 120;
+                    loopCanvas.height = 60;
+                    loopCanvas.className = 'loop-item-canvas flex-shrink-0';
+                    const loopCtx = loopCanvas.getContext('2d');
+
+                    drawMusicalStaff(loopCtx, loopCanvas.width, loopCanvas.height);
+
+                    loopCtx.strokeStyle = loop.color;
+                    loopCtx.lineWidth = 1.5;
+                    loopCtx.beginPath();
+                    const scaleX = loopCanvas.width / mainCanvas.width;
+                    const scaleY = loopCanvas.height / mainCanvas.height;
+                    if (loop.path && loop.path.length > 0) {
+                        loopCtx.moveTo(loop.path[0].x * scaleX, loop.path[0].y * scaleY);
+                        for (let i = 1; i < loop.path.length; i++) {
+                            loopCtx.lineTo(loop.path[i].x * scaleX, loop.path[i].y * scaleY);
+                        }
+                    }
+                    loopCtx.stroke();
+
+                    const loopInfo = document.createElement('span');
+                    loopInfo.className = 'text-sm text-gray-200 flex-grow truncate mr-2';
+                    loopInfo.textContent = `Loop ${savedLoopsData.indexOf(loop) + 1}: ${loop.notes.length} notes`;
+
+                    const playButton = document.createElement('button');
+                    playButton.className = `px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-full transition duration-150`;
+                    playButton.innerHTML = '&#9658; Isolate';
+                    playButton.onclick = () => loopManager.playIsolatedLoop(loop.id, loop.notes); // Call manager method
+
+                    const deleteButton = document.createElement('button');
+                    deleteButton.className = `ml-2 px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-full transition duration-150`;
+                    deleteButton.textContent = 'Delete';
+                    deleteButton.onclick = () => loopManager.deleteLoop(loop.id); // Call manager method
+
+                    loopDisplay.appendChild(loopCanvas);
+                    loopDisplay.appendChild(loopInfo);
+                    loopDiv.appendChild(loopDisplay);
+                    loopDiv.appendChild(playButton);
+                    loopDiv.appendChild(deleteButton);
+
+                    savedLoopsContainer.appendChild(loopDiv);
+                });
+            }
+        }
+
+        // Initialize the application when the window loads
+        window.onload = function() {
+            loopManager.init();
+        };
+
+    </script>
+</body>
+</html>
