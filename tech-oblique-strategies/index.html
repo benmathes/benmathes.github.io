@@ -3,13 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Oblique Strategies for Tech & Business</title>
+    <title>Synchronized Oblique Strategies</title>
     <!-- Tailwind CSS CDN for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Custom styles for card flip animation */
         .card-container {
             perspective: 1000px; /* Establishes a 3D context for the children */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         .card {
@@ -41,14 +44,20 @@
             font-family: 'Inter', sans-serif; /* Use Inter font */
             padding: 1.5rem;
             text-align: center;
+            overflow: hidden; /* Hide overflowing content for long texts */
         }
 
         .card-front {
-            background-color: #ef4444; /* Tailwind red-500 */
+            background-color: #ef4444; /* Default red for "Click Me!" */
             color: white;
             font-size: 3rem;
             font-weight: bold;
             line-height: 1;
+        }
+
+        /* Specific styles for Original Card */
+        .card-front.original {
+            background-color: #f59e0b; /* Tailwind amber-500 */
         }
 
         /* Specific styles for Technical Card */
@@ -60,7 +69,6 @@
         .card-front.product-business {
             background-color: #10b981; /* Tailwind emerald-500 */
         }
-
 
         .card-back {
             background-color: #f9fafb; /* Tailwind gray-50 */
@@ -81,14 +89,30 @@
             font-size: 1rem;
             color: #6b7280; /* Lighter gray for the description */
             line-height: 1.5;
+            overflow-y: auto; /* Enable scrolling for long content */
         }
 
         /* Responsive adjustments for layout */
-        @media (max-width: 768px) {
+        @media (min-width: 1024px) {
+            .main-container {
+                display: flex;
+                flex-direction: row; /* Three columns on larger screens */
+                justify-content: center;
+                align-items: flex-start;
+                flex-wrap: nowrap; /* Prevent wrapping on large screens */
+                width: 100%;
+                max-width: 1200px; /* Limit max width for better readability */
+            }
+        }
+
+        @media (max-width: 1023px) {
             .main-container {
                 flex-direction: column; /* Stack cards vertically on smaller screens */
                 align-items: center;
             }
+        }
+
+        @media (max-width: 768px) {
             .card {
                 width: 250px;
                 height: 375px;
@@ -125,6 +149,24 @@
 <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
 
     <div class="main-container flex flex-wrap justify-center items-start">
+        <!-- Original Oblique Strategies Card -->
+        <div class="card-container">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">Original Strategies</h2>
+            <div id="originalCard" class="card">
+                <div class="card-face card-front original">
+                    Click Me!
+                </div>
+                <div id="originalCardBack" class="card-face card-back">
+                    <div id="originalStrategyShort" class="strategy-short">
+                        <!-- Short message will appear here -->
+                    </div>
+                    <div id="originalStrategyLong" class="strategy-long">
+                        <!-- Long description will appear here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Technical Strategies Card -->
         <div class="card-container">
             <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">Technical Strategies</h2>
@@ -163,243 +205,11 @@
     </div>
 
     <script>
-        // Technical Strategies List
-        const technicalStrategies = [
-            { short: "Ditch standard frameworks.", long: "Abandon normal instruments: Abandon established frameworks/technologies." },
-            { short: "Get feedback, widely.", long: "Accept advice: Solicit feedback (from anyone, even junior devs)." },
-            { short: "Build incrementally.", long: "Accretion: Iterative development; gradual feature addition." },
-            { short: "Consider all perspectives (user, dev, business).", long: "A line has two sides: Consider both user and business perspectives (or front-end and back-end)." },
-            { short: "Loosen a tight constraint.", long: "Allow an easement (an easement is the abandonment of a stricture): Relax a strict architectural constraint." },
-            { short: "Map user flows; smooth handoffs.", long: "Are there sections? Consider transitions: Examine user flows; smooth onboarding/offboarding." },
-            { short: "Brainstorm 'bad' ideas.", long: "Ask people to work against their better judgment: Encourage \"crazy\" ideas in brainstorming; explore counter-intuitive solutions." },
-            { short: "Trust your gut on design.", long: "Ask your body: Trust your gut feeling about a design or technical approach." },
-            { short: "Refactor related modules.", long: "Assemble some of the instruments in a group and treat the group: Refactor a set of related modules into a single service." },
-            { short: "Design system vs. unique feature.", long: "Balance the consistency principle with the inconsistency principle: Weigh design system adherence against novel UI/UX for specific features." },
-            { short: "Prototype quickly, debt is fine for now.", long: "Be dirty: Embrace rapid prototyping; allow for technical debt in early stages." },
-            { short: "Pause before big decisions.", long: "Breathe more deeply: Take a mindful pause before making a critical decision." },
-            { short: "Create integrations - remove old ones.", long: "Bridges -build -burn: Create integrations - remove deprecated ones." },
-            { short: "Trace dependencies; check ripple effects.", long: "Cascades: Implement a dependency chain; observe ripple effects of a change." },
-            { short: "Swap team roles around.", long: "Change instrument roles: Reassign roles within a cross-functional team (e.g., designer codes, engineer researches UX)." },
-            { short: "Stick to the design system.", long: "Change nothing and continue with immaculate consistency: Maintain strict adherence to design guidelines; avoid feature creep." },
-            { short: "Get unfiltered user feedback.", long: "Children's voices -speaking -singing: Gather raw, uninhibited user feedback (from diverse age groups or backgrounds)." },
-            { short: "Group similar user patterns.", long: "Cluster analysis: Group similar user behaviors or technical issues." },
-            { short: "Plan API deprecation.", long: "Consider different fading systems: Implement various deprecation strategies for old APIs or features." },
-            { short: "Research competitors (good and bad).", long: "Consult other sources -promising -unpromising: Research competitive products (successful and failed); examine unrelated industries for inspiration." },
-            { short: "Animate a static UI element.", long: "Convert a melodic element into a rhythmic element: Transform a static design element into an interactive component with timed animations." },
-            { short: "Just ship it.", long: "Courage!: Ship it; deploy to production." },
-            { short: "Break a dependency; remove a core feature.", long: "Cut a vital connection: Deliberately break a dependency to isolate a problem; remove a core but problematic feature." },
-            { short: "Polish the UI.", long: "Decorate, decorate: Enhance UI aesthetics; add delightful micro-interactions." },
-            { short: "Establish a stable core service.", long: "Define an area as `safe' and use it as an anchor: Establish a core, stable microservice and build around it." },
-            { short: "Refactor lightly - rewrite completely.", long: "Destroy -nothing -the most important thing: Refactor a non-critical component - rewrite the core architecture." },
-            { short: "Challenge a core assumption.", long: "Discard an axiom: Challenge a fundamental assumption about user behavior or system architecture." },
-            { short: "Design without personal bias.", long: "Disconnect from desire: Design without personal bias; focus purely on user needs or technical requirements." },
-            { short: "Break from common patterns.", long: "Discover the recipes you are using and abandon them: Identify common design patterns/coding idioms and intentionally break from them for innovation." },
-            { short: "Use time-travel debugging.", long: "Distorting time: Implement time-travel debugging; simulate future states of data." },
-            { short: "Delay optimization.", long: "Do nothing for as long as possible: Delay optimization until absolutely necessary; avoid premature generalization." },
-            { short: "Embrace simple solutions.", long: "Don't be afraid of things because they're easy to do: Implement a simple, obvious solution even if it feels too basic." },
-            { short: "Use common UI patterns.", long: "Don't be frightened of cliches: Use well-understood UI patterns." },
-            { short: "Showcase your best work.", long: "Don't be frightened to display your talents: Showcase your most innovative design or engineering work." },
-            { short: "Maintain system stability.", long: "Don't break the silence: Maintain system stability; avoid introducing regressions." },
-            { short: "Balance all aspects (perf, UX, cost).", long: "Don't stress one thing more than another: Maintain balance across all aspects: performance, usability, security, cost." },
-            { short: "Document; do routine maintenance.", long: "Do something boring: Write comprehensive documentation; perform routine maintenance." },
-            { short: "Clean up tech debt.", long: "Do the washing up: Clean up technical debt; refactor old code." },
-            { short: "Refine UI copy.", long: "Do the words need changing?: Refine copy/microcopy in the UI." },
-            { short: "Design for extensibility.", long: "Do we need holes?: Design for extensibility (e.g., plugin architecture); consider API endpoints for external integration." },
-            { short: "Highlight unique selling points.", long: "Emphasize differences: Highlight unique selling points of a product feature; make contrasting UI elements stand out." },
-            { short: "Reinforce consistent patterns.", long: "Emphasize repetitions: Reinforce consistent design patterns; reuse common components." },
-            { short: "Acknowledge bugs publicly.", long: "Emphasize the flaws: Publicly acknowledge known bugs; conduct a post-mortem on a failed launch." },
-            { short: "A/B test.", long: "Faced with a choice, do both (given by Dieter Roth): A/B test two competing designs/implementations." },
-            { short: "Use telemetry for design.", long: "Feedback recordings into an acoustic situation: Use telemetry/monitoring data to inform future design decisions." },
-            { short: "Continuous delivery.", long: "Fill every beat with something: Optimize for continuous delivery; ensure no idle capacity in a system." },
-            { short: "Take a break; delegate.", long: "Get your neck massaged: Take a short break to clear your head; delegate a task." },
-            { short: "Account for legacy behavior.", long: "Ghost echoes: Account for legacy system behavior in new designs; anticipate unintended side effects." },
-            { short: "Open-source a component.", long: "Give the game away: Open-source a component; publicly share a technical roadmap." },
-            { short: "Implement a 'bad' idea to test.", long: "Give way to your worst impulse: Implement a feature just to see how users react, even if you suspect it's a bad idea." },
-            { short: "Systematically test edge cases.", long: "Go slowly all the way round the outside: Systematically analyze all edge cases for a feature." },
-            { short: "Learn from bugs.", long: "Honor thy error as a hidden intention: Learn from bugs and design flaws; uncover deeper system understanding from failures." },
-            { short: "Review with an alternative in mind.", long: "How would you have done it?: Review a colleague's code/design with an alternative approach in mind." },
-            { short: "Add personality to errors.", long: "Humanize something free of error: Add personality to an error message; give a bot a conversational tone." },
-            { short: "Visualize the user journey.", long: "Imagine the music as a moving chain or caterpillar: Envision the user journey as a continuous flow." },
-            { short: "Think microservices; discrete interactions.", long: "Imagine the music as a set of disconnected events: Treat microservices as independent entities; think of discrete user interactions." },
-            { short: "Pixel-perfect UI; nanosecond optimization.", long: "Infinitesimal gradations: Refine a UI element pixel by pixel; optimize a function for nanosecond improvements." },
-            { short: "Assess feature purpose.", long: "Intentions -credibility of -nobility of -humility of: Assess the purpose of a feature: is it trustworthy, genuinely helpful, or self-serving?" },
-            { short: "Tackle an intractable problem.", long: "Into the impossible: Attempt to solve a seemingly intractable technical problem." },
-            { short: "Is it shippable?", long: "Is it finished?: Is the feature shippable; does it meet the definition of done?" },
-            { short: "Gap analysis.", long: "Is there something missing?: Conduct a gap analysis for a product; check for overlooked requirements." },
-            { short: "Are system parameters optimized?", long: "Is the tuning appropriate?: Are the system parameters (e.g., database connection limits, caching strategies) optimized?" },
-            { short: "Keep coding/designing.", long: "Just carry on: Continue coding/designing despite blockers; push through development fatigue." },
-            { short: "Design for segments (devices, users).", long: "Left channel, right channel, center channel: Design for different user segments; optimize for varying network conditions or device types." },
-            { short: "Observe passive user behavior.", long: "Listen in total darkness, or in a very large room, very quietly: Analyze system logs in isolation; observe passive user behavior." },
-            { short: "Heed subtle cues/warnings.", long: "Listen to the quiet voice: Pay attention to subtle user cues; heed minor warnings in system logs." },
-            { short: "Focus on one component.", long: "Look at a very small object; look at its center: Focus on a single UI component; debug a specific line of code." },
-            { short: "Optimize workflow.", long: "Look at the order in which you do things: Optimize the build process; streamline the design workflow." },
-            { short: "Address critical flaws directly.", long: "Look closely at the most embarrassing details and amplify them: Publicly address a critical bug or design flaw; make a painful onboarding step highly visible to fix it." },
-            { short: "Ensure core accessibility.", long: "Lowest common denominator check -single beat -single note -single riff: Ensure core functionality works on the most basic setup; design for accessibility." },
-            { short: "Design beautiful empty states.", long: "Make a blank valuable by putting it in an exquisite frame: Make an empty state visually appealing and informative." },
-            { short: "Brainstorm, then pick the least obvious.", long: "Make an exhaustive list of everything you might do and do the last thing on the list: Brainstorm all possible solutions, then choose the least obvious one." },
-            { short: "Chaos engineering.", long: "Make a sudden, destructive, unpredictable action; incorporate: Introduce a chaos engineering experiment into production." },
-            { short: "Automate a unique process.", long: "Mechanicalize something idiosyncratic: Automate a manual, unique process." },
-            { short: "Disable a failing feature, keep building.", long: "Mute and continue: Disable a failing feature temporarily but keep developing." },
-            { short: "Enforce uniqueness.", long: "Only one element of each kind: Enforce uniqueness constraints; avoid redundancy in components or services." },
-            { short: "Design self-healing systems.", long: "(Organic) machinery: Design a self-healing system; create an adaptive algorithm." },
-            { short: "Advocate for stable APIs.", long: "Overtly resist change: Advocate for a stable API; challenge every new feature request." },
-            { short: "Block distractions.", long: "Put in earplugs: Block out external distractions; focus on the immediate task." },
-            { short: "Reflect on past projects.", long: "Remember those quiet evenings: Reflect on past project successes or failures." },
-            { short: "Clarify requirements.", long: "Remove ambiguities and convert to specifics: Clarify requirements; write detailed technical specifications." },
-            { short: "Broaden problem statements.", long: "Remove specifics and convert to ambiguities: Broaden a problem statement for more innovative solutions; generalize a specific bug into a pattern." },
-            { short: "Iterative design.", long: "Repetition is a form of change: Iterative design; continuous integration/delivery." },
-            { short: "Undo a commit.", long: "Reverse: Undo a commit; revert to an older design." },
-            { short: "Implement fail-fast.", long: "Short circuit: Implement a fail-fast mechanism; bypass a complex subsystem for testing." },
-            { short: "Integrate a powerful tech directly.", long: "improve his virility shovels them straight into his lap): Directly integrate a new, powerful technology without extensive preparation; push a critical fix immediately." },
-            { short: "Observe users without intervention.", long: "Shut the door and listen from outside: Observe users interacting with the product without intervention; monitor system performance from an external perspective." },
-            { short: "Strip features to the MVP.", long: "Simple subtraction: Remove features until only the core remains (e.g., MVP)." },
-            { short: "Comprehensive security audit.", long: "Spectrum analysis: Perform a comprehensive security audit; analyze the full range of user feedback." },
-            { short: "Step away.", long: "Take a break: Step away from the screen; go for a walk." },
-            { short: "Prune non-essential features.", long: "Take away the elements in order of apparent non-importance: Prune non-essential features; refactor by removing unused code." },
-            { short: "Listen without interrupting.", long: "Tape your mouth (given by Ritva Saarikko): Listen without interruption during user interviews; observe without judging." },
-            { short: "Deliberately introduce variation.", long: "The inconsistency principle: Deliberately introduce variation to test user adaptability; break from established patterns for impact." },
-            { short: "Logs are the source of truth.", long: "The tape is now the music: The log file is the source of truth; the user data defines the product." },
-            { short: "Design for passive use (notifications).", long: "Think of the radio: Consider passive consumption of information; design for background processes or notifications." },
-            { short: "Refactor; organize files.", long: "Tidy up: Refactor code; organize design files." },
-            { short: "Trust current intuition.", long: "Trust in the you of now: Believe in your current skills and intuition; make decisions based on available information." },
-            { short: "Reframe the problem.", long: "Turn it upside down: Reframe the problem; reverse the user flow." },
-            { short: "Fundamentally change the data model.", long: "Twist the spine: Introduce a fundamental change to the data model or core architecture." },
-            { short: "Revisit a discarded concept.", long: "Use an old idea: Revisit a discarded feature concept; leverage a proven technology." },
-            { short: "Use a jarring UI element.", long: "Use an unacceptable color: Deliberately use a jarring UI element to draw attention; design something provocative." },
-            { short: "Simplify the UI.", long: "Use fewer notes: Simplify the UI; reduce the number of features." },
-            { short: "Implement user data filters.", long: "Use filters: Implement data filtering options for users; filter out noise in error logs." },
-            { short: "Get feedback from non-tech users.", long: "Use \"unqualified\" people: Get feedback from non-technical users; involve stakeholders outside of product/engineering." },
-            { short: "Design for fluidity.", long: "Water: Design for fluidity and adaptability; ensure scalability." },
-            { short: "Bring personal insights into design.", long: "What are you really thinking about just now? Incorporate: Bring your current personal insights or tangential thoughts into the design process." },
-            { short: "Ground solutions in current constraints.", long: "What is the reality of the situation?: Ground solutions in current technical constraints and user needs." },
-            { short: "Conduct a retrospective.", long: "What mistakes did you make last time?: Conduct a retrospective; analyze past project failures." },
-            { short: "Seek a trusted outside opinion.", long: "What would your closest friend do?: Seek an outside, trusted perspective on a problem." },
-            { short: "Define anti-patterns.", long: "What wouldn't you do?: Identify anti-patterns; define what your product/system *won't* do." },
-            { short: "Vary prototyping pace.", long: "Work at a different speed: Implement a faster prototyping cycle; dedicate time to deep, slow architectural design." },
-            { short: "Embrace problem-solving.", long: "You are an engineer: Embody a problem-solving mindset; focus on practical solutions." },
-            { short: "Focus on one task.", long: "You can only make one dot at a time: Focus on one task; implement one feature at a time." },
-            { short: "Trust your own concepts.", long: "You don't have to be ashamed of using your own ideas: Trust your instincts; don't dismiss your original concepts." }
-        ];
+        // Get references to all card elements
+        const originalCard = document.getElementById('originalCard');
+        const originalStrategyShortElement = document.getElementById('originalStrategyShort');
+        const originalStrategyLongElement = document.getElementById('originalStrategyLong');
 
-        // Product/Business Strategies List (derived from original Oblique Strategies)
-        const productBusinessStrategies = [
-            { short: "Ditch standard tools.", long: "Abandon normal instruments: Abandon conventional methods/software." },
-            { short: "Seek counsel.", long: "Accept advice: Actively listen to diverse stakeholder input." },
-            { short: "Build iteratively.", long: "Accretion: Gradually add features based on feedback." },
-            { short: "Consider all viewpoints.", long: "A line has two sides: Look at problems from user, business, and competitor angles." },
-            { short: "Loosen a rule.", long: "Allow an easement (an easement is the abandonment of a stricture): Relax a rigid process or guideline." },
-            { short: "Map customer journeys.", long: "Are there sections? Consider transitions: Focus on smooth transitions between product stages." },
-            { short: "Provoke new ideas.", long: "Ask people to work against their better judgment: Challenge assumptions in brainstorming; explore contrarian approaches." },
-            { short: "Trust your instinct.", long: "Ask your body: Rely on intuition gleaned from experience." },
-            { short: "Bundle features.", long: "Assemble some of the instruments in a group and treat the group: Group related functionalities for a cohesive offering." },
-            { short: "Harmonize standard with novel.", long: "Balance the consistency principle with the inconsistency principle: Balance brand consistency with unique feature experiences." },
-            { short: "Embrace quick tests.", long: "Be dirty: Allow for imperfect, rapid prototyping for validation." },
-            { short: "Pause and reflect.", long: "Breathe more deeply: Take a strategic break before critical decisions." },
-            { short: "Create partnerships - end failing ones.", long: "Bridges -build -burn: Form strategic alliances - discontinue unproductive ventures." },
-            { short: "Analyze dependencies.", long: "Cascades: Understand how changes in one area affect others." },
-            { short: "Reassign team responsibilities.", long: "Change instrument roles: Shift roles within a project team for new perspectives." },
-            { short: "Maintain strict alignment.", long: "Change nothing and continue with immaculate consistency: Stick rigidly to core product vision; resist scope creep." },
-            { short: "Gather raw user insights.", long: "Children's voices -speaking -singing: Listen to unfiltered feedback from diverse user groups." },
-            { short: "Segment customer data.", long: "Cluster analysis: Identify distinct groups within your user base." },
-            { short: "Plan product sunsets.", long: "Consider different fading systems: Strategically phase out old features or products." },
-            { short: "Research broadly.", long: "Consult other sources -promising -unpromising: Investigate successful and unsuccessful products/strategies outside your direct domain." },
-            { short: "Make static dynamic.", long: "Convert a melodic element into a rhythmic element: Transform a static report into an interactive dashboard." },
-            { short: "Launch it!", long: "Courage!: Dare to release the product." },
-            { short: "Eliminate a key dependency.", long: "Cut a vital connection: Remove a critical, but problematic, integration or process." },
-            { short: "Refine user experience.", long: "Decorate, decorate: Add delight and polish to the product interface." },
-            { short: "Establish a core competency.", long: "Define an area as `safe' and use it as an anchor: Focus on a stable, proven product area as your foundation." },
-            { short: "Iterate lightly - pivot radically.", long: "Destroy -nothing -the most important thing: Make minor adjustments - fundamentally change direction." },
-            { short: "Challenge a core belief.", long: "Discard an axiom: Question a fundamental assumption about your market or users." },
-            { short: "Prioritize user needs.", long: "Disconnect from desire: Design without personal preferences; focus solely on market demand." },
-            { short: "Break from standard playbooks.", long: "Discover the recipes you are using and abandon them: Identify common business strategies and intentionally deviate." },
-            { short: "Simulate future scenarios.", long: "Distorting time: Project market trends; model long-term product impact." },
-            { short: "Delay non-critical work.", long: "Do nothing for as long as possible: Avoid premature optimization or feature development." },
-            { short: "Embrace simple solutions.", long: "Don't be afraid of things because they're easy to do: Implement straightforward fixes if they solve the problem effectively." },
-            { short: "Utilize proven patterns.", long: "Don't be frightened of cliches: Leverage established business models or marketing tactics." },
-            { short: "Showcase your product's strengths.", long: "Don't be frightened to display your talents: Highlight your product's unique value proposition." },
-            { short: "Maintain market presence.", long: "Don't break the silence: Keep communication channels open with customers." },
-            { short: "Balance all priorities.", long: "Don't stress one thing more than another: Give equal consideration to growth, profitability, user satisfaction, etc." },
-            { short: "Focus on core operations.", long: "Do something boring: Handle essential, unglamorous tasks like data hygiene or compliance." },
-            { short: "Clean up legacy processes.", long: "Do the washing up: Streamline outdated business operations." },
-            { short: "Refine messaging.", long: "Do the words need changing?: Improve product marketing copy or value propositions." },
-            { short: "Identify market gaps.", long: "Do we need holes?: Look for underserved customer needs or niche opportunities." },
-            { short: "Highlight competitive advantages.", long: "Emphasize differences: Clearly articulate what makes your product unique." },
-            { short: "Reinforce brand messaging.", long: "Emphasize repetitions: Consistently communicate core values and benefits." },
-            { short: "Address product weaknesses.", long: "Emphasize the flaws: Transparently communicate limitations or areas for improvement." },
-            { short: "Pursue parallel strategies.", long: "Faced with a choice, do both (given by Dieter Roth): Explore two distinct market approaches simultaneously." },
-            { short: "Integrate market feedback.", long: "Feedback recordings into an acoustic situation: Use customer reviews and analytics to inform product strategy." },
-            { short: "Maximize operational efficiency.", long: "Fill every beat with something: Ensure all resources are actively contributing." },
-            { short: "Delegate; take a break.", long: "Get your neck massaged: Relieve pressure by assigning tasks or stepping back." },
-            { short: "Learn from past failures.", long: "Ghost echoes: Account for historical market dynamics or previous project issues." },
-            { short: "Share intellectual property.", long: "Give the game away: Open-source a component; share market insights." },
-            { short: "Test a risky idea.", long: "Give way to your worst impulse: Experiment with an unconventional business model or feature." },
-            { short: "Thoroughly analyze market segments.", long: "Go slowly all the way round the outside: Deeply understand all aspects of a target market." },
-            { short: "Learn from missteps.", long: "Honor thy error as a hidden intention: Find valuable lessons in business failures." },
-            { short: "Critique existing strategies.", long: "How would you have done it?: Evaluate current market approaches with alternative methods in mind." },
-            { short: "Add personality to a brand.", long: "Humanize something free of error: Give a dry product a compelling story." },
-            { short: "Visualize the customer lifecycle.", long: "Imagine the music as a moving chain or caterpillar: See the end-to-end journey of a customer." },
-            { short: "Analyze discrete market signals.", long: "Imagine the music as a set of disconnected events: Look at individual market events rather than a continuous trend." },
-            { short: "Refine pricing tiers.", long: "Infinitesimal gradations: Make small, precise adjustments to product pricing." },
-            { short: "Evaluate strategic motives.", long: "Intentions -credibility of -nobility of -humility of: Assess if a business decision is trustworthy, genuinely beneficial, or self-serving." },
-            { short: "Pursue moonshot projects.", long: "Into the impossible: Attempt to achieve seemingly unattainable market goals." },
-            { short: "Is it market-ready?", long: "Is it finished?: Does the product meet the criteria for release?" },
-            { short: "Identify market gaps.", long: "Is there something missing?: Discover unaddressed needs in the competitive landscape." },
-            { short: "Optimize resource allocation.", long: "Is the tuning appropriate?: Are business resources effectively aligned with goals?" },
-            { short: "Persevere through challenges.", long: "Just carry on: Continue execution despite market headwinds." },
-            { short: "Target diverse segments.", long: "Left channel, right channel, center channel: Design marketing for different customer demographics." },
-            { short: "Analyze subtle market shifts.", long: "Listen in total darkness, or in a very large room, very quietly: Discern faint signals in noisy market data." },
-            { short: "Heed weak signals.", long: "Listen to the quiet voice: Pay attention to early, subtle market indicators." },
-            { short: "Deep dive on a niche.", long: "Look at a very small object; look at its center: Focus intensely on a specific, small market segment." },
-            { short: "Optimize product roadmap.", long: "Look at the order in which you do things: Streamline the sequence of feature development." },
-            { short: "Address brand vulnerabilities directly.", long: "Look closely at the most embarrassing details and amplify them: Confront public perception issues head-on." },
-            { short: "Ensure broad appeal.", long: "Lowest common denominator check -single beat -single note -single riff: Design a product to meet the most basic, widespread user needs." },
-            { short: "Brand empty states.", long: "Make a blank valuable by putting it in an exquisite frame: Make non-functional aspects of the product visually appealing." },
-            { short: "Explore unconventional strategies.", long: "Make an exhaustive list of everything you might do and do the last thing on the list: List all business options, then pursue the least obvious." },
-            { short: "Disrupt the market.", long: "Make a sudden, destructive, unpredictable action; incorporate: Introduce a radical change that reshapes the industry." },
-            { short: "Automate a unique process.", long: "Mechanicalize something idiosyncratic: Standardize a bespoke business operation." },
-            { short: "Pause a failing initiative.", long: "Mute and continue: Temporarily suspend a struggling product line but continue broader efforts." },
-            { short: "Enforce product uniqueness.", long: "Only one element of each kind: Ensure each product or feature has a distinct purpose." },
-            { short: "Build self-sustaining systems.", long: "(Organic) machinery: Design business models that grow autonomously." },
-            { short: "Defend core values.", long: "Overtly resist change: Protect fundamental brand principles from dilution." },
-            { short: "Block market noise.", long: "Put in earplugs: Filter out irrelevant trends or competitor actions." },
-            { short: "Reflect on past successes.", long: "Remember those quiet evenings: Recall lessons from previous product launches." },
-            { short: "Clarify market positioning.", long: "Remove ambiguities and convert to specifics: Define precise target audience and value proposition." },
-            { short: "Broaden product messaging.", long: "Remove specifics and convert to ambiguities: Generalize unique selling points to appeal to a wider audience." },
-            { short: "Consistent branding evolves perception.", long: "Repetition is a form of change: Repeating a message changes how it's received over time." },
-            { short: "Undo a strategic decision.", long: "Reverse: Withdraw from a market or pivot back." },
-            { short: "Streamline a process.", long: "Short circuit: Bypass unnecessary steps in a business workflow." },
-            { short: "Boldly deploy a core asset.", long: "improve his virility shovels them straight into his lap): Directly apply a powerful resource to a critical business problem." },
-            { short: "Observe customer behavior.", long: "Shut the door and listen from outside: Analyze user interaction without direct intervention." },
-            { short: "Simplify product offering.", long: "Simple subtraction: Remove non-essential features to focus on core value." },
-            { short: "Conduct a market comprehensive analysis.", long: "Spectrum analysis: Evaluate the full range of market forces." },
-            { short: "Step away from the business.", long: "Take a break: Get an outside perspective; prevent burnout." },
-            { short: "Prune non-essential features.", long: "Take away the elements in order of apparent non-importance: Systematically remove least impactful product elements." },
-            { short: "Listen without bias.", long: "Tape your mouth (given by Ritva Saarikko): Observe market trends without imposing preconceived notions." },
-            { short: "Introduce market disruption.", long: "The inconsistency principle: Deliberately deviate to test market reactions." },
-            { short: "Data dictates strategy.", long: "The tape is now the music: Market data is the ultimate source of truth for business decisions." },
-            { short: "Consider passive engagement.", long: "Think of the radio: Design for background presence or subtle brand touchpoints." },
-            { short: "Streamline business operations.", long: "Tidy up: Organize internal processes and data." },
-            { short: "Rely on current insights.", long: "Trust in the you of now: Make decisions based on the best available present information." },
-            { short: "Reframe the business model.", long: "Turn it upside down: Consider a completely inverse approach to your market." },
-            { short: "Fundamentally alter the business model.", long: "Twist the spine: Introduce a radical change to core revenue streams or operations." },
-            { short: "Revive a classic concept.", long: "Use an old idea: Reintroduce a previously discarded product idea or strategy." },
-            { short: "Challenge brand norms.", long: "Use an unacceptable color: Introduce a visually jarring or unconventional marketing element." },
-            { short: "Simplify your pitch.", long: "Use fewer notes: Condense your product's value proposition." },
-            { short: "Segment your audience.", long: "Use filters: Apply criteria to target specific customer groups." },
-            { short: "Get fresh perspectives.", long: "Use \"unqualified\" people: Involve non-experts in brainstorming or testing." },
-            { short: "Design for adaptability.", long: "Water: Ensure the product/business model can flow and adjust to market changes." },
-            { short: "Integrate personal insights.", long: "What are you really thinking about just now? Incorporate: Bring your current tangential thoughts into strategic planning." },
-            { short: "Assess market reality.", long: "What is the reality of the situation?: Base decisions on current market conditions, not assumptions." },
-            { short: "Analyze past market failures.", long: "What mistakes did you make last time?: Review previous product/business missteps." },
-            { short: "Seek external advice.", long: "What would your closest friend do?: Consult a trusted advisor on business decisions." },
-            { short: "Define your non-strategy.", long: "What wouldn't you do?: Clearly articulate what your business *won't* pursue." },
-            { short: "Vary development cycles.", long: "Work at a different speed: Switch between rapid sprints and slower, deeper strategic planning." },
-            { short: "Apply problem-solving logic.", long: "You are an engineer: Approach business challenges with a systematic, logical mindset." },
-            { short: "Focus on one initiative.", long: "You can only make one dot at a time: Prioritize a single core business objective at a time." },
-            { short: "Trust your original concepts.", long: "You don't have to be ashamed of using your own ideas: Have confidence in your unique business ideas." }
-        ];
-
-        // Get references to card elements
         const technicalCard = document.getElementById('technicalCard');
         const technicalStrategyShortElement = document.getElementById('technicalStrategyShort');
         const technicalStrategyLongElement = document.getElementById('technicalStrategyLong');
@@ -408,9 +218,584 @@
         const productBusinessStrategyShortElement = document.getElementById('productBusinessStrategyShort');
         const productBusinessStrategyLongElement = document.getElementById('productBusinessStrategyLong');
 
-        // Copies of strategies for shuffling for each deck
-        let availableTechnicalStrategies = [...technicalStrategies];
-        let availableProductBusinessStrategies = [...productBusinessStrategies];
+        // Consolidated list of all strategies with original, technical, and product/business versions
+        const masterStrategies = [
+            {
+                original: { short: "Abandon normal instruments", long: "Abandon normal instruments" },
+                technical: { short: "Ditch standard frameworks.", long: "Abandon normal instruments: Abandon established frameworks/technologies." },
+                productBusiness: { short: "Ditch standard tools.", long: "Abandon normal instruments: Abandon conventional methods/software." }
+            },
+            {
+                original: { short: "Accept advice", long: "Accept advice" },
+                technical: { short: "Get feedback, widely.", long: "Accept advice: Solicit feedback (from anyone, even junior devs)." },
+                productBusiness: { short: "Seek counsel.", long: "Accept advice: Actively listen to diverse stakeholder input." }
+            },
+            {
+                original: { short: "Accretion", long: "Accretion" },
+                technical: { short: "Build incrementally.", long: "Accretion: Iterative development; gradual feature addition." },
+                productBusiness: { short: "Build iteratively.", long: "Accretion: Gradually add features based on feedback." }
+            },
+            {
+                original: { short: "A line has two sides", long: "A line has two sides" },
+                technical: { short: "Consider all perspectives (user, dev, business).", long: "A line has two sides: Consider both user and business perspectives (or front-end and back-end)." },
+                productBusiness: { short: "Consider all viewpoints.", long: "A line has two sides: Look at problems from user, business, and competitor angles." }
+            },
+            {
+                original: { short: "Allow an easement", long: "Allow an easement (an easement is the abandonment of a stricture)" },
+                technical: { short: "Loosen a tight constraint.", long: "Allow an easement (an easement is the abandonment of a stricture): Relax a strict architectural constraint." },
+                productBusiness: { short: "Loosen a rule.", long: "Allow an easement (an easement is the abandonment of a stricture): Relax a rigid process or guideline." }
+            },
+            {
+                original: { short: "Are there sections? Consider transitions", long: "Are there sections? Consider transitions" },
+                technical: { short: "Map user flows; smooth handoffs.", long: "Are there sections? Consider transitions: Examine user flows; smooth onboarding/offboarding." },
+                productBusiness: { short: "Map customer journeys.", long: "Are there sections? Consider transitions: Focus on smooth transitions between product stages." }
+            },
+            {
+                original: { short: "Ask people to work against their better judgment", long: "Ask people to work against their better judgment" },
+                technical: { short: "Brainstorm 'bad' ideas.", long: "Ask people to work against their better judgment: Encourage \"crazy\" ideas in brainstorming; explore counter-intuitive solutions." },
+                productBusiness: { short: "Provoke new ideas.", long: "Ask people to work against their better judgment: Challenge assumptions in brainstorming; explore contrarian approaches." }
+            },
+            {
+                original: { short: "Ask your body", long: "Ask your body" },
+                technical: { short: "Trust your gut on design.", long: "Ask your body: Trust your gut feeling about a design or technical approach." },
+                productBusiness: { short: "Trust your instinct.", long: "Ask your body: Rely on intuition gleaned from experience." }
+            },
+            {
+                original: { short: "Assemble some of the instruments in a group and treat the group", long: "Assemble some of the instruments in a group and treat the group" },
+                technical: { short: "Refactor related modules.", long: "Assemble some of the instruments in a group and treat the group: Refactor a set of related modules into a single service." },
+                productBusiness: { short: "Bundle features.", long: "Assemble some of the instruments in a group and treat the group: Group related functionalities for a cohesive offering." }
+            },
+            {
+                original: { short: "Balance the consistency principle with the inconsistency principle", long: "Balance the consistency principle with the inconsistency principle" },
+                technical: { short: "Design system vs. unique feature.", long: "Balance the consistency principle with the inconsistency principle: Weigh design system adherence against novel UI/UX for specific features." },
+                productBusiness: { short: "Harmonize standard with novel.", long: "Balance the consistency principle with the inconsistency principle: Balance brand consistency with unique feature experiences." }
+            },
+            {
+                original: { short: "Be dirty", long: "Be dirty" },
+                technical: { short: "Prototype quickly, debt is fine for now.", long: "Be dirty: Embrace rapid prototyping; allow for technical debt in early stages." },
+                productBusiness: { short: "Embrace quick tests.", long: "Be dirty: Allow for imperfect, rapid prototyping for validation." }
+            },
+            {
+                original: { short: "Breathe more deeply", long: "Breathe more deeply" },
+                technical: { short: "Pause before big decisions.", long: "Breathe more deeply: Take a mindful pause before making a critical decision." },
+                productBusiness: { short: "Pause and reflect.", long: "Breathe more deeply: Take a strategic break before critical decisions." }
+            },
+            {
+                original: { short: "Bridges -build -burn", long: "Bridges -build -burn" },
+                technical: { short: "Create integrations - remove old ones.", long: "Bridges -build -burn: Create integrations - remove deprecated ones." },
+                productBusiness: { short: "Create partnerships - end failing ones.", long: "Bridges -build -burn: Form strategic alliances - discontinue unproductive ventures." }
+            },
+            {
+                original: { short: "Cascades", long: "Cascades" },
+                technical: { short: "Trace dependencies; check ripple effects.", long: "Cascades: Implement a dependency chain; observe ripple effects of a change." },
+                productBusiness: { short: "Analyze dependencies.", long: "Cascades: Understand how changes in one area affect others." }
+            },
+            {
+                original: { short: "Change instrument roles", long: "Change instrument roles" },
+                technical: { short: "Swap team roles around.", long: "Change instrument roles: Reassign roles within a cross-functional team (e.g., designer codes, engineer researches UX)." },
+                productBusiness: { short: "Reassign team responsibilities.", long: "Change instrument roles: Shift roles within a project team for new perspectives." }
+            },
+            {
+                original: { short: "Change nothing and continue with immaculate consistency", long: "Change nothing and continue with immaculate consistency" },
+                technical: { short: "Stick to the design system.", long: "Change nothing and continue with immaculate consistency: Maintain strict adherence to design guidelines; avoid feature creep." },
+                productBusiness: { short: "Maintain strict alignment.", long: "Change nothing and continue with immaculate consistency: Stick rigidly to core product vision; resist scope creep." }
+            },
+            {
+                original: { short: "Children's voices -speaking -singing", long: "Children's voices -speaking -singing" },
+                technical: { short: "Get unfiltered user feedback.", long: "Children's voices -speaking -singing: Gather raw, uninhibited user feedback (from diverse age groups or backgrounds)." },
+                productBusiness: { short: "Gather raw user insights.", long: "Children's voices -speaking -singing: Listen to unfiltered feedback from diverse user groups." }
+            },
+            {
+                original: { short: "Cluster analysis", long: "Cluster analysis" },
+                technical: { short: "Group similar user patterns.", long: "Cluster analysis: Group similar user behaviors or technical issues." },
+                productBusiness: { short: "Segment customer data.", long: "Cluster analysis: Identify distinct groups within your user base." }
+            },
+            {
+                original: { short: "Consider different fading systems", long: "Consider different fading systems" },
+                technical: { short: "Plan API deprecation.", long: "Consider different fading systems: Implement various deprecation strategies for old APIs or features." },
+                productBusiness: { short: "Plan product sunsets.", long: "Consider different fading systems: Strategically phase out old features or products." }
+            },
+            {
+                original: { short: "Consult other sources -promising -unpromising", long: "Consult other sources -promising -unpromising" },
+                technical: { short: "Research competitors (good and bad).", long: "Consult other sources -promising -unpromising: Research competitive products (successful and failed); examine unrelated industries for inspiration." },
+                productBusiness: { short: "Research broadly.", long: "Consult other sources -promising -unpromising: Investigate successful and unsuccessful products/strategies outside your direct domain." }
+            },
+            {
+                original: { short: "Convert a melodic element into a rhythmic element", long: "Convert a melodic element into a rhythmic element" },
+                technical: { short: "Animate a static UI element.", long: "Convert a melodic element into a rhythmic element: Transform a static design element into an interactive component with timed animations." },
+                productBusiness: { short: "Make static dynamic.", long: "Convert a melodic element into a rhythmic element: Transform a static report into an interactive dashboard." }
+            },
+            {
+                original: { short: "Courage!", long: "Courage!" },
+                technical: { short: "Just ship it.", long: "Courage!: Ship it; deploy to production." },
+                productBusiness: { short: "Launch it!", long: "Courage!: Dare to release the product." }
+            },
+            {
+                original: { short: "Cut a vital connection", long: "Cut a vital connection" },
+                technical: { short: "Break a dependency; remove a core feature.", long: "Cut a vital connection: Deliberately break a dependency to isolate a problem; remove a core but problematic feature." },
+                productBusiness: { short: "Eliminate a key dependency.", long: "Cut a vital connection: Remove a critical, but problematic, integration or process." }
+            },
+            {
+                original: { short: "Decorate, decorate", long: "Decorate, decorate" },
+                technical: { short: "Polish the UI.", long: "Decorate, decorate: Enhance UI aesthetics; add delightful micro-interactions." },
+                productBusiness: { short: "Refine user experience.", long: "Decorate, decorate: Add delight and polish to the product interface." }
+            },
+            {
+                original: { short: "Define an area as `safe' and use it as an anchor", long: "Define an area as `safe' and use it as an anchor" },
+                technical: { short: "Establish a stable core service.", long: "Define an area as `safe' and use it as an anchor: Establish a core, stable microservice and build around it." },
+                productBusiness: { short: "Establish a core competency.", long: "Define an area as `safe' and use it as an anchor: Focus on a stable, proven product area as your foundation." }
+            },
+            {
+                original: { short: "Destroy -nothing -the most important thing", long: "Destroy -nothing -the most important thing" },
+                technical: { short: "Refactor lightly - rewrite completely.", long: "Destroy -nothing -the most important thing: Refactor a non-critical component - rewrite the core architecture." },
+                productBusiness: { short: "Iterate lightly - pivot radically.", long: "Destroy -nothing -the most important thing: Make minor adjustments - fundamentally change direction." }
+            },
+            {
+                original: { short: "Discard an axiom", long: "Discard an axiom" },
+                technical: { short: "Challenge a core assumption.", long: "Discard an axiom: Challenge a fundamental assumption about user behavior or system architecture." },
+                productBusiness: { short: "Challenge a core belief.", long: "Discard an axiom: Question a fundamental assumption about your market or users." }
+            },
+            {
+                original: { short: "Disconnect from desire", long: "Disconnect from desire" },
+                technical: { short: "Design without personal bias.", long: "Disconnect from desire: Design without personal bias; focus purely on user needs or technical requirements." },
+                productBusiness: { short: "Prioritize user needs.", long: "Disconnect from desire: Design without personal preferences; focus solely on market demand." }
+            },
+            {
+                original: { short: "Discover the recipes you are using and abandon them", long: "Discover the recipes you are using and abandon them" },
+                technical: { short: "Break from common patterns.", long: "Discover the recipes you are using and abandon them: Identify common design patterns/coding idioms and intentionally break from them for innovation." },
+                productBusiness: { short: "Break from standard playbooks.", long: "Discover the recipes you are using and abandon them: Identify common business strategies and intentionally deviate." }
+            },
+            {
+                original: { short: "Distorting time", long: "Distorting time" },
+                technical: { short: "Use time-travel debugging.", long: "Distorting time: Implement time-travel debugging; simulate future states of data." },
+                productBusiness: { short: "Simulate future scenarios.", long: "Distorting time: Project market trends; model long-term product impact." }
+            },
+            {
+                original: { short: "Do nothing for as long as possible", long: "Do nothing for as long as possible" },
+                technical: { short: "Delay optimization.", long: "Do nothing for as long as possible: Delay optimization until absolutely necessary; avoid premature generalization." },
+                productBusiness: { short: "Delay non-critical work.", long: "Do nothing for as long as possible: Avoid premature optimization or feature development." }
+            },
+            {
+                original: { short: "Don't be afraid of things because they're easy to do", long: "Don't be afraid of things because they're easy to do" },
+                technical: { short: "Embrace simple solutions.", long: "Don't be afraid of things because they're easy to do: Implement a simple, obvious solution even if it feels too basic." },
+                productBusiness: { short: "Embrace simple solutions.", long: "Don't be afraid of things because they're easy to do: Implement straightforward fixes if they solve the problem effectively." }
+            },
+            {
+                original: { short: "Don't be frightened of cliches", long: "Don't be frightened of cliches" },
+                technical: { short: "Use common UI patterns.", long: "Don't be frightened of cliches: Use well-understood UI patterns." },
+                productBusiness: { short: "Utilize proven patterns.", long: "Don't be frightened of cliches: Leverage established business models or marketing tactics." }
+            },
+            {
+                original: { short: "Don't be frightened to display your talents", long: "Don't be frightened to display your talents" },
+                technical: { short: "Showcase your best work.", long: "Don't be frightened to display your talents: Showcase your most innovative design or engineering work." },
+                productBusiness: { short: "Showcase your product's strengths.", long: "Don't be frightened to display your talents: Highlight your product's unique value proposition." }
+            },
+            {
+                original: { short: "Don't break the silence", long: "Don't break the silence" },
+                technical: { short: "Maintain system stability.", long: "Don't break the silence: Maintain system stability; avoid introducing regressions." },
+                productBusiness: { short: "Maintain market presence.", long: "Don't break the silence: Keep communication channels open with customers." }
+            },
+            {
+                original: { short: "Don't stress one thing more than another", long: "Don't stress one thing more than another" },
+                technical: { short: "Balance all aspects (perf, UX, cost).", long: "Don't stress one thing more than another: Maintain balance across all aspects: performance, usability, security, cost." },
+                productBusiness: { short: "Balance all priorities.", long: "Don't stress one thing more than another: Give equal consideration to growth, profitability, user satisfaction, etc." }
+            },
+            {
+                original: { short: "Do something boring", long: "Do something boring" },
+                technical: { short: "Document; do routine maintenance.", long: "Do something boring: Write comprehensive documentation; perform routine maintenance." },
+                productBusiness: { short: "Focus on core operations.", long: "Do something boring: Handle essential, unglamorous tasks like data hygiene or compliance." }
+            },
+            {
+                original: { short: "Do the washing up", long: "Do the washing up" },
+                technical: { short: "Clean up tech debt.", long: "Do the washing up: Clean up technical debt; refactor old code." },
+                productBusiness: { short: "Clean up legacy processes.", long: "Do the washing up: Streamline outdated business operations." }
+            },
+            {
+                original: { short: "Do the words need changing?", long: "Do the words need changing?" },
+                technical: { short: "Refine UI copy.", long: "Do the words need changing?: Refine copy/microcopy in the UI." },
+                productBusiness: { short: "Refine messaging.", long: "Do the words need changing?: Improve product marketing copy or value propositions." }
+            },
+            {
+                original: { short: "Do we need holes?", long: "Do we need holes?" },
+                technical: { short: "Design for extensibility.", long: "Do we need holes?: Design for extensibility (e.g., plugin architecture); consider API endpoints for external integration." },
+                productBusiness: { short: "Identify market gaps.", long: "Do we need holes?: Look for underserved customer needs or niche opportunities." }
+            },
+            {
+                original: { short: "Emphasize differences", long: "Emphasize differences" },
+                technical: { short: "Highlight unique selling points.", long: "Emphasize differences: Highlight unique selling points of a product feature; make contrasting UI elements stand out." },
+                productBusiness: { short: "Highlight competitive advantages.", long: "Emphasize differences: Clearly articulate what makes your product unique." }
+            },
+            {
+                original: { short: "Emphasize repetitions", long: "Emphasize repetitions" },
+                technical: { short: "Reinforce consistent patterns.", long: "Emphasize repetitions: Reinforce consistent design patterns; reuse common components." },
+                productBusiness: { short: "Reinforce brand messaging.", long: "Emphasize repetitions: Consistently communicate core values and benefits." }
+            },
+            {
+                original: { short: "Emphasize the flaws", long: "Emphasize the flaws" },
+                technical: { short: "Acknowledge bugs publicly.", long: "Emphasize the flaws: Publicly acknowledge known bugs; conduct a post-mortem on a failed launch." },
+                productBusiness: { short: "Address product weaknesses.", long: "Emphasize the flaws: Transparently communicate limitations or areas for improvement." }
+            },
+            {
+                original: { short: "Faced with a choice, do both (given by Dieter Roth)", long: "Faced with a choice, do both (given by Dieter Roth)" },
+                technical: { short: "A/B test.", long: "Faced with a choice, do both (given by Dieter Roth): A/B test two competing designs/implementations." },
+                productBusiness: { short: "Pursue parallel strategies.", long: "Faced with a choice, do both (given by Dieter Roth): Explore two distinct market approaches simultaneously." }
+            },
+            {
+                original: { short: "Feedback recordings into an acoustic situation", long: "Feedback recordings into an acoustic situation" },
+                technical: { short: "Use telemetry for design.", long: "Feedback recordings into an acoustic situation: Use telemetry/monitoring data to inform future design decisions." },
+                productBusiness: { short: "Integrate market feedback.", long: "Feedback recordings into an acoustic situation: Use customer reviews and analytics to inform product strategy." }
+            },
+            {
+                original: { short: "Fill every beat with something", long: "Fill every beat with something" },
+                technical: { short: "Continuous delivery.", long: "Fill every beat with something: Optimize for continuous delivery; ensure no idle capacity in a system." },
+                productBusiness: { short: "Maximize operational efficiency.", long: "Fill every beat with something: Ensure all resources are actively contributing." }
+            },
+            {
+                original: { short: "Get your neck massaged", long: "Get your neck massaged" },
+                technical: { short: "Take a break; delegate.", long: "Get your neck massaged: Take a short break to clear your head; delegate a task." },
+                productBusiness: { short: "Delegate; take a break.", long: "Get your neck massaged: Relieve pressure by assigning tasks or stepping back." }
+            },
+            {
+                original: { short: "Ghost echoes", long: "Ghost echoes" },
+                technical: { short: "Account for legacy behavior.", long: "Ghost echoes: Account for legacy system behavior in new designs; anticipate unintended side effects." },
+                productBusiness: { short: "Learn from past failures.", long: "Ghost echoes: Account for historical market dynamics or previous project issues." }
+            },
+            {
+                original: { short: "Give the game away", long: "Give the game away" },
+                technical: { short: "Open-source a component.", long: "Give the game away: Open-source a component; publicly share a technical roadmap." },
+                productBusiness: { short: "Share intellectual property.", long: "Give the game away: Open-source a component; share market insights." }
+            },
+            {
+                original: { short: "Give way to your worst impulse", long: "Give way to your worst impulse" },
+                technical: { short: "Implement a 'bad' idea to test.", long: "Give way to your worst impulse: Implement a feature just to see how users react, even if you suspect it's a bad idea." },
+                productBusiness: { short: "Test a risky idea.", long: "Give way to your worst impulse: Experiment with an unconventional business model or feature." }
+            },
+            {
+                original: { short: "Go slowly all the way round the outside", long: "Go slowly all the way round the outside" },
+                technical: { short: "Systematically test edge cases.", long: "Go slowly all the way round the outside: Systematically analyze all edge cases for a feature." },
+                productBusiness: { short: "Thoroughly analyze market segments.", long: "Go slowly all the way round the outside: Deeply understand all aspects of a target market." }
+            },
+            {
+                original: { short: "Honor thy error as a hidden intention", long: "Honor thy error as a hidden intention" },
+                technical: { short: "Learn from bugs.", long: "Honor thy error as a hidden intention: Learn from bugs and design flaws; uncover deeper system understanding from failures." },
+                productBusiness: { short: "Learn from missteps.", long: "Honor thy error as a hidden intention: Find valuable lessons in business failures." }
+            },
+            {
+                original: { short: "How would you have done it?", long: "How would you have done it?" },
+                technical: { short: "Review with an alternative in mind.", long: "How would you have done it?: Review a colleague's code/design with an alternative approach in mind." },
+                productBusiness: { short: "Critique existing strategies.", long: "How would you have done it?: Evaluate current market approaches with alternative methods in mind." }
+            },
+            {
+                original: { short: "Humanize something free of error", long: "Humanize something free of error" },
+                technical: { short: "Add personality to errors.", long: "Humanize something free of error: Add personality to an error message; give a bot a conversational tone." },
+                productBusiness: { short: "Add personality to a brand.", long: "Humanize something free of error: Give a dry product a compelling story." }
+            },
+            {
+                original: { short: "Imagine the music as a moving chain or caterpillar", long: "Imagine the music as a moving chain or caterpillar" },
+                technical: { short: "Visualize the user journey.", long: "Imagine the music as a moving chain or caterpillar: Envision the user journey as a continuous flow." },
+                productBusiness: { short: "Visualize the customer lifecycle.", long: "Imagine the music as a moving chain or caterpillar: See the end-to-end journey of a customer." }
+            },
+            {
+                original: { short: "Imagine the music as a set of disconnected events", long: "Imagine the music as a set of disconnected events" },
+                technical: { short: "Think microservices; discrete interactions.", long: "Imagine the music as a set of disconnected events: Treat microservices as independent entities; think of discrete user interactions." },
+                productBusiness: { short: "Analyze discrete market signals.", long: "Imagine the music as a set of disconnected events: Look at individual market events rather than a continuous trend." }
+            },
+            {
+                original: { short: "Infinitesimal gradations", long: "Infinitesimal gradations" },
+                technical: { short: "Pixel-perfect UI; nanosecond optimization.", long: "Infinitesimal gradations: Refine a UI element pixel by pixel; optimize a function for nanosecond improvements." },
+                productBusiness: { short: "Refine pricing tiers.", long: "Infinitesimal gradations: Make small, precise adjustments to product pricing." }
+            },
+            {
+                original: { short: "Intentions -credibility of -nobility of -humility of", long: "Intentions -credibility of -nobility of -humility of" },
+                technical: { short: "Assess feature purpose.", long: "Intentions -credibility of -nobility of -humility of: Assess the purpose of a feature: is it trustworthy, genuinely helpful, or self-serving?" },
+                productBusiness: { short: "Evaluate strategic motives.", long: "Intentions -credibility of -nobility of -humility of: Assess if a business decision is trustworthy, genuinely beneficial, or self-serving." }
+            },
+            {
+                original: { short: "Into the impossible", long: "Into the impossible" },
+                technical: { short: "Tackle an intractable problem.", long: "Into the impossible: Attempt to solve a seemingly intractable technical problem." },
+                productBusiness: { short: "Pursue moonshot projects.", long: "Into the impossible: Attempt to achieve seemingly unattainable market goals." }
+            },
+            {
+                original: { short: "Is it finished?", long: "Is it finished?" },
+                technical: { short: "Is it shippable?", long: "Is it finished?: Is the feature shippable; does it meet the definition of done?" },
+                productBusiness: { short: "Is it market-ready?", long: "Is it finished?: Does the product meet the criteria for release?" }
+            },
+            {
+                original: { short: "Is there something missing?", long: "Is there something missing?" },
+                technical: { short: "Gap analysis.", long: "Is there something missing?: Conduct a gap analysis for a product; check for overlooked requirements." },
+                productBusiness: { short: "Identify market gaps.", long: "Is there something missing?: Discover unaddressed needs in the competitive landscape." }
+            },
+            {
+                original: { short: "Is the tuning appropriate?", long: "Is the tuning appropriate?" },
+                technical: { short: "Are system parameters optimized?", long: "Is the tuning appropriate?: Are the system parameters (e.g., database connection limits, caching strategies) optimized?" },
+                productBusiness: { short: "Optimize resource allocation.", long: "Is the tuning appropriate?: Are business resources effectively aligned with goals?" }
+            },
+            {
+                original: { short: "Just carry on", long: "Just carry on" },
+                technical: { short: "Keep coding/designing.", long: "Just carry on: Continue coding/designing despite blockers; push through development fatigue." },
+                productBusiness: { short: "Persevere through challenges.", long: "Just carry on: Continue execution despite market headwinds." }
+            },
+            {
+                original: { short: "Left channel, right channel, center channel", long: "Left channel, right channel, center channel" },
+                technical: { short: "Design for segments (devices, users).", long: "Left channel, right channel, center channel: Design for different user segments; optimize for varying network conditions or device types." },
+                productBusiness: { short: "Target diverse segments.", long: "Left channel, right channel, center channel: Design marketing for different customer demographics." }
+            },
+            {
+                original: { short: "Listen in total darkness, or in a very large room, very quietly", long: "Listen in total darkness, or in a very large room, very quietly" },
+                technical: { short: "Observe passive user behavior.", long: "Listen in total darkness, or in a very large room, very quietly: Analyze system logs in isolation; observe passive user behavior." },
+                productBusiness: { short: "Analyze subtle market shifts.", long: "Listen in total darkness, or in a very large room, very quietly: Discern faint signals in noisy market data." }
+            },
+            {
+                original: { short: "Listen to the quiet voice", long: "Listen to the quiet voice" },
+                technical: { short: "Heed subtle cues/warnings.", long: "Listen to the quiet voice: Pay attention to subtle user cues; heed minor warnings in system logs." },
+                productBusiness: { short: "Heed weak signals.", long: "Listen to the quiet voice: Pay attention to early, subtle market indicators." }
+            },
+            {
+                original: { short: "Look at a very small object; look at its center", long: "Look at a very small object; look at its center" },
+                technical: { short: "Focus on one component.", long: "Look at a very small object; look at its center: Focus on a single UI component; debug a specific line of code." },
+                productBusiness: { short: "Deep dive on a niche.", long: "Look at a very small object; look at its center: Focus intensely on a specific, small market segment." }
+            },
+            {
+                original: { short: "Look at the order in which you do things", long: "Look at the order in which you do things" },
+                technical: { short: "Optimize workflow.", long: "Look at the order in which you do things: Optimize the build process; streamline the design workflow." },
+                productBusiness: { short: "Optimize product roadmap.", long: "Look at the order in which you do things: Streamline the sequence of feature development." }
+            },
+            {
+                original: { short: "Look closely at the most embarrassing details and amplify them", long: "Look closely at the most embarrassing details and amplify them" },
+                technical: { short: "Address critical flaws directly.", long: "Look closely at the most embarrassing details and amplify them: Publicly address a critical bug or design flaw; make a painful onboarding step highly visible to fix it." },
+                productBusiness: { short: "Address brand vulnerabilities directly.", long: "Look closely at the most embarrassing details and amplify them: Confront public perception issues head-on." }
+            },
+            {
+                original: { short: "Lowest common denominator check", long: "Lowest common denominator check -single beat -single note -single riff" },
+                technical: { short: "Ensure core accessibility.", long: "Lowest common denominator check -single beat -single note -single riff: Ensure core functionality works on the most basic setup; design for accessibility." },
+                productBusiness: { short: "Ensure broad appeal.", long: "Lowest common denominator check -single beat -single note -single riff: Design a product to meet the most basic, widespread user needs." }
+            },
+            {
+                original: { short: "Make a blank valuable by putting it in an exquisite frame", long: "Make a blank valuable by putting it in an exquisite frame" },
+                technical: { short: "Design beautiful empty states.", long: "Make a blank valuable by putting it in an exquisite frame: Make an empty state visually appealing and informative." },
+                productBusiness: { short: "Brand empty states.", long: "Make a blank valuable by putting it in an exquisite frame: Make non-functional aspects of the product visually appealing." }
+            },
+            {
+                original: { short: "Make an exhaustive list of everything you might do and do the last thing on the list", long: "Make an exhaustive list of everything you might do and do the last thing on the list" },
+                technical: { short: "Brainstorm, then pick the least obvious.", long: "Make an exhaustive list of everything you might do and do the last thing on the list: Brainstorm all possible solutions, then choose the least obvious one." },
+                productBusiness: { short: "Explore unconventional strategies.", long: "Make an exhaustive list of everything you might do and do the last thing on the list: List all business options, then pursue the least obvious." }
+            },
+            {
+                original: { short: "Make a sudden, destructive, unpredictable action; incorporate", long: "Make a sudden, destructive, unpredictable action; incorporate" },
+                technical: { short: "Chaos engineering.", long: "Make a sudden, destructive, unpredictable action; incorporate: Introduce a chaos engineering experiment into production." },
+                productBusiness: { short: "Disrupt the market.", long: "Make a sudden, destructive, unpredictable action; incorporate: Introduce a radical change that reshapes the industry." }
+            },
+            {
+                original: { short: "Mechanicalize something idiosyncratic", long: "Mechanicalize something idiosyncratic" },
+                technical: { short: "Automate a unique process.", long: "Mechanicalize something idiosyncratic: Automate a manual, unique process." },
+                productBusiness: { short: "Automate a unique process.", long: "Mechanicalize something idiosyncratic: Standardize a bespoke business operation." }
+            },
+            {
+                original: { short: "Mute and continue", long: "Mute and continue" },
+                technical: { short: "Disable a failing feature, keep building.", long: "Mute and continue: Disable a failing feature temporarily but keep developing." },
+                productBusiness: { short: "Pause a failing initiative.", long: "Mute and continue: Temporarily suspend a struggling product line but continue broader efforts." }
+            },
+            {
+                original: { short: "Only one element of each kind", long: "Only one element of each kind" },
+                technical: { short: "Enforce uniqueness.", long: "Only one element of each kind: Enforce uniqueness constraints; avoid redundancy in components or services." },
+                productBusiness: { short: "Enforce product uniqueness.", long: "Only one element of each kind: Ensure each product or feature has a distinct purpose." }
+            },
+            {
+                original: { short: "(Organic) machinery", long: "(Organic) machinery" },
+                technical: { short: "Design self-healing systems.", long: "(Organic) machinery: Design a self-healing system; create an adaptive algorithm." },
+                productBusiness: { short: "Build self-sustaining systems.", long: "(Organic) machinery: Design business models that grow autonomously." }
+            },
+            {
+                original: { short: "Overtly resist change", long: "Overtly resist change" },
+                technical: { short: "Advocate for stable APIs.", long: "Overtly resist change: Advocate for a stable API; challenge every new feature request." },
+                productBusiness: { short: "Defend core values.", long: "Overtly resist change: Protect fundamental brand principles from dilution." }
+            },
+            {
+                original: { short: "Put in earplugs", long: "Put in earplugs" },
+                technical: { short: "Block distractions.", long: "Put in earplugs: Block out external distractions; focus on the immediate task." },
+                productBusiness: { short: "Block market noise.", long: "Put in earplugs: Filter out irrelevant trends or competitor actions." }
+            },
+            {
+                original: { short: "Remember those quiet evenings", long: "Remember those quiet evenings" },
+                technical: { short: "Reflect on past projects.", long: "Remember those quiet evenings: Reflect on past project successes or failures." },
+                productBusiness: { short: "Reflect on past successes.", long: "Remember those quiet evenings: Recall lessons from previous product launches." }
+            },
+            {
+                original: { short: "Remove ambiguities and convert to specifics", long: "Remove ambiguities and convert to specifics" },
+                technical: { short: "Clarify requirements.", long: "Remove ambiguities and convert to specifics: Clarify requirements; write detailed technical specifications." },
+                productBusiness: { short: "Clarify market positioning.", long: "Remove ambiguities and convert to specifics: Define precise target audience and value proposition." }
+            },
+            {
+                original: { short: "Remove specifics and convert to ambiguities", long: "Remove specifics and convert to ambiguities" },
+                technical: { short: "Broaden problem statements.", long: "Remove specifics and convert to ambiguities: Broaden a problem statement for more innovative solutions; generalize a specific bug into a pattern." },
+                productBusiness: { short: "Broaden product messaging.", long: "Remove specifics and convert to ambiguities: Generalize unique selling points to appeal to a wider audience." }
+            },
+            {
+                original: { short: "Repetition is a form of change", long: "Repetition is a form of change" },
+                technical: { short: "Iterative design.", long: "Repetition is a form of change: Iterative design; continuous integration/delivery." },
+                productBusiness: { short: "Consistent branding evolves perception.", long: "Repetition is a form of change: Repeating a message changes how it's received over time." }
+            },
+            {
+                original: { short: "Reverse", long: "Reverse" },
+                technical: { short: "Undo a commit.", long: "Reverse: Undo a commit; revert to an older design." },
+                productBusiness: { short: "Undo a strategic decision.", long: "Reverse: Withdraw from a market or pivot back." }
+            },
+            {
+                original: { short: "Short circuit", long: "Short circuit" },
+                technical: { short: "Implement fail-fast.", long: "Short circuit: Implement a fail-fast mechanism; bypass a complex subsystem for testing." },
+                productBusiness: { short: "Streamline a process.", long: "Short circuit: Bypass unnecessary steps in a business workflow." }
+            },
+            {
+                original: { short: "Improve his virility shovels them straight into his lap)", long: "improve his virility shovels them straight into his lap)" },
+                technical: { short: "Integrate a powerful tech directly.", long: "improve his virility shovels them straight into his lap): Directly integrate a new, powerful technology without extensive preparation; push a critical fix immediately." },
+                productBusiness: { short: "Boldly deploy a core asset.", long: "improve his virility shovels them straight into his lap): Directly apply a powerful resource to a critical business problem." }
+            },
+            {
+                original: { short: "Shut the door and listen from outside", long: "Shut the door and listen from outside" },
+                technical: { short: "Observe users without intervention.", long: "Shut the door and listen from outside: Observe users interacting with the product without intervention; monitor system performance from an external perspective." },
+                productBusiness: { short: "Observe customer behavior.", long: "Shut the door and listen from outside: Analyze user interaction without direct intervention." }
+            },
+            {
+                original: { short: "Simple subtraction", long: "Simple subtraction" },
+                technical: { short: "Strip features to the MVP.", long: "Simple subtraction: Remove features until only the core remains (e.g., MVP)." },
+                productBusiness: { short: "Simplify product offering.", long: "Simple subtraction: Remove non-essential features to focus on core value." }
+            },
+            {
+                original: { short: "Spectrum analysis", long: "Spectrum analysis" },
+                technical: { short: "Comprehensive security audit.", long: "Spectrum analysis: Perform a comprehensive security audit; analyze the full range of user feedback." },
+                productBusiness: { short: "Conduct a market comprehensive analysis.", long: "Spectrum analysis: Evaluate the full range of market forces." }
+            },
+            {
+                original: { short: "Take a break", long: "Take a break" },
+                technical: { short: "Step away.", long: "Take a break: Step away from the screen; go for a walk." },
+                productBusiness: { short: "Step away from the business.", long: "Take a break: Get an outside perspective; prevent burnout." }
+            },
+            {
+                original: { short: "Take away the elements in order of apparent non-importance", long: "Take away the elements in order of apparent non-importance" },
+                technical: { short: "Prune non-essential features.", long: "Take away the elements in order of apparent non-importance: Prune non-essential features; refactor by removing unused code." },
+                productBusiness: { short: "Prune non-essential features.", long: "Take away the elements in order of apparent non-importance: Systematically remove least impactful product elements." }
+            },
+            {
+                original: { short: "Tape your mouth (given by Ritva Saarikko)", long: "Tape your mouth (given by Ritva Saarikko)" },
+                technical: { short: "Listen without interrupting.", long: "Tape your mouth (given by Ritva Saarikko): Listen without interruption during user interviews; observe without judging." },
+                productBusiness: { short: "Listen without bias.", long: "Tape your mouth (given by Ritva Saarikko): Observe market trends without imposing preconceived notions." }
+            },
+            {
+                original: { short: "The inconsistency principle", long: "The inconsistency principle" },
+                technical: { short: "Deliberately introduce variation.", long: "The inconsistency principle: Deliberately introduce variation to test user adaptability; break from established patterns for impact." },
+                productBusiness: { short: "Introduce market disruption.", long: "The inconsistency principle: Deliberately deviate to test market reactions." }
+            },
+            {
+                original: { short: "The tape is now the music", long: "The tape is now the music" },
+                technical: { short: "Logs are the source of truth.", long: "The tape is now the music: The log file is the source of truth; the user data defines the product." },
+                productBusiness: { short: "Data dictates strategy.", long: "The tape is now the music: Market data is the ultimate source of truth for business decisions." }
+            },
+            {
+                original: { short: "Think of the radio", long: "Think of the radio" },
+                technical: { short: "Design for passive use (notifications).", long: "Think of the radio: Consider passive consumption of information; design for background processes or notifications." },
+                productBusiness: { short: "Consider passive engagement.", long: "Think of the radio: Design for background presence or subtle brand touchpoints." }
+            },
+            {
+                original: { short: "Tidy up", long: "Tidy up" },
+                technical: { short: "Refactor; organize files.", long: "Tidy up: Refactor code; organize design files." },
+                productBusiness: { short: "Streamline business operations.", long: "Tidy up: Organize internal processes and data." }
+            },
+            {
+                original: { short: "Trust in the you of now", long: "Trust in the you of now" },
+                technical: { short: "Trust current intuition.", long: "Trust in the you of now: Believe in your current skills and intuition; make decisions based on available information." },
+                productBusiness: { short: "Rely on current insights.", long: "Trust in the you of now: Make decisions based on the best available present information." }
+            },
+            {
+                original: { short: "Turn it upside down", long: "Turn it upside down" },
+                technical: { short: "Reframe the problem.", long: "Reframe the problem: Reframe the problem; reverse the user flow." },
+                productBusiness: { short: "Reframe the business model.", long: "Reframe the business model: Consider a completely inverse approach to your market." }
+            },
+            {
+                original: { short: "Twist the spine", long: "Twist the spine" },
+                technical: { short: "Fundamentally change the data model.", long: "Twist the spine: Introduce a fundamental change to the data model or core architecture." },
+                productBusiness: { short: "Fundamentally alter the business model.", long: "Twist the spine: Introduce a radical change to core revenue streams or operations." }
+            },
+            {
+                original: { short: "Use an old idea", long: "Use an old idea" },
+                technical: { short: "Revisit a discarded concept.", long: "Revisit a discarded concept: Revisit a discarded feature concept; leverage a proven technology." },
+                productBusiness: { short: "Revive a classic concept.", long: "Revive a classic concept: Reintroduce a previously discarded product idea or strategy." }
+            },
+            {
+                original: { short: "Use an unacceptable color", long: "Use an unacceptable color" },
+                technical: { short: "Use a jarring UI element.", long: "Use a jarring UI element: Deliberately use a jarring UI element to draw attention; design something provocative." },
+                productBusiness: { short: "Challenge brand norms.", long: "Challenge brand norms: Introduce a visually jarring or unconventional marketing element." }
+            },
+            {
+                original: { short: "Use fewer notes", long: "Use fewer notes" },
+                technical: { short: "Simplify the UI.", long: "Simplify the UI: Simplify the UI; reduce the number of features." },
+                productBusiness: { short: "Simplify your pitch.", long: "Simplify your pitch: Condense your product's value proposition." }
+            },
+            {
+                original: { short: "Use filters", long: "Use filters" },
+                technical: { short: "Implement user data filters.", long: "Implement user data filters: Implement data filtering options for users; filter out noise in error logs." },
+                productBusiness: { short: "Segment your audience.", long: "Segment your audience: Apply criteria to target specific customer groups." }
+            },
+            {
+                original: { short: "Use \"unqualified\" people", long: "Use \"unqualified\" people" },
+                technical: { short: "Get feedback from non-tech users.", long: "Get feedback from non-tech users: Get feedback from non-technical users; involve stakeholders outside of product/engineering." },
+                productBusiness: { short: "Get fresh perspectives.", long: "Get fresh perspectives: Involve non-experts in brainstorming or testing." }
+            },
+            {
+                original: { short: "Water", long: "Water" },
+                technical: { short: "Design for fluidity.", long: "Design for fluidity: Design for fluidity and adaptability; ensure scalability." },
+                productBusiness: { short: "Design for adaptability.", long: "Design for adaptability: Ensure the product/business model can flow and adjust to market changes." }
+            },
+            {
+                original: { short: "What are you really thinking about just now? Incorporate", long: "What are you really thinking about just now? Incorporate" },
+                technical: { short: "Bring personal insights into design.", long: "Bring personal insights into design: Bring your current personal insights or tangential thoughts into the design process." },
+                productBusiness: { short: "Integrate personal insights.", long: "Integrate personal insights: Bring your current tangential thoughts into strategic planning." }
+            },
+            {
+                original: { short: "What is the reality of the situation?", long: "What is the reality of the situation?" },
+                technical: { short: "Ground solutions in current constraints.", long: "Ground solutions in current constraints: Ground solutions in current technical constraints and user needs." },
+                productBusiness: { short: "Assess market reality.", long: "Assess market reality: Base decisions on current market conditions, not assumptions." }
+            },
+            {
+                original: { short: "What mistakes did you make last time?", long: "What mistakes did you make last time?" },
+                technical: { short: "Conduct a retrospective.", long: "Conduct a retrospective: Conduct a retrospective; analyze past project failures." },
+                productBusiness: { short: "Analyze past market failures.", long: "Analyze past market failures: Review previous product/business missteps." }
+            },
+            {
+                original: { short: "What would your closest friend do?", long: "What would your closest friend do?" },
+                technical: { short: "Seek a trusted outside opinion.", long: "Seek a trusted outside opinion: Seek an outside, trusted perspective on a problem." },
+                productBusiness: { short: "Seek external advice.", long: "Seek external advice: Consult a trusted advisor on business decisions." }
+            },
+            {
+                original: { short: "What wouldn't you do?", long: "What wouldn't you do?" },
+                technical: { short: "Define anti-patterns.", long: "Define anti-patterns: Identify anti-patterns; define what your product/system *won't* do." },
+                productBusiness: { short: "Define your non-strategy.", long: "Define your non-strategy: Clearly articulate what your business *won't* pursue." }
+            },
+            {
+                original: { short: "Work at a different speed", long: "Work at a different speed" },
+                technical: { short: "Vary prototyping pace.", long: "Vary prototyping pace: Implement a faster prototyping cycle; dedicate time to deep, slow architectural design." },
+                productBusiness: { short: "Vary development cycles.", long: "Vary development cycles: Switch between rapid sprints and slower, deeper strategic planning." }
+            },
+            {
+                original: { short: "You are an engineer", long: "You are an engineer" },
+                technical: { short: "Embrace problem-solving.", long: "Embrace problem-solving: Embody a problem-solving mindset; focus on practical solutions." },
+                productBusiness: { short: "Apply problem-solving logic.", long: "Apply problem-solving logic: Approach business challenges with a systematic, logical mindset." }
+            },
+            {
+                original: { short: "You can only make one dot at a time", long: "You can only make one dot at a time" },
+                technical: { short: "Focus on one task.", long: "Focus on one task: Focus on one task; implement one feature at a time." },
+                productBusiness: { short: "Focus on one initiative.", long: "Focus on one initiative: Prioritize a single core business objective at a time." }
+            },
+            {
+                original: { short: "You don't have to be ashamed of using your own ideas", long: "You don't have to be ashamed of using your own ideas" },
+                technical: { short: "Trust your own concepts.", long: "Trust your own concepts: Trust your instincts; don't dismiss your original concepts." },
+                productBusiness: { short: "Trust your original concepts.", long: "Trust your original concepts: Have confidence in your unique business ideas." }
+            }
+        ];
+
+        // Copy for shuffling
+        let availableStrategies = [...masterStrategies];
+        // Initial shuffle
+        shuffleArray(availableStrategies);
 
         /**
          * Shuffles an array in place using the Fisher-Yates (Knuth) shuffle algorithm.
@@ -423,73 +808,60 @@
             }
         }
 
-        // Shuffle strategies for both decks initially
-        shuffleArray(availableTechnicalStrategies);
-        shuffleArray(availableProductBusinessStrategies);
-
-        /**
-         * Handles the click event for a card, flipping it and displaying a new strategy.
-         * @param {HTMLElement} cardElement The card HTML element.
-         * @param {HTMLElement} shortTextElement The element for the short strategy.
-         * @param {HTMLElement} longTextElement The element for the long strategy.
-         * @param {Array<Object>} strategyList The full list of strategies for this deck.
-         * @param {Array<Object>} availableList The shuffled list of available strategies.
-         */
-        function handleCardClick(cardElement, shortTextElement, longTextElement, strategyList, availableList) {
-            if (cardElement.classList.contains('flipped')) {
-                cardElement.classList.remove('flipped');
-                setTimeout(() => {
-                    displayNewStrategy(cardElement, shortTextElement, longTextElement, strategyList, availableList);
-                }, 400); // Half of 0.8s transition
+        // Function to handle the display and flipping of ALL cards
+        function displayAllNewStrategies() {
+            // If cards are currently flipped, flip them back first
+            if (originalCard.classList.contains('flipped')) {
+                originalCard.classList.remove('flipped');
+                technicalCard.classList.remove('flipped');
+                productBusinessCard.classList.remove('flipped');
+                // Wait for the cards to flip back (half the transition duration)
+                setTimeout(showNextSynchronizedStrategy, 400);
             } else {
-                displayNewStrategy(cardElement, shortTextElement, longTextElement, strategyList, availableList);
+                // Otherwise, directly show the next strategy
+                showNextSynchronizedStrategy();
             }
         }
 
-        /**
-         * Displays a new random strategy on a given card.
-         * @param {HTMLElement} cardElement The card HTML element.
-         * @param {HTMLElement} shortTextElement The element for the short strategy.
-         * @param {HTMLElement} longTextElement The element for the long strategy.
-         * @param {Array<Object>} strategyList The full list of strategies for this deck.
-         * @param {Array<Object>} availableList The shuffled list of available strategies.
-         */
-        function displayNewStrategy(cardElement, shortTextElement, longTextElement, strategyList, availableList) {
-            if (availableList.length === 0) {
+        function showNextSynchronizedStrategy() {
+            if (availableStrategies.length === 0) {
                 // If all strategies have been shown, reshuffle
-                // Clear existing strategies and refill from original list
-                availableList.splice(0, availableList.length, ...strategyList);
-                shuffleArray(availableList);
+                availableStrategies = [...masterStrategies];
+                shuffleArray(availableStrategies);
             }
 
             // Get the next strategy from the shuffled list
-            const nextStrategy = availableList.pop(); // Take from the end
+            const nextStrategy = availableStrategies.pop();
 
-            // Update the card message elements immediately
-            shortTextElement.textContent = nextStrategy.short;
-            longTextElement.textContent = nextStrategy.long;
+            // Update Original Card
+            originalStrategyShortElement.textContent = nextStrategy.original.short;
+            originalStrategyLongElement.textContent = nextStrategy.original.long;
 
-            // Flip the card after the content is set
-            cardElement.classList.add('flipped');
+            // Update Technical Card
+            technicalStrategyShortElement.textContent = nextStrategy.technical.short;
+            technicalStrategyLongElement.textContent = nextStrategy.technical.long;
+
+            // Update Product/Business Card
+            productBusinessStrategyShortElement.textContent = nextStrategy.productBusiness.short;
+            productBusinessStrategyLongElement.textContent = nextStrategy.productBusiness.long;
+
+            // Flip all cards
+            originalCard.classList.add('flipped');
+            technicalCard.classList.add('flipped');
+            productBusinessCard.classList.add('flipped');
         }
 
-        // Add event listeners to both cards
-        technicalCard.addEventListener('click', () => {
-            handleCardClick(technicalCard, technicalStrategyShortElement, technicalStrategyLongElement, technicalStrategies, availableTechnicalStrategies);
-        });
+        // Add event listeners to all three cards to trigger the synchronized display
+        originalCard.addEventListener('click', displayAllNewStrategies);
+        technicalCard.addEventListener('click', displayAllNewStrategies);
+        productBusinessCard.addEventListener('click', displayAllNewStrategies);
 
-        productBusinessCard.addEventListener('click', () => {
-            handleCardClick(productBusinessCard, productBusinessStrategyShortElement, productBusinessStrategyLongElement, productBusinessStrategies, availableProductBusinessStrategies);
-        });
-
-        // Initial display of strategies on load for both cards
+        // Initial display of strategies on load
         window.onload = () => {
             setTimeout(() => {
-                displayNewStrategy(technicalCard, technicalStrategyShortElement, technicalStrategyLongElement, technicalStrategies, availableTechnicalStrategies);
-                displayNewStrategy(productBusinessCard, productBusinessStrategyShortElement, productBusinessStrategyLongElement, productBusinessStrategies, availableProductBusinessStrategies);
+                showNextSynchronizedStrategy(); // Call this directly after small delay for initial state
             }, 500);
         };
-
     </script>
 </body>
 </html>
