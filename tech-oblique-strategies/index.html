@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oblique Strategies for Tech</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for card flip animation */
+        .card-container {
+            perspective: 1000px; /* Establishes a 3D context for the children */
+        }
+
+        .card {
+            width: 300px;
+            height: 450px;
+            position: relative;
+            transform-style: preserve-3d; /* Ensures child elements are positioned in 3D space */
+            transition: transform 0.8s; /* Smooth transition for the flip effect */
+            cursor: pointer;
+        }
+
+        .card.flipped {
+            transform: rotateY(180deg); /* Flip on Y-axis when 'flipped' class is applied */
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden; /* Hide the back of the element when facing away */
+            backface-visibility: hidden; /* Standard property */
+            display: flex;
+            flex-direction: column; /* Stack elements vertically */
+            align-items: center;
+            justify-content: center;
+            border-radius: 1rem; /* Rounded corners for card faces */
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2); /* Subtle shadow for depth */
+            font-family: 'Inter', sans-serif; /* Use Inter font */
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .card-front {
+            background-color: #ef4444; /* Tailwind red-500 */
+            color: white;
+            font-size: 3rem;
+            font-weight: bold;
+            line-height: 1;
+        }
+
+        .card-back {
+            background-color: #f9fafb; /* Tailwind gray-50 */
+            color: #1f2937; /* Tailwind gray-800 */
+            transform: rotateY(180deg); /* Initially rotate back face to be hidden */
+            justify-content: flex-start; /* Align content to the top */
+            padding-top: 2rem; /* Add some padding at the top */
+        }
+
+        .strategy-short {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 0.75rem; /* Space between short and long descriptions */
+            color: #1f2937; /* Dark gray for the bold message */
+        }
+
+        .strategy-long {
+            font-size: 1rem;
+            color: #6b7280; /* Lighter gray for the description */
+            line-height: 1.5;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .card {
+                width: 250px;
+                height: 375px;
+            }
+            .card-front {
+                font-size: 2.5rem;
+            }
+            .strategy-short {
+                font-size: 1.3rem;
+            }
+            .strategy-long {
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .card {
+                width: 200px;
+                height: 300px;
+            }
+            .card-front {
+                font-size: 2rem;
+            }
+            .strategy-short {
+                font-size: 1.1rem;
+            }
+            .strategy-long {
+                font-size: 0.8rem;
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+
+    <div class="card-container">
+        <div id="card" class="card">
+            <div class="card-face card-front">
+                Click Me!
+            </div>
+            <div id="cardBack" class="card-face card-back">
+                <div id="strategyShort" class="strategy-short">
+                    <!-- Short message will appear here -->
+                </div>
+                <div id="strategyLong" class="strategy-long">
+                    <!-- Long description will appear here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Array of strategies with both short and long descriptions
+        const strategies = [
+            { short: "Ditch standard frameworks.", long: "Abandon normal instruments: Abandon established frameworks/technologies." },
+            { short: "Get feedback, widely.", long: "Accept advice: Solicit feedback (from anyone, even junior devs)." },
+            { short: "Build incrementally.", long: "Accretion: Iterative development; gradual feature addition." },
+            { short: "Consider all perspectives (user, dev, business).", long: "A line has two sides: Consider both user and business perspectives (or front-end and back-end)." },
+            { short: "Loosen a tight constraint.", long: "Allow an easement (an easement is the abandonment of a stricture): Relax a strict architectural constraint." },
+            { short: "Map user flows; smooth handoffs.", long: "Are there sections? Consider transitions: Examine user flows; smooth onboarding/offboarding." },
+            { short: "Brainstorm 'bad' ideas.", long: "Ask people to work against their better judgment: Encourage \"crazy\" ideas in brainstorming; explore counter-intuitive solutions." },
+            { short: "Trust your gut on design.", long: "Ask your body: Trust your gut feeling about a design or technical approach." },
+            { short: "Refactor related modules.", long: "Assemble some of the instruments in a group and treat the group: Refactor a set of related modules into a single service." },
+            { short: "Design system vs. unique feature.", long: "Balance the consistency principle with the inconsistency principle: Weigh design system adherence against novel UI/UX for specific features." },
+            { short: "Prototype quickly, debt is fine for now.", long: "Be dirty: Embrace rapid prototyping; allow for technical debt in early stages." },
+            { short: "Pause before big decisions.", long: "Breathe more deeply: Take a mindful pause before making a critical decision." },
+            { short: "Create integrations - remove old ones.", long: "Bridges -build -burn: Create integrations - remove deprecated ones." },
+            { short: "Trace dependencies; check ripple effects.", long: "Cascades: Implement a dependency chain; observe ripple effects of a change." },
+            { short: "Swap team roles around.", long: "Change instrument roles: Reassign roles within a cross-functional team (e.g., designer codes, engineer researches UX)." },
+            { short: "Stick to the design system.", long: "Change nothing and continue with immaculate consistency: Maintain strict adherence to design guidelines; avoid feature creep." },
+            { short: "Get unfiltered user feedback.", long: "Children's voices -speaking -singing: Gather raw, uninhibited user feedback (from diverse age groups or backgrounds)." },
+            { short: "Group similar user patterns.", long: "Cluster analysis: Group similar user behaviors or technical issues." },
+            { short: "Plan API deprecation.", long: "Consider different fading systems: Implement various deprecation strategies for old APIs or features." },
+            { short: "Research competitors (good and bad).", long: "Consult other sources -promising -unpromising: Research competitive products (successful and failed); examine unrelated industries for inspiration." },
+            { short: "Animate a static UI element.", long: "Convert a melodic element into a rhythmic element: Transform a static design element into an interactive component with timed animations." },
+            { short: "Just ship it.", long: "Courage!: Ship it; deploy to production." },
+            { short: "Break a dependency; remove a core feature.", long: "Cut a vital connection: Deliberately break a dependency to isolate a problem; remove a core but problematic feature." },
+            { short: "Polish the UI.", long: "Decorate, decorate: Enhance UI aesthetics; add delightful micro-interactions." },
+            { short: "Establish a stable core service.", long: "Define an area as `safe' and use it as an anchor: Establish a core, stable microservice and build around it." },
+            { short: "Refactor lightly - rewrite completely.", long: "Destroy -nothing -the most important thing: Refactor a non-critical component - rewrite the core architecture." },
+            { short: "Challenge a core assumption.", long: "Discard an axiom: Challenge a fundamental assumption about user behavior or system architecture." },
+            { short: "Design without personal bias.", long: "Disconnect from desire: Design without personal bias; focus purely on user needs or technical requirements." },
+            { short: "Break from common patterns.", long: "Discover the recipes you are using and abandon them: Identify common design patterns/coding idioms and intentionally break from them for innovation." },
+            { short: "Use time-travel debugging.", long: "Distorting time: Implement time-travel debugging; simulate future states of data." },
+            { short: "Delay optimization.", long: "Do nothing for as long as possible: Delay optimization until absolutely necessary; avoid premature generalization." },
+            { short: "Embrace simple solutions.", long: "Don't be afraid of things because they're easy to do: Implement a simple, obvious solution even if it feels too basic." },
+            { short: "Use common UI patterns.", long: "Don't be frightened of cliches: Use well-understood UI patterns." },
+            { short: "Showcase your best work.", long: "Don't be frightened to display your talents: Showcase your most innovative design or engineering work." },
+            { short: "Maintain system stability.", long: "Don't break the silence: Maintain system stability; avoid introducing regressions." },
+            { short: "Balance all aspects (perf, UX, cost).", long: "Don't stress one thing more than another: Maintain balance across all aspects: performance, usability, security, cost." },
+            { short: "Document; do routine maintenance.", long: "Do something boring: Write comprehensive documentation; perform routine maintenance." },
+            { short: "Clean up tech debt.", long: "Do the washing up: Clean up technical debt; refactor old code." },
+            { short: "Refine UI copy.", long: "Do the words need changing?: Refine copy/microcopy in the UI." },
+            { short: "Design for extensibility.", long: "Do we need holes?: Design for extensibility (e.g., plugin architecture); consider API endpoints for external integration." },
+            { short: "Highlight unique selling points.", long: "Emphasize differences: Highlight unique selling points of a product feature; make contrasting UI elements stand out." },
+            { short: "Reinforce consistent patterns.", long: "Emphasize repetitions: Reinforce consistent design patterns; reuse common components." },
+            { short: "Acknowledge bugs publicly.", long: "Emphasize the flaws: Publicly acknowledge known bugs; conduct a post-mortem on a failed launch." },
+            { short: "A/B test.", long: "Faced with a choice, do both (given by Dieter Roth): A/B test two competing designs/implementations." },
+            { short: "Use telemetry for design.", long: "Feedback recordings into an acoustic situation: Use telemetry/monitoring data to inform future design decisions." },
+            { short: "Continuous delivery.", long: "Fill every beat with something: Optimize for continuous delivery; ensure no idle capacity in a system." },
+            { short: "Take a break; delegate.", long: "Get your neck massaged: Take a short break to clear your head; delegate a task." },
+            { short: "Account for legacy behavior.", long: "Ghost echoes: Account for legacy system behavior in new designs; anticipate unintended side effects." },
+            { short: "Open-source a component.", long: "Give the game away: Open-source a component; publicly share a technical roadmap." },
+            { short: "Implement a 'bad' idea to test.", long: "Give way to your worst impulse: Implement a feature just to see how users react, even if you suspect it's a bad idea." },
+            { short: "Systematically test edge cases.", long: "Go slowly all the way round the outside: Systematically analyze all edge cases for a feature." },
+            { short: "Learn from bugs.", long: "Honor thy error as a hidden intention: Learn from bugs and design flaws; uncover deeper system understanding from failures." },
+            { short: "Review with an alternative in mind.", long: "How would you have done it?: Review a colleague's code/design with an alternative approach in mind." },
+            { short: "Add personality to errors.", long: "Humanize something free of error: Add personality to an error message; give a bot a conversational tone." },
+            { short: "Visualize the user journey.", long: "Imagine the music as a moving chain or caterpillar: Envision the user journey as a continuous flow." },
+            { short: "Think microservices; discrete interactions.", long: "Imagine the music as a set of disconnected events: Treat microservices as independent entities; think of discrete user interactions." },
+            { short: "Pixel-perfect UI; nanosecond optimization.", long: "Infinitesimal gradations: Refine a UI element pixel by pixel; optimize a function for nanosecond improvements." },
+            { short: "Assess feature purpose.", long: "Intentions -credibility of -nobility of -humility of: Assess the purpose of a feature: is it trustworthy, genuinely helpful, or self-serving?" },
+            { short: "Tackle an intractable problem.", long: "Into the impossible: Attempt to solve a seemingly intractable technical problem." },
+            { short: "Is it shippable?", long: "Is it finished?: Is the feature shippable; does it meet the definition of done?" },
+            { short: "Gap analysis.", long: "Is there something missing?: Conduct a gap analysis for a product; check for overlooked requirements." },
+            { short: "Are system parameters optimized?", long: "Is the tuning appropriate?: Are the system parameters (e.g., database connection limits, caching strategies) optimized?" },
+            { short: "Keep coding/designing.", long: "Just carry on: Continue coding/designing despite blockers; push through development fatigue." },
+            { short: "Design for segments (devices, users).", long: "Left channel, right channel, center channel: Design for different user segments; optimize for varying network conditions or device types." },
+            { short: "Observe passive user behavior.", long: "Listen in total darkness, or in a very large room, very quietly: Analyze system logs in isolation; observe passive user behavior." },
+            { short: "Heed subtle cues/warnings.", long: "Listen to the quiet voice: Pay attention to subtle user cues; heed minor warnings in system logs." },
+            { short: "Focus on one component.", long: "Look at a very small object; look at its center: Focus on a single UI component; debug a specific line of code." },
+            { short: "Optimize workflow.", long: "Look at the order in which you do things: Optimize the build process; streamline the design workflow." },
+            { short: "Address critical flaws directly.", long: "Look closely at the most embarrassing details and amplify them: Publicly address a critical bug or design flaw; make a painful onboarding step highly visible to fix it." },
+            { short: "Ensure core accessibility.", long: "Lowest common denominator check -single beat -single note -single riff: Ensure core functionality works on the most basic setup; design for accessibility." },
+            { short: "Design beautiful empty states.", long: "Make a blank valuable by putting it in an exquisite frame: Make an empty state visually appealing and informative." },
+            { short: "Brainstorm, then pick the least obvious.", long: "Make an exhaustive list of everything you might do and do the last thing on the list: Brainstorm all possible solutions, then choose the least obvious one." },
+            { short: "Chaos engineering.", long: "Make a sudden, destructive, unpredictable action; incorporate: Introduce a chaos engineering experiment into production." },
+            { short: "Automate a unique process.", long: "Mechanicalize something idiosyncratic: Automate a manual, unique process." },
+            { short: "Disable a failing feature, keep building.", long: "Mute and continue: Disable a failing feature temporarily but keep developing." },
+            { short: "Enforce uniqueness.", long: "Only one element of each kind: Enforce uniqueness constraints; avoid redundancy in components or services." },
+            { short: "Design self-healing systems.", long: "(Organic) machinery: Design a self-healing system; create an adaptive algorithm." },
+            { short: "Advocate for stable APIs.", long: "Overtly resist change: Advocate for a stable API; challenge every new feature request." },
+            { short: "Block distractions.", long: "Put in earplugs: Block out external distractions; focus on the immediate task." },
+            { short: "Reflect on past projects.", long: "Remember those quiet evenings: Reflect on past project successes or failures." },
+            { short: "Clarify requirements.", long: "Remove ambiguities and convert to specifics: Clarify requirements; write detailed technical specifications." },
+            { short: "Broaden problem statements.", long: "Remove specifics and convert to ambiguities: Broaden a problem statement for more innovative solutions; generalize a specific bug into a pattern." },
+            { short: "Iterative design.", long: "Repetition is a form of change: Iterative design; continuous integration/delivery." },
+            { short: "Undo a commit.", long: "Reverse: Undo a commit; revert to an older design." },
+            { short: "Implement fail-fast.", long: "Short circuit: Implement a fail-fast mechanism; bypass a complex subsystem for testing." },
+            { short: "Integrate a powerful tech directly.", long: "improve his virility shovels them straight into his lap): Directly integrate a new, powerful technology without extensive preparation; push a critical fix immediately." },
+            { short: "Observe users without intervention.", long: "Shut the door and listen from outside: Observe users interacting with the product without intervention; monitor system performance from an external perspective." },
+            { short: "Strip features to the MVP.", long: "Simple subtraction: Remove features until only the core remains (e.g., MVP)." },
+            { short: "Comprehensive security audit.", long: "Spectrum analysis: Perform a comprehensive security audit; analyze the full range of user feedback." },
+            { short: "Step away.", long: "Take a break: Step away from the screen; go for a walk." },
+            { short: "Prune non-essential features.", long: "Take away the elements in order of apparent non-importance: Prune non-essential features; refactor by removing unused code." },
+            { short: "Listen without interrupting.", long: "Tape your mouth (given by Ritva Saarikko): Listen without interruption during user interviews; observe without judging." },
+            { short: "Deliberately introduce variation.", long: "The inconsistency principle: Deliberately introduce variation to test user adaptability; break from established patterns for impact." },
+            { short: "Logs are the source of truth.", long: "The tape is now the music: The log file is the source of truth; the user data defines the product." },
+            { short: "Design for passive use (notifications).", long: "Think of the radio: Consider passive consumption of information; design for background processes or notifications." },
+            { short: "Refactor; organize files.", long: "Tidy up: Refactor code; organize design files." },
+            { short: "Trust current intuition.", long: "Trust in the you of now: Believe in your current skills and intuition; make decisions based on available information." },
+            { short: "Reframe the problem.", long: "Turn it upside down: Reframe the problem; reverse the user flow." },
+            { short: "Fundamentally change the data model.", long: "Twist the spine: Introduce a fundamental change to the data model or core architecture." },
+            { short: "Revisit a discarded concept.", long: "Use an old idea: Revisit a discarded feature concept; leverage a proven technology." },
+            { short: "Use a jarring UI element.", long: "Use an unacceptable color: Deliberately use a jarring UI element to draw attention; design something provocative." },
+            { short: "Simplify the UI.", long: "Use fewer notes: Simplify the UI; reduce the number of features." },
+            { short: "Implement user data filters.", long: "Use filters: Implement data filtering options for users; filter out noise in error logs." },
+            { short: "Get feedback from non-tech users.", long: "Use \"unqualified\" people: Get feedback from non-technical users; involve stakeholders outside of product/engineering." },
+            { short: "Design for fluidity.", long: "Water: Design for fluidity and adaptability; ensure scalability." },
+            { short: "Bring personal insights into design.", long: "What are you really thinking about just now? Incorporate: Bring your current personal insights or tangential thoughts into the design process." },
+            { short: "Ground solutions in current constraints.", long: "What is the reality of the situation?: Ground solutions in current technical constraints and user needs." },
+            { short: "Conduct a retrospective.", long: "What mistakes did you make last time?: Conduct a retrospective; analyze past project failures." },
+            { short: "Seek a trusted outside opinion.", long: "What would your closest friend do?: Seek an outside, trusted perspective on a problem." },
+            { short: "Define anti-patterns.", long: "What wouldn't you do?: Identify anti-patterns; define what your product/system *won't* do." },
+            { short: "Vary prototyping pace.", long: "Work at a different speed: Implement a faster prototyping cycle; dedicate time to deep, slow architectural design." },
+            { short: "Embrace problem-solving.", long: "You are an engineer: Embody a problem-solving mindset; focus on practical solutions." },
+            { short: "Focus on one task.", long: "You can only make one dot at a time: Focus on one task; implement one feature at a time." },
+            { short: "Trust your own concepts.", long: "You don't have to be ashamed of using your own ideas: Trust your instincts; don't dismiss your original concepts." }
+        ];
+
+        const card = document.getElementById('card');
+        const strategyShortElement = document.getElementById('strategyShort');
+        const strategyLongElement = document.getElementById('strategyLong');
+        let availableStrategies = [...strategies]; // Copy of strategies to shuffle
+
+        /**
+         * Shuffles an array in place using the Fisher-Yates (Knuth) shuffle algorithm.
+         * @param {Array} array The array to shuffle.
+         */
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]]; // Swap elements
+            }
+        }
+
+        // Shuffle strategies initially
+        shuffleArray(availableStrategies);
+
+        card.addEventListener('click', () => {
+            // If currently showing a message, flip back to front before showing new
+            if (card.classList.contains('flipped')) {
+                card.classList.remove('flipped');
+                // Wait for the card to flip back (half the transition duration)
+                setTimeout(() => {
+                    displayNewStrategy();
+                }, 400); // Half of 0.8s transition
+            } else {
+                displayNewStrategy();
+            }
+        });
+
+        /**
+         * Displays a new random strategy on the card.
+         */
+        function displayNewStrategy() {
+            if (availableStrategies.length === 0) {
+                // If all strategies have been shown, reshuffle
+                availableStrategies = [...strategies];
+                shuffleArray(availableStrategies);
+            }
+
+            // Get the next strategy from the shuffled list
+            const nextStrategy = availableStrategies.pop(); // Take from the end
+
+            // Update the card message elements immediately
+            strategyShortElement.textContent = nextStrategy.short;
+            strategyLongElement.textContent = nextStrategy.long;
+
+            // Flip the card after the content is set
+            card.classList.add('flipped');
+        }
+
+        // Initial display of a strategy on load
+        window.onload = () => {
+            // Delay initial flip slightly to make it feel deliberate
+            setTimeout(() => {
+                displayNewStrategy();
+            }, 500);
+        };
+
+    </script>
+</body>
+</html>
