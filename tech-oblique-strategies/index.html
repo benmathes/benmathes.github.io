@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Oblique Strategies for Tech</title>
+    <title>Oblique Strategies for Tech & Business</title>
     <!-- Tailwind CSS CDN for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -19,6 +19,7 @@
             transform-style: preserve-3d; /* Ensures child elements are positioned in 3D space */
             transition: transform 0.8s; /* Smooth transition for the flip effect */
             cursor: pointer;
+            margin: 1rem; /* Space between cards */
         }
 
         .card.flipped {
@@ -50,6 +51,17 @@
             line-height: 1;
         }
 
+        /* Specific styles for Technical Card */
+        .card-front.technical {
+            background-color: #3b82f6; /* Tailwind blue-500 */
+        }
+
+        /* Specific styles for Product/Business Card */
+        .card-front.product-business {
+            background-color: #10b981; /* Tailwind emerald-500 */
+        }
+
+
         .card-back {
             background-color: #f9fafb; /* Tailwind gray-50 */
             color: #1f2937; /* Tailwind gray-800 */
@@ -71,8 +83,12 @@
             line-height: 1.5;
         }
 
-        /* Responsive adjustments */
+        /* Responsive adjustments for layout */
         @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column; /* Stack cards vertically on smaller screens */
+                align-items: center;
+            }
             .card {
                 width: 250px;
                 height: 375px;
@@ -108,25 +124,47 @@
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
 
-    <div class="card-container">
-        <div id="card" class="card">
-            <div class="card-face card-front">
-                Click Me!
-            </div>
-            <div id="cardBack" class="card-face card-back">
-                <div id="strategyShort" class="strategy-short">
-                    <!-- Short message will appear here -->
+    <div class="main-container flex flex-wrap justify-center items-start">
+        <!-- Technical Strategies Card -->
+        <div class="card-container">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">Technical Strategies</h2>
+            <div id="technicalCard" class="card">
+                <div class="card-face card-front technical">
+                    Click Me!
                 </div>
-                <div id="strategyLong" class="strategy-long">
-                    <!-- Long description will appear here -->
+                <div id="technicalCardBack" class="card-face card-back">
+                    <div id="technicalStrategyShort" class="strategy-short">
+                        <!-- Short message will appear here -->
+                    </div>
+                    <div id="technicalStrategyLong" class="strategy-long">
+                        <!-- Long description will appear here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product/Business Strategies Card -->
+        <div class="card-container">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">Product/Business Strategies</h2>
+            <div id="productBusinessCard" class="card">
+                <div class="card-face card-front product-business">
+                    Click Me!
+                </div>
+                <div id="productBusinessCardBack" class="card-face card-back">
+                    <div id="productBusinessStrategyShort" class="strategy-short">
+                        <!-- Short message will appear here -->
+                    </div>
+                    <div id="productBusinessStrategyLong" class="strategy-long">
+                        <!-- Long description will appear here -->
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Array of strategies with both short and long descriptions
-        const strategies = [
+        // Technical Strategies List
+        const technicalStrategies = [
             { short: "Ditch standard frameworks.", long: "Abandon normal instruments: Abandon established frameworks/technologies." },
             { short: "Get feedback, widely.", long: "Accept advice: Solicit feedback (from anyone, even junior devs)." },
             { short: "Build incrementally.", long: "Accretion: Iterative development; gradual feature addition." },
@@ -243,10 +281,136 @@
             { short: "Trust your own concepts.", long: "You don't have to be ashamed of using your own ideas: Trust your instincts; don't dismiss your original concepts." }
         ];
 
-        const card = document.getElementById('card');
-        const strategyShortElement = document.getElementById('strategyShort');
-        const strategyLongElement = document.getElementById('strategyLong');
-        let availableStrategies = [...strategies]; // Copy of strategies to shuffle
+        // Product/Business Strategies List (derived from original Oblique Strategies)
+        const productBusinessStrategies = [
+            { short: "Ditch standard tools.", long: "Abandon normal instruments: Abandon conventional methods/software." },
+            { short: "Seek counsel.", long: "Accept advice: Actively listen to diverse stakeholder input." },
+            { short: "Build iteratively.", long: "Accretion: Gradually add features based on feedback." },
+            { short: "Consider all viewpoints.", long: "A line has two sides: Look at problems from user, business, and competitor angles." },
+            { short: "Loosen a rule.", long: "Allow an easement (an easement is the abandonment of a stricture): Relax a rigid process or guideline." },
+            { short: "Map customer journeys.", long: "Are there sections? Consider transitions: Focus on smooth transitions between product stages." },
+            { short: "Provoke new ideas.", long: "Ask people to work against their better judgment: Challenge assumptions in brainstorming; explore contrarian approaches." },
+            { short: "Trust your instinct.", long: "Ask your body: Rely on intuition gleaned from experience." },
+            { short: "Bundle features.", long: "Assemble some of the instruments in a group and treat the group: Group related functionalities for a cohesive offering." },
+            { short: "Harmonize standard with novel.", long: "Balance the consistency principle with the inconsistency principle: Balance brand consistency with unique feature experiences." },
+            { short: "Embrace quick tests.", long: "Be dirty: Allow for imperfect, rapid prototyping for validation." },
+            { short: "Pause and reflect.", long: "Breathe more deeply: Take a strategic break before critical decisions." },
+            { short: "Create partnerships - end failing ones.", long: "Bridges -build -burn: Form strategic alliances - discontinue unproductive ventures." },
+            { short: "Analyze dependencies.", long: "Cascades: Understand how changes in one area affect others." },
+            { short: "Reassign team responsibilities.", long: "Change instrument roles: Shift roles within a project team for new perspectives." },
+            { short: "Maintain strict alignment.", long: "Change nothing and continue with immaculate consistency: Stick rigidly to core product vision; resist scope creep." },
+            { short: "Gather raw user insights.", long: "Children's voices -speaking -singing: Listen to unfiltered feedback from diverse user groups." },
+            { short: "Segment customer data.", long: "Cluster analysis: Identify distinct groups within your user base." },
+            { short: "Plan product sunsets.", long: "Consider different fading systems: Strategically phase out old features or products." },
+            { short: "Research broadly.", long: "Consult other sources -promising -unpromising: Investigate successful and unsuccessful products/strategies outside your direct domain." },
+            { short: "Make static dynamic.", long: "Convert a melodic element into a rhythmic element: Transform a static report into an interactive dashboard." },
+            { short: "Launch it!", long: "Courage!: Dare to release the product." },
+            { short: "Eliminate a key dependency.", long: "Cut a vital connection: Remove a critical, but problematic, integration or process." },
+            { short: "Refine user experience.", long: "Decorate, decorate: Add delight and polish to the product interface." },
+            { short: "Establish a core competency.", long: "Define an area as `safe' and use it as an anchor: Focus on a stable, proven product area as your foundation." },
+            { short: "Iterate lightly - pivot radically.", long: "Destroy -nothing -the most important thing: Make minor adjustments - fundamentally change direction." },
+            { short: "Challenge a core belief.", long: "Discard an axiom: Question a fundamental assumption about your market or users." },
+            { short: "Prioritize user needs.", long: "Disconnect from desire: Design without personal preferences; focus solely on market demand." },
+            { short: "Break from standard playbooks.", long: "Discover the recipes you are using and abandon them: Identify common business strategies and intentionally deviate." },
+            { short: "Simulate future scenarios.", long: "Distorting time: Project market trends; model long-term product impact." },
+            { short: "Delay non-critical work.", long: "Do nothing for as long as possible: Avoid premature optimization or feature development." },
+            { short: "Embrace simple solutions.", long: "Don't be afraid of things because they're easy to do: Implement straightforward fixes if they solve the problem effectively." },
+            { short: "Utilize proven patterns.", long: "Don't be frightened of cliches: Leverage established business models or marketing tactics." },
+            { short: "Showcase your product's strengths.", long: "Don't be frightened to display your talents: Highlight your product's unique value proposition." },
+            { short: "Maintain market presence.", long: "Don't break the silence: Keep communication channels open with customers." },
+            { short: "Balance all priorities.", long: "Don't stress one thing more than another: Give equal consideration to growth, profitability, user satisfaction, etc." },
+            { short: "Focus on core operations.", long: "Do something boring: Handle essential, unglamorous tasks like data hygiene or compliance." },
+            { short: "Clean up legacy processes.", long: "Do the washing up: Streamline outdated business operations." },
+            { short: "Refine messaging.", long: "Do the words need changing?: Improve product marketing copy or value propositions." },
+            { short: "Identify market gaps.", long: "Do we need holes?: Look for underserved customer needs or niche opportunities." },
+            { short: "Highlight competitive advantages.", long: "Emphasize differences: Clearly articulate what makes your product unique." },
+            { short: "Reinforce brand messaging.", long: "Emphasize repetitions: Consistently communicate core values and benefits." },
+            { short: "Address product weaknesses.", long: "Emphasize the flaws: Transparently communicate limitations or areas for improvement." },
+            { short: "Pursue parallel strategies.", long: "Faced with a choice, do both (given by Dieter Roth): Explore two distinct market approaches simultaneously." },
+            { short: "Integrate market feedback.", long: "Feedback recordings into an acoustic situation: Use customer reviews and analytics to inform product strategy." },
+            { short: "Maximize operational efficiency.", long: "Fill every beat with something: Ensure all resources are actively contributing." },
+            { short: "Delegate; take a break.", long: "Get your neck massaged: Relieve pressure by assigning tasks or stepping back." },
+            { short: "Learn from past failures.", long: "Ghost echoes: Account for historical market dynamics or previous project issues." },
+            { short: "Share intellectual property.", long: "Give the game away: Open-source a component; share market insights." },
+            { short: "Test a risky idea.", long: "Give way to your worst impulse: Experiment with an unconventional business model or feature." },
+            { short: "Thoroughly analyze market segments.", long: "Go slowly all the way round the outside: Deeply understand all aspects of a target market." },
+            { short: "Learn from missteps.", long: "Honor thy error as a hidden intention: Find valuable lessons in business failures." },
+            { short: "Critique existing strategies.", long: "How would you have done it?: Evaluate current market approaches with alternative methods in mind." },
+            { short: "Add personality to a brand.", long: "Humanize something free of error: Give a dry product a compelling story." },
+            { short: "Visualize the customer lifecycle.", long: "Imagine the music as a moving chain or caterpillar: See the end-to-end journey of a customer." },
+            { short: "Analyze discrete market signals.", long: "Imagine the music as a set of disconnected events: Look at individual market events rather than a continuous trend." },
+            { short: "Refine pricing tiers.", long: "Infinitesimal gradations: Make small, precise adjustments to product pricing." },
+            { short: "Evaluate strategic motives.", long: "Intentions -credibility of -nobility of -humility of: Assess if a business decision is trustworthy, genuinely beneficial, or self-serving." },
+            { short: "Pursue moonshot projects.", long: "Into the impossible: Attempt to achieve seemingly unattainable market goals." },
+            { short: "Is it market-ready?", long: "Is it finished?: Does the product meet the criteria for release?" },
+            { short: "Identify market gaps.", long: "Is there something missing?: Discover unaddressed needs in the competitive landscape." },
+            { short: "Optimize resource allocation.", long: "Is the tuning appropriate?: Are business resources effectively aligned with goals?" },
+            { short: "Persevere through challenges.", long: "Just carry on: Continue execution despite market headwinds." },
+            { short: "Target diverse segments.", long: "Left channel, right channel, center channel: Design marketing for different customer demographics." },
+            { short: "Analyze subtle market shifts.", long: "Listen in total darkness, or in a very large room, very quietly: Discern faint signals in noisy market data." },
+            { short: "Heed weak signals.", long: "Listen to the quiet voice: Pay attention to early, subtle market indicators." },
+            { short: "Deep dive on a niche.", long: "Look at a very small object; look at its center: Focus intensely on a specific, small market segment." },
+            { short: "Optimize product roadmap.", long: "Look at the order in which you do things: Streamline the sequence of feature development." },
+            { short: "Address brand vulnerabilities directly.", long: "Look closely at the most embarrassing details and amplify them: Confront public perception issues head-on." },
+            { short: "Ensure broad appeal.", long: "Lowest common denominator check -single beat -single note -single riff: Design a product to meet the most basic, widespread user needs." },
+            { short: "Brand empty states.", long: "Make a blank valuable by putting it in an exquisite frame: Make non-functional aspects of the product visually appealing." },
+            { short: "Explore unconventional strategies.", long: "Make an exhaustive list of everything you might do and do the last thing on the list: List all business options, then pursue the least obvious." },
+            { short: "Disrupt the market.", long: "Make a sudden, destructive, unpredictable action; incorporate: Introduce a radical change that reshapes the industry." },
+            { short: "Automate a unique process.", long: "Mechanicalize something idiosyncratic: Standardize a bespoke business operation." },
+            { short: "Pause a failing initiative.", long: "Mute and continue: Temporarily suspend a struggling product line but continue broader efforts." },
+            { short: "Enforce product uniqueness.", long: "Only one element of each kind: Ensure each product or feature has a distinct purpose." },
+            { short: "Build self-sustaining systems.", long: "(Organic) machinery: Design business models that grow autonomously." },
+            { short: "Defend core values.", long: "Overtly resist change: Protect fundamental brand principles from dilution." },
+            { short: "Block market noise.", long: "Put in earplugs: Filter out irrelevant trends or competitor actions." },
+            { short: "Reflect on past successes.", long: "Remember those quiet evenings: Recall lessons from previous product launches." },
+            { short: "Clarify market positioning.", long: "Remove ambiguities and convert to specifics: Define precise target audience and value proposition." },
+            { short: "Broaden product messaging.", long: "Remove specifics and convert to ambiguities: Generalize unique selling points to appeal to a wider audience." },
+            { short: "Consistent branding evolves perception.", long: "Repetition is a form of change: Repeating a message changes how it's received over time." },
+            { short: "Undo a strategic decision.", long: "Reverse: Withdraw from a market or pivot back." },
+            { short: "Streamline a process.", long: "Short circuit: Bypass unnecessary steps in a business workflow." },
+            { short: "Boldly deploy a core asset.", long: "improve his virility shovels them straight into his lap): Directly apply a powerful resource to a critical business problem." },
+            { short: "Observe customer behavior.", long: "Shut the door and listen from outside: Analyze user interaction without direct intervention." },
+            { short: "Simplify product offering.", long: "Simple subtraction: Remove non-essential features to focus on core value." },
+            { short: "Conduct a market comprehensive analysis.", long: "Spectrum analysis: Evaluate the full range of market forces." },
+            { short: "Step away from the business.", long: "Take a break: Get an outside perspective; prevent burnout." },
+            { short: "Prune non-essential features.", long: "Take away the elements in order of apparent non-importance: Systematically remove least impactful product elements." },
+            { short: "Listen without bias.", long: "Tape your mouth (given by Ritva Saarikko): Observe market trends without imposing preconceived notions." },
+            { short: "Introduce market disruption.", long: "The inconsistency principle: Deliberately deviate to test market reactions." },
+            { short: "Data dictates strategy.", long: "The tape is now the music: Market data is the ultimate source of truth for business decisions." },
+            { short: "Consider passive engagement.", long: "Think of the radio: Design for background presence or subtle brand touchpoints." },
+            { short: "Streamline business operations.", long: "Tidy up: Organize internal processes and data." },
+            { short: "Rely on current insights.", long: "Trust in the you of now: Make decisions based on the best available present information." },
+            { short: "Reframe the business model.", long: "Turn it upside down: Consider a completely inverse approach to your market." },
+            { short: "Fundamentally alter the business model.", long: "Twist the spine: Introduce a radical change to core revenue streams or operations." },
+            { short: "Revive a classic concept.", long: "Use an old idea: Reintroduce a previously discarded product idea or strategy." },
+            { short: "Challenge brand norms.", long: "Use an unacceptable color: Introduce a visually jarring or unconventional marketing element." },
+            { short: "Simplify your pitch.", long: "Use fewer notes: Condense your product's value proposition." },
+            { short: "Segment your audience.", long: "Use filters: Apply criteria to target specific customer groups." },
+            { short: "Get fresh perspectives.", long: "Use \"unqualified\" people: Involve non-experts in brainstorming or testing." },
+            { short: "Design for adaptability.", long: "Water: Ensure the product/business model can flow and adjust to market changes." },
+            { short: "Integrate personal insights.", long: "What are you really thinking about just now? Incorporate: Bring your current tangential thoughts into strategic planning." },
+            { short: "Assess market reality.", long: "What is the reality of the situation?: Base decisions on current market conditions, not assumptions." },
+            { short: "Analyze past market failures.", long: "What mistakes did you make last time?: Review previous product/business missteps." },
+            { short: "Seek external advice.", long: "What would your closest friend do?: Consult a trusted advisor on business decisions." },
+            { short: "Define your non-strategy.", long: "What wouldn't you do?: Clearly articulate what your business *won't* pursue." },
+            { short: "Vary development cycles.", long: "Work at a different speed: Switch between rapid sprints and slower, deeper strategic planning." },
+            { short: "Apply problem-solving logic.", long: "You are an engineer: Approach business challenges with a systematic, logical mindset." },
+            { short: "Focus on one initiative.", long: "You can only make one dot at a time: Prioritize a single core business objective at a time." },
+            { short: "Trust your original concepts.", long: "You don't have to be ashamed of using your own ideas: Have confidence in your unique business ideas." }
+        ];
+
+        // Get references to card elements
+        const technicalCard = document.getElementById('technicalCard');
+        const technicalStrategyShortElement = document.getElementById('technicalStrategyShort');
+        const technicalStrategyLongElement = document.getElementById('technicalStrategyLong');
+
+        const productBusinessCard = document.getElementById('productBusinessCard');
+        const productBusinessStrategyShortElement = document.getElementById('productBusinessStrategyShort');
+        const productBusinessStrategyLongElement = document.getElementById('productBusinessStrategyLong');
+
+        // Copies of strategies for shuffling for each deck
+        let availableTechnicalStrategies = [...technicalStrategies];
+        let availableProductBusinessStrategies = [...productBusinessStrategies];
 
         /**
          * Shuffles an array in place using the Fisher-Yates (Knuth) shuffle algorithm.
@@ -259,48 +423,70 @@
             }
         }
 
-        // Shuffle strategies initially
-        shuffleArray(availableStrategies);
-
-        card.addEventListener('click', () => {
-            // If currently showing a message, flip back to front before showing new
-            if (card.classList.contains('flipped')) {
-                card.classList.remove('flipped');
-                // Wait for the card to flip back (half the transition duration)
-                setTimeout(() => {
-                    displayNewStrategy();
-                }, 400); // Half of 0.8s transition
-            } else {
-                displayNewStrategy();
-            }
-        });
+        // Shuffle strategies for both decks initially
+        shuffleArray(availableTechnicalStrategies);
+        shuffleArray(availableProductBusinessStrategies);
 
         /**
-         * Displays a new random strategy on the card.
+         * Handles the click event for a card, flipping it and displaying a new strategy.
+         * @param {HTMLElement} cardElement The card HTML element.
+         * @param {HTMLElement} shortTextElement The element for the short strategy.
+         * @param {HTMLElement} longTextElement The element for the long strategy.
+         * @param {Array<Object>} strategyList The full list of strategies for this deck.
+         * @param {Array<Object>} availableList The shuffled list of available strategies.
          */
-        function displayNewStrategy() {
-            if (availableStrategies.length === 0) {
+        function handleCardClick(cardElement, shortTextElement, longTextElement, strategyList, availableList) {
+            if (cardElement.classList.contains('flipped')) {
+                cardElement.classList.remove('flipped');
+                setTimeout(() => {
+                    displayNewStrategy(cardElement, shortTextElement, longTextElement, strategyList, availableList);
+                }, 400); // Half of 0.8s transition
+            } else {
+                displayNewStrategy(cardElement, shortTextElement, longTextElement, strategyList, availableList);
+            }
+        }
+
+        /**
+         * Displays a new random strategy on a given card.
+         * @param {HTMLElement} cardElement The card HTML element.
+         * @param {HTMLElement} shortTextElement The element for the short strategy.
+         * @param {HTMLElement} longTextElement The element for the long strategy.
+         * @param {Array<Object>} strategyList The full list of strategies for this deck.
+         * @param {Array<Object>} availableList The shuffled list of available strategies.
+         */
+        function displayNewStrategy(cardElement, shortTextElement, longTextElement, strategyList, availableList) {
+            if (availableList.length === 0) {
                 // If all strategies have been shown, reshuffle
-                availableStrategies = [...strategies];
-                shuffleArray(availableStrategies);
+                // Clear existing strategies and refill from original list
+                availableList.splice(0, availableList.length, ...strategyList);
+                shuffleArray(availableList);
             }
 
             // Get the next strategy from the shuffled list
-            const nextStrategy = availableStrategies.pop(); // Take from the end
+            const nextStrategy = availableList.pop(); // Take from the end
 
             // Update the card message elements immediately
-            strategyShortElement.textContent = nextStrategy.short;
-            strategyLongElement.textContent = nextStrategy.long;
+            shortTextElement.textContent = nextStrategy.short;
+            longTextElement.textContent = nextStrategy.long;
 
             // Flip the card after the content is set
-            card.classList.add('flipped');
+            cardElement.classList.add('flipped');
         }
 
-        // Initial display of a strategy on load
+        // Add event listeners to both cards
+        technicalCard.addEventListener('click', () => {
+            handleCardClick(technicalCard, technicalStrategyShortElement, technicalStrategyLongElement, technicalStrategies, availableTechnicalStrategies);
+        });
+
+        productBusinessCard.addEventListener('click', () => {
+            handleCardClick(productBusinessCard, productBusinessStrategyShortElement, productBusinessStrategyLongElement, productBusinessStrategies, availableProductBusinessStrategies);
+        });
+
+        // Initial display of strategies on load for both cards
         window.onload = () => {
-            // Delay initial flip slightly to make it feel deliberate
             setTimeout(() => {
-                displayNewStrategy();
+                displayNewStrategy(technicalCard, technicalStrategyShortElement, technicalStrategyLongElement, technicalStrategies, availableTechnicalStrategies);
+                displayNewStrategy(productBusinessCard, productBusinessStrategyShortElement, productBusinessStrategyLongElement, productBusinessStrategies, availableProductBusinessStrategies);
             }, 500);
         };
 
