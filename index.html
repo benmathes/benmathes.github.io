@@ -1,13 +1,68 @@
----
-layout: default
-title: Your New Jekyll Site
----
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Name - Projects</title>
+    <style>
+        /* Basic styling for readability */
+        body {
+            font-family: 'Inter', sans-serif; /* Using Inter for a clean look */
+            margin: 40px auto; /* Centering content */
+            max-width: 600px; /* Limiting width for better readability */
+            color: #333; /* Dark gray text */
+            line-height: 1.6; /* Spacing for text */
+            background-color: #f9f9f9; /* Light background */
+        }
+        h1, h2 {
+            margin-bottom: 0.5em; /* Spacing below headings */
+        }
+        a {
+            color: #007bff; /* Standard link blue */
+            text-decoration: none; /* No underline by default */
+        }
+        a:hover {
+            text-decoration: underline; /* Underline on hover */
+        }
+        ul {
+            list-style: none; /* No bullet points */
+            padding: 0; /* No default padding */
+        }
+        li {
+            margin-bottom: 0.5em; /* Spacing between list items */
+        }
+        footer {
+            margin-top: 40px; /* Space above footer */
+            text-align: center; /* Centered footer text */
+            font-size: 0.8em; /* Smaller font for footer */
+            color: #777; /* Lighter gray for footer */
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Hi, I'm Ben</h1>
+        <p>A collection of my small, one-off projects.</p>
+    </header>
 
-<div id="home">
-  <h1>Blog Posts</h1>
-  <ul class="posts">
-    {% for post in site.posts %}
-      <li><span>{{ post.date | date_to_string }}</span> &raquo; <a href="{{ post.url }}">{{ post.title }}</a></li>
-    {% endfor %}
-  </ul>
-</div>
+    <section>
+        <h2>Projects</h2>
+        <ul>
+            <li><a href="/tech-oblique-strategies/index.html">Oblique Strategies for Tech</a></li>
+        </ul>
+    </section>
+
+    <section>
+        <h2>About</h2>
+        Me on:
+        <ul>
+          <li><a href="https://github.com/benmathes">GitHub</a></li>
+          <li><a href="https://x.com/ben_mathes">twitter</a></li>
+        </ul>
+    </section>
+
+    <footer>
+        <p>&copy; 2025 [Your Name]</p>
+    </footer>
+</body>
+</html>
