@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Winter Return - A Strava Zine</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Source+Serif+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --park-brown: #3d2914;
+            --park-tan: #d4a574;
+            --park-cream: #f5f0e6;
+            --park-forest: #2d4a3e;
+            --park-rust: #8b4513;
+            --park-gold: #c9a227;
+            --park-sky: #87a7b3;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Source Serif Pro', Georgia, serif;
+            background-color: var(--park-cream);
+            color: var(--park-brown);
+            line-height: 1.7;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Title styling - WPA poster inspired */
+        h1 {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-weight: 900;
+            font-size: 3.5rem;
+            text-align: center;
+            color: var(--park-forest);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin: 2rem 0 0.5rem;
+            padding: 1rem 2rem;
+            border: 4px double var(--park-forest);
+            background: linear-gradient(to bottom, var(--park-cream) 0%, #ebe5d9 100%);
+            position: relative;
+        }
+
+        h1::before, h1::after {
+            content: "★";
+            position: absolute;
+            color: var(--park-gold);
+            font-size: 1.5rem;
+        }
+
+        h1::before { left: 1rem; top: 50%; transform: translateY(-50%); }
+        h1::after { right: 1rem; top: 50%; transform: translateY(-50%); }
+
+        /* Subtitle/date styling */
+        h1 + p em {
+            display: block;
+            text-align: center;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.1rem;
+            color: var(--park-rust);
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            margin-bottom: 2rem;
+        }
+
+        hr {
+            border: none;
+            height: 3px;
+            background: linear-gradient(to right, transparent, var(--park-tan), var(--park-brown), var(--park-tan), transparent);
+            margin: 3rem 0;
+        }
+
+        /* Section headers */
+        h2 {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-weight: 700;
+            font-size: 2rem;
+            color: var(--park-forest);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            border-bottom: 2px solid var(--park-tan);
+            padding-bottom: 0.5rem;
+            margin-top: 3rem;
+        }
+
+        /* Activity titles */
+        h3 {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: var(--park-rust);
+            margin-top: 2rem;
+            margin-bottom: 0.25rem;
+        }
+
+        /* Stats line under activity titles */
+        h3 + p em {
+            display: block;
+            font-family: 'Source Serif Pro', serif;
+            font-size: 0.85rem;
+            color: var(--park-sky);
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+            padding: 0.25rem 0.5rem;
+            background: rgba(135, 167, 179, 0.15);
+            border-left: 3px solid var(--park-sky);
+        }
+
+        p {
+            margin: 1rem 0;
+            text-align: justify;
+            hyphens: auto;
+        }
+
+        /* Blockquotes for activity descriptions from Strava */
+        blockquote, h3 + p + p:first-line {
+            font-style: italic;
+        }
+
+        /* Images */
+        img {
+            width: 100%;
+            height: auto;
+            margin: 1.5rem 0;
+            border: 8px solid var(--park-brown);
+            box-shadow:
+                0 0 0 2px var(--park-cream),
+                0 0 0 4px var(--park-tan),
+                4px 4px 15px rgba(0,0,0,0.3);
+        }
+
+        /* Stats summary box */
+        strong {
+            color: var(--park-forest);
+        }
+
+        /* Final stats section */
+        ul {
+            background: var(--park-forest);
+            color: var(--park-cream);
+            padding: 1.5rem 2rem 1.5rem 3rem;
+            margin: 2rem 0;
+            border-radius: 0;
+            list-style: none;
+        }
+
+        ul li {
+            padding: 0.25rem 0;
+            border-bottom: 1px solid rgba(245, 240, 230, 0.2);
+        }
+
+        ul li:last-child {
+            border-bottom: none;
+        }
+
+        ul li::before {
+            content: "▸ ";
+            color: var(--park-gold);
+        }
+
+        /* Decorative elements */
+        .container::before {
+            content: "";
+            display: block;
+            height: 20px;
+            background: repeating-linear-gradient(
+                90deg,
+                var(--park-forest) 0px,
+                var(--park-forest) 10px,
+                var(--park-tan) 10px,
+                var(--park-tan) 20px,
+                var(--park-rust) 20px,
+                var(--park-rust) 30px,
+                var(--park-tan) 30px,
+                var(--park-tan) 40px
+            );
+            margin-bottom: 2rem;
+        }
+
+        /* Chapter marker */
+        .chapter-end {
+            text-align: center;
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            color: var(--park-rust);
+            margin: 3rem 0;
+            font-size: 1.2rem;
+        }
+
+        /* Print styles */
+        @media print {
+            body { background: white; }
+            .container { max-width: 100%; }
+            img { max-width: 100%; page-break-inside: avoid; }
+            h2, h3 { page-break-after: avoid; }
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            h1 { font-size: 2rem; letter-spacing: 0.05em; }
+            h1::before, h1::after { display: none; }
+            .container { padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="content"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        fetch('chapter-01-winter-return.md')
+            .then(response => response.text())
+            .then(markdown => {
+                document.getElementById('content').innerHTML = marked.parse(markdown);
+            })
+            .catch(err => {
+                document.getElementById('content').innerHTML = '<p>Error loading chapter. Make sure chapter-01-winter-return.md is in the same folder.</p>';
+            });
+    </script>
+</body>
+</html>
