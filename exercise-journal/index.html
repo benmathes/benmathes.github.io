@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exercise Journal</title>
+    <!-- Marked.js for markdown rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Google Fonts - Libre Baskerville for retro serif, Cabin for body -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cabin:wght@400;600&family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --forest-green: #2d4a3e;
+            --pine: #1a3328;
+            --bark-brown: #5c4033;
+            --tan: #d4a574;
+            --cream: #f5f0e6;
+            --rust: #a0522d;
+            --sky: #87a889;
+            --gold: #c9a962;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cabin', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--cream);
+            background-image:
+                radial-gradient(circle at 20% 80%, rgba(45, 74, 62, 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(92, 64, 51, 0.03) 0%, transparent 50%);
+            min-height: 100vh;
+            color: var(--bark-brown);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header with park badge style */
+        header {
+            text-align: center;
+            padding: 30px 20px;
+            background: linear-gradient(135deg, var(--forest-green) 0%, var(--pine) 100%);
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            bottom: 10px;
+            border: 2px solid var(--gold);
+            border-radius: 4px;
+            pointer-events: none;
+        }
+
+        header h1 {
+            font-family: 'Libre Baskerville', serif;
+            color: var(--cream);
+            margin: 0;
+            font-size: 2rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        header p {
+            color: var(--tan);
+            margin: 10px 0 0;
+            font-size: 0.9rem;
+            letter-spacing: 0.05em;
+        }
+
+        /* Chapter/Entry card */
+        .chapter {
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border: 1px solid rgba(92, 64, 51, 0.1);
+            overflow: hidden;
+        }
+
+        .chapter-header {
+            background: linear-gradient(135deg, var(--forest-green) 0%, var(--pine) 100%);
+            padding: 16px 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+        }
+
+        .chapter-header:hover {
+            background: linear-gradient(135deg, var(--pine) 0%, var(--forest-green) 100%);
+        }
+
+        .chapter-title {
+            font-family: 'Libre Baskerville', serif;
+            color: var(--cream);
+            font-size: 1.1rem;
+            margin: 0;
+        }
+
+        .chapter-toggle {
+            color: var(--gold);
+            font-size: 1.2rem;
+            transition: transform 0.3s;
+        }
+
+        .chapter.expanded .chapter-toggle {
+            transform: rotate(180deg);
+        }
+
+        .chapter-content {
+            padding: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+        }
+
+        .chapter.expanded .chapter-content {
+            padding: 24px;
+            max-height: 5000px;
+        }
+
+        /* Markdown rendered content styles */
+        .chapter-content h1,
+        .chapter-content h2,
+        .chapter-content h3 {
+            font-family: 'Libre Baskerville', serif;
+            color: var(--forest-green);
+        }
+
+        .chapter-content h1 { font-size: 1.5rem; margin-top: 0; }
+        .chapter-content h2 { font-size: 1.25rem; }
+        .chapter-content h3 { font-size: 1.1rem; }
+
+        .chapter-content p {
+            line-height: 1.7;
+        }
+
+        .chapter-content ul, .chapter-content ol {
+            padding-left: 24px;
+            line-height: 1.7;
+        }
+
+        .chapter-content li {
+            margin-bottom: 6px;
+        }
+
+        .chapter-content a {
+            color: var(--rust);
+        }
+
+        .chapter-content strong {
+            color: var(--forest-green);
+        }
+
+        .chapter-content blockquote {
+            border-left: 4px solid var(--tan);
+            margin: 16px 0;
+            padding: 8px 16px;
+            background: rgba(212, 165, 116, 0.1);
+            color: #555;
+            font-style: italic;
+        }
+
+        .chapter-content code {
+            background: rgba(45, 74, 62, 0.1);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+
+        .chapter-content hr {
+            border: none;
+            border-top: 2px solid var(--tan);
+            margin: 24px 0;
+        }
+
+        /* Loading state */
+        .loading {
+            color: #999;
+            font-style: italic;
+            padding: 20px;
+            text-align: center;
+        }
+
+        /* Error state */
+        .error {
+            color: var(--rust);
+            padding: 20px;
+            text-align: center;
+            background: rgba(160, 82, 45, 0.1);
+            border-radius: 4px;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 30px;
+            color: #999;
+            font-size: 0.85rem;
+        }
+
+        footer a {
+            color: var(--rust);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            header h1 {
+                font-size: 1.5rem;
+            }
+
+            .chapter-title {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Exercise Journal</h1>
+            <p>A trail through fitness</p>
+        </header>
+
+        <main id="chapters">
+            <div class="loading">Loading entries...</div>
+        </main>
+
+        <footer>
+            <a href="/">← Back to Projects</a>
+        </footer>
+    </div>
+
+    <script>
+        // ============================================
+        // CONFIGURE YOUR ENTRIES HERE
+        // Add markdown files to the entries/ folder
+        // and list them below (newest first)
+        // ============================================
+        const ENTRIES = [
+            { file: 'entries/2025-01-12-first-entry.md', title: 'January 12, 2025 - First Entry' },
+            // Add more entries above this line:
+            // { file: 'entries/YYYY-MM-DD-title.md', title: 'Display Title' },
+        ];
+        // ============================================
+
+        const chaptersContainer = document.getElementById('chapters');
+
+        // Configure marked
+        marked.setOptions({
+            breaks: true,
+            gfm: true
+        });
+
+        // Load and render all chapters
+        async function loadChapters() {
+            if (ENTRIES.length === 0) {
+                chaptersContainer.innerHTML = `
+                    <div class="chapter">
+                        <div class="chapter-content" style="padding: 24px; max-height: none;">
+                            <p style="text-align: center; color: #999;">
+                                No entries yet. Add markdown files to the <code>entries/</code> folder
+                                and list them in the ENTRIES array in index.html.
+                            </p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            chaptersContainer.innerHTML = '';
+
+            for (const entry of ENTRIES) {
+                const chapterEl = document.createElement('div');
+                chapterEl.className = 'chapter';
+
+                chapterEl.innerHTML = `
+                    <div class="chapter-header">
+                        <h2 class="chapter-title">${entry.title}</h2>
+                        <span class="chapter-toggle">▼</span>
+                    </div>
+                    <div class="chapter-content">
+                        <div class="loading">Loading...</div>
+                    </div>
+                `;
+
+                chaptersContainer.appendChild(chapterEl);
+
+                // Load markdown content
+                try {
+                    const response = await fetch(entry.file);
+                    if (!response.ok) throw new Error('File not found');
+                    const markdown = await response.text();
+                    const contentEl = chapterEl.querySelector('.chapter-content');
+                    contentEl.innerHTML = marked.parse(markdown);
+                } catch (err) {
+                    const contentEl = chapterEl.querySelector('.chapter-content');
+                    contentEl.innerHTML = `<div class="error">Could not load ${entry.file}</div>`;
+                }
+
+                // Add click handler for expand/collapse
+                const headerEl = chapterEl.querySelector('.chapter-header');
+                headerEl.addEventListener('click', () => {
+                    chapterEl.classList.toggle('expanded');
+                });
+            }
+
+            // Expand the first (newest) entry by default
+            const firstChapter = chaptersContainer.querySelector('.chapter');
+            if (firstChapter) {
+                firstChapter.classList.add('expanded');
+            }
+        }
+
+        loadChapters();
+    </script>
+</body>
+</html>
