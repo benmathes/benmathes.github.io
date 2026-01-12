@@ -4,7 +4,12 @@
       "Bash(git checkout:*)",
       "Bash(python3:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(for file in ~/agenting/makezine/zine/*)",
+      "Bash(do ln -s \"$file\" .)",
+      "Bash(done)",
+      "Bash(git merge:*)"
     ]
   }
 }
