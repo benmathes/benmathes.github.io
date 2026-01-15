@@ -3,69 +3,238 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Name - Projects</title>
+    <title>Ben Mathes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        /* Basic styling for readability */
+        :root {
+            --bg: #fafafa;
+            --bg-secondary: #f0f0f0;
+            --text: #1a1a1a;
+            --text-muted: #666;
+            --accent: #0066cc;
+            --accent-hover: #0052a3;
+            --border: #e0e0e0;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #111;
+                --bg-secondary: #1a1a1a;
+                --text: #f0f0f0;
+                --text-muted: #999;
+                --accent: #4da6ff;
+                --accent-hover: #80c0ff;
+                --border: #333;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
-            font-family: 'Inter', sans-serif; /* Using Inter for a clean look */
-            margin: 40px auto; /* Centering content */
-            max-width: 600px; /* Limiting width for better readability */
-            color: #333; /* Dark gray text */
-            line-height: 1.6; /* Spacing for text */
-            background-color: #f9f9f9; /* Light background */
+            font-family: 'Space Grotesk', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            min-height: 100vh;
         }
-        h1, h2 {
-            margin-bottom: 0.5em; /* Spacing below headings */
+
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 80px 24px;
         }
-        a {
-            color: #007bff; /* Standard link blue */
-            text-decoration: none; /* No underline by default */
+
+        /* Bold intro */
+        .intro {
+            margin-bottom: 64px;
         }
-        a:hover {
-            text-decoration: underline; /* Underline on hover */
+
+        .intro h1 {
+            font-size: clamp(2.5rem, 8vw, 4rem);
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+            margin-bottom: 16px;
         }
-        ul {
-            list-style: none; /* No bullet points */
-            padding: 0; /* No default padding */
+
+        .intro h1 .wave {
+            display: inline-block;
+            transform-origin: 70% 70%;
+            animation: none;
+            cursor: default;
         }
-        li {
-            margin-bottom: 0.5em; /* Spacing between list items */
+
+        .intro h1 .wave:hover {
+            animation: wave 0.5s ease-in-out;
         }
+
+        @keyframes wave {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(20deg); }
+            75% { transform: rotate(-15deg); }
+        }
+
+        .intro .tagline {
+            font-size: 1.125rem;
+            color: var(--text-muted);
+            max-width: 400px;
+        }
+
+        /* Section styling */
+        section {
+            margin-bottom: 48px;
+        }
+
+        .section-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-label::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        /* Project list */
+        .projects {
+            list-style: none;
+        }
+
+        .projects li {
+            border-bottom: 1px solid var(--border);
+        }
+
+        .projects a {
+            display: block;
+            padding: 16px 0;
+            color: var(--text);
+            text-decoration: none;
+            font-size: 1.125rem;
+            font-weight: 400;
+            position: relative;
+            transition: padding-left 0.2s ease, color 0.2s ease;
+        }
+
+        .projects a::before {
+            content: '\2192';
+            position: absolute;
+            left: -20px;
+            opacity: 0;
+            transition: left 0.2s ease, opacity 0.2s ease;
+            color: var(--accent);
+        }
+
+        .projects a:hover {
+            padding-left: 24px;
+            color: var(--accent);
+        }
+
+        .projects a:hover::before {
+            left: 0;
+            opacity: 1;
+        }
+
+        /* Links section */
+        .links {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        .links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            position: relative;
+            transition: color 0.2s ease;
+        }
+
+        .links a::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: var(--accent);
+            transition: width 0.2s ease;
+        }
+
+        .links a:hover {
+            color: var(--accent);
+        }
+
+        .links a:hover::after {
+            width: 100%;
+        }
+
+        /* Footer */
         footer {
-            margin-top: 40px; /* Space above footer */
-            text-align: center; /* Centered footer text */
-            font-size: 0.8em; /* Smaller font for footer */
-            color: #777; /* Lighter gray for footer */
+            margin-top: 80px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .footer-grid {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .colophon {
+            font-size: 0.7rem;
+            opacity: 0.6;
         }
     </style>
 </head>
 <body>
-    <header>
-        <h1>Hi, I'm Ben</h1>
-        <p>A collection of my small, one-off projects.</p>
-    </header>
+    <div class="container">
+        <header class="intro">
+            <h1><span class="wave">Hi</span>, I'm Ben</h1>
+            <p class="tagline">I make small, one-off things. Sometimes they're useful.</p>
+        </header>
 
-    <section>
-        <h2>Projects</h2>
-        <ul>
-            <li><a href="/clear/index.html">CLEAR: Clear Letter on Equity and Remuneration</a></li>
-            <li><a href="/tech-oblique-strategies/index.html">Oblique Strategies for Tech</a></li>
-            <li><a href="/musical-scratchpad/index.html">Musical Looper Scratchpad</a></li>
-            <li><a href="/exercise-journal/index.html">Exercise Journal</a></li>
-        </ul>
-    </section>
+        <section>
+            <div class="section-label">Projects</div>
+            <ul class="projects">
+                <li><a href="/clear/index.html">CLEAR: Clear Letter on Equity and Remuneration</a></li>
+                <li><a href="/tech-oblique-strategies/index.html">Oblique Strategies for Tech</a></li>
+                <li><a href="/musical-scratchpad/index.html">Musical Looper Scratchpad</a></li>
+                <li><a href="/exercise-journal/index.html">Exercise Journal</a></li>
+            </ul>
+        </section>
 
-    <section>
-        <h2>About</h2>
-        Me on:
-        <ul>
-          <li><a href="https://github.com/benmathes">GitHub</a></li>
-          <li><a href="https://x.com/ben_mathes">twitter</a></li>
-        </ul>
-    </section>
+        <section>
+            <div class="section-label">Elsewhere</div>
+            <div class="links">
+                <a href="https://github.com/benmathes">GitHub</a>
+                <a href="https://x.com/ben_mathes">Twitter</a>
+            </div>
+        </section>
 
-    <footer>
-        <p>&copy; 2025 [Your Name]</p>
-    </footer>
+        <footer>
+            <div class="footer-grid">
+                <span>&copy; 2025 Ben Mathes</span>
+                <span class="colophon">Set in Space Grotesk</span>
+            </div>
+        </footer>
+    </div>
 </body>
 </html>
