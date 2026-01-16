@@ -9,7 +9,25 @@
       "Bash(for file in ~/agenting/makezine/zine/*)",
       "Bash(do ln -s \"$file\" .)",
       "Bash(done)",
-      "Bash(git merge:*)"
+      "Bash(git merge:*)",
+      "Bash(git -C /Users/benmathes/coding/benmathes.github.io status)",
+      "Bash(git -C /Users/benmathes/coding/benmathes.github.io add clear/ index.html)",
+      "Bash(git -C /Users/benmathes/coding/benmathes.github.io log --oneline -3)",
+      "Bash(git -C /Users/benmathes/coding/benmathes.github.io commit -m \"$\\(cat <<''EOF''\nAdd CLEAR equity calculator to projects\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git -C /Users/benmathes/coding/benmathes.github.io push)",
+      "Bash(git -C /Users/benmathes/coding/benmathes.github.io checkout -b site_styling_redesign)",
+      "Bash(git -C /Users/benmathes/coding/benmathes.github.io add index.html)",
+      "Bash(git -C /Users/benmathes/coding/benmathes.github.io commit -m \"$\\(cat <<''EOF''\nRedesign site with Swiss/Bauhaus-inspired styling\n\n- Space Grotesk typography with bold headlines\n- Dark/light mode via system preference\n- Subtle hover animations \\(waving Hi, sliding arrows, expanding underlines\\)\n- High contrast cool color palette\n- Clean grid layout with section dividers\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git -C /Users/benmathes/coding/benmathes.github.io push -u origin site_styling_redesign)",
+      "Bash(git -C /Users/benmathes/coding/benmathes.github.io add images/ index.html)",
+      "Bash(git -C /Users/benmathes/coding/benmathes.github.io commit -m \"$\\(cat <<''EOF''\nAdd headshot photo to intro section\n\n- Slightly desaturated by default, full color on hover\n- Subtle rotation animation on hover\n- Responsive flex layout with text\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git -C /Users/benmathes/coding/benmathes.github.io checkout master)",
+      "Bash(git -C /Users/benmathes/coding/benmathes.github.io merge site_styling_redesign)",
+      "Bash(git -C /Users/benmathes/coding/benmathes.github.io branch:*)",
+      "Bash(git -C /Users/benmathes/coding/benmathes.github.io push -u origin main)",
+      "Bash(gh repo edit:*)",
+      "Bash(git -C /Users/benmathes/coding/benmathes.github.io push origin --delete master)",
+      "Bash(git -C /Users/benmathes/coding/benmathes.github.io push origin --delete site_styling_redesign)"
     ]
   }
 }
