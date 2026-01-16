@@ -86,6 +86,32 @@
             max-width: 400px;
         }
 
+        .intro-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        .intro-text {
+            flex: 1;
+            min-width: 280px;
+        }
+
+        .headshot {
+            width: 120px;
+            height: 120px;
+            border-radius: 8px;
+            object-fit: cover;
+            filter: grayscale(20%);
+            transition: filter 0.3s ease, transform 0.3s ease;
+        }
+
+        .headshot:hover {
+            filter: grayscale(0%);
+            transform: rotate(2deg);
+        }
+
         /* Section styling */
         section {
             margin-bottom: 48px;
@@ -207,8 +233,13 @@
 <body>
     <div class="container">
         <header class="intro">
-            <h1><span class="wave">Hi</span>, I'm Ben</h1>
-            <p class="tagline">I make small, one-off things. Sometimes they're useful.</p>
+            <div class="intro-header">
+                <div class="intro-text">
+                    <h1><span class="wave">Hi</span>, I'm Ben</h1>
+                    <p class="tagline">I make small, one-off things. Sometimes they're useful.</p>
+                </div>
+                <img src="/images/ben.jpg" alt="Ben Mathes" class="headshot">
+            </div>
         </header>
 
         <section>
