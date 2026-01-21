@@ -70,6 +70,11 @@
             background-color: #10b981; /* Tailwind emerald-500 */
         }
 
+        /* Specific styles for Applied Card */
+        .card-front.applied {
+            background-color: #8b5cf6; /* Tailwind violet-500 */
+        }
+
         .card-back {
             background-color: #f9fafb; /* Tailwind gray-50 */
             color: #1f2937; /* Tailwind gray-800 */
@@ -92,16 +97,38 @@
             overflow-y: auto; /* Enable scrolling for long content */
         }
 
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .loading-dots {
+            animation: pulse 1.5s ease-in-out infinite;
+            color: #9ca3af;
+        }
+
         /* Responsive adjustments for layout */
-        @media (min-width: 1024px) {
+        @media (min-width: 1400px) {
             .main-container {
                 display: flex;
-                flex-direction: row; /* Three columns on larger screens */
+                flex-direction: row; /* Four columns on larger screens */
                 justify-content: center;
                 align-items: flex-start;
                 flex-wrap: nowrap; /* Prevent wrapping on large screens */
                 width: 100%;
-                max-width: 1200px; /* Limit max width for better readability */
+                max-width: 1400px; /* Wider for 4 cards */
+            }
+        }
+
+        @media (max-width: 1399px) and (min-width: 1024px) {
+            .main-container {
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                align-items: flex-start;
+                flex-wrap: wrap; /* Allow wrapping for 4 cards */
+                width: 100%;
+                max-width: 1200px;
             }
         }
 
@@ -146,7 +173,7 @@
         }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center p-4">
+<body class="bg-gray-100 min-h-screen flex flex-col items-center justify-start p-4 pt-8">
 
     <div class="main-container flex flex-wrap justify-center items-start">
         <!-- Original Oblique Strategies Card -->
@@ -198,6 +225,42 @@
                     </div>
                     <div id="productBusinessStrategyLong" class="strategy-long">
                         <!-- Long description will appear here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Applied to Your Problem Card -->
+        <div class="card-container">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">Applied to You</h2>
+            <!-- User Problem Input -->
+            <div class="w-full mb-4">
+                <textarea
+                    id="userProblem"
+                    rows="2"
+                    placeholder="What's your problem or question?"
+                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 resize-none text-gray-800"
+                    style="width: 300px;"
+                ></textarea>
+                <div class="mt-2">
+                    <button id="settingsToggle" class="text-xs text-gray-400 hover:text-gray-600">⚙️ API Key</button>
+                    <div id="settingsPanel" class="hidden mt-2">
+                        <input type="password" id="groqApiKey" placeholder="Groq API key (gsk_...)"
+                            class="w-full px-2 py-1 text-xs border border-gray-300 rounded" style="width: 300px;" />
+                        <p class="text-xs text-gray-400 mt-1">Free at <a href="https://console.groq.com" target="_blank" class="text-purple-500 hover:underline">console.groq.com</a></p>
+                    </div>
+                </div>
+            </div>
+            <div id="appliedCard" class="card">
+                <div class="card-face card-front applied">
+                    Click Me!
+                </div>
+                <div id="appliedCardBack" class="card-face card-back">
+                    <div id="appliedStrategyShort" class="strategy-short">
+                        <!-- Applied insight title -->
+                    </div>
+                    <div id="appliedStrategyLong" class="strategy-long">
+                        <!-- Applied insight will appear here -->
                     </div>
                 </div>
             </div>
@@ -815,6 +878,7 @@
                 originalCard.classList.remove('flipped');
                 technicalCard.classList.remove('flipped');
                 productBusinessCard.classList.remove('flipped');
+                appliedCard.classList.remove('flipped');
                 // Wait for the cards to flip back (half the transition duration)
                 setTimeout(showNextSynchronizedStrategy, 400);
             } else {
@@ -856,10 +920,151 @@
         technicalCard.addEventListener('click', displayAllNewStrategies);
         productBusinessCard.addEventListener('click', displayAllNewStrategies);
 
+        // ========== NEW: User Problem & LLM Integration ==========
+
+        // DOM references for new elements
+        const userProblemInput = document.getElementById('userProblem');
+        const appliedCard = document.getElementById('appliedCard');
+        const appliedStrategyShortElement = document.getElementById('appliedStrategyShort');
+        const appliedStrategyLongElement = document.getElementById('appliedStrategyLong');
+        const settingsToggle = document.getElementById('settingsToggle');
+        const settingsPanel = document.getElementById('settingsPanel');
+        const groqApiKeyInput = document.getElementById('groqApiKey');
+
+        // Settings toggle
+        settingsToggle.addEventListener('click', () => settingsPanel.classList.toggle('hidden'));
+
+        // Load/save API key from localStorage
+        if (localStorage.getItem('groqApiKey')) groqApiKeyInput.value = localStorage.getItem('groqApiKey');
+        groqApiKeyInput.addEventListener('change', () => localStorage.setItem('groqApiKey', groqApiKeyInput.value.trim()));
+
+        // Add click listener to applied card
+        appliedCard.addEventListener('click', displayAllNewStrategies);
+
+        // Flip cards on Enter key in the text input
+        userProblemInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                displayAllNewStrategies();
+            }
+        });
+
+        // Call Groq API to apply strategy to user's problem
+        async function applyStrategyWithLLM(strategy, userProblem) {
+            const apiKey = localStorage.getItem('groqApiKey');
+            if (!apiKey) return null;
+
+            const prompt = `You are helping someone apply an Oblique Strategy creative prompt to their problem.
+
+The oblique strategy is: "${strategy.original.short}"
+The technical interpretation is: "${strategy.technical.short}"
+Their problem/situation is: "${userProblem}"
+
+In 2-3 sentences, give a creative, thought-provoking insight on how this strategy applies to their specific situation. Be specific to their problem. Don't repeat the strategy - just give the actionable insight.`;
+
+            try {
+                const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: 'llama-3.1-8b-instant',
+                        messages: [
+                            { role: 'user', content: prompt }
+                        ],
+                        max_tokens: 200,
+                        temperature: 0.8
+                    })
+                });
+
+                if (!response.ok) {
+                    console.error('Groq API error:', response.status);
+                    return null;
+                }
+
+                const data = await response.json();
+                return data.choices[0]?.message?.content?.trim() || null;
+            } catch (error) {
+                console.error('Error calling Groq API:', error);
+                return null;
+            }
+        }
+
+        // Modified function to apply strategy with LLM
+        async function applyStrategyToProblem(strategy) {
+            const userProblem = userProblemInput.value.trim();
+            const apiKey = localStorage.getItem('groqApiKey');
+
+            if (!userProblem) {
+                appliedStrategyShortElement.textContent = "Your Insight";
+                appliedStrategyLongElement.textContent = "Enter a problem above, then press Enter.";
+                return;
+            }
+
+            if (!apiKey) {
+                appliedStrategyShortElement.textContent = "API Key Needed";
+                appliedStrategyLongElement.textContent = "Click '⚙️ API Key' to add your free Groq key.";
+                return;
+            }
+
+            // Show loading state
+            appliedStrategyShortElement.textContent = "Thinking...";
+            appliedStrategyLongElement.innerHTML = '<span class="loading-dots">Applying strategy to your problem...</span>';
+
+            // Call LLM
+            const insight = await applyStrategyWithLLM(strategy, userProblem);
+
+            if (insight) {
+                appliedStrategyShortElement.textContent = "Your Insight";
+                appliedStrategyLongElement.textContent = insight;
+            } else {
+                appliedStrategyShortElement.textContent = "Your Insight";
+                appliedStrategyLongElement.textContent = "Could not generate insight. Try again!";
+            }
+        }
+
+        // Store current strategy for LLM application
+        let currentStrategy = null;
+
+        // Modify the original showNextSynchronizedStrategy to also trigger LLM
+        const originalShowNextSynchronizedStrategy = showNextSynchronizedStrategy;
+        showNextSynchronizedStrategy = function() {
+            if (availableStrategies.length === 0) {
+                availableStrategies = [...masterStrategies];
+                shuffleArray(availableStrategies);
+            }
+
+            const nextStrategy = availableStrategies.pop();
+            currentStrategy = nextStrategy;
+
+            // Update Original Card
+            originalStrategyShortElement.textContent = nextStrategy.original.short;
+            originalStrategyLongElement.textContent = nextStrategy.original.long;
+
+            // Update Technical Card
+            technicalStrategyShortElement.textContent = nextStrategy.technical.short;
+            technicalStrategyLongElement.textContent = nextStrategy.technical.long;
+
+            // Update Product/Business Card
+            productBusinessStrategyShortElement.textContent = nextStrategy.productBusiness.short;
+            productBusinessStrategyLongElement.textContent = nextStrategy.productBusiness.long;
+
+            // Flip all cards including the applied card
+            originalCard.classList.add('flipped');
+            technicalCard.classList.add('flipped');
+            productBusinessCard.classList.add('flipped');
+            appliedCard.classList.add('flipped');
+
+            // Apply strategy with LLM if user has entered a problem
+            applyStrategyToProblem(nextStrategy);
+        };
+
         // Initial display of strategies on load
         window.onload = () => {
             setTimeout(() => {
-                showNextSynchronizedStrategy(); // Call this directly after small delay for initial state
+                showNextSynchronizedStrategy();
             }, 500);
         };
     </script>
