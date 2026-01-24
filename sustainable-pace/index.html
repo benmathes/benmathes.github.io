@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sustainable Pace | Burnout Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Georgia', serif; }
+        .slider-container input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #e5e7eb;
+        }
+        .slider-container input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #8b5cf6;
+            cursor: pointer;
+        }
+        .energy-bar {
+            transition: all 0.3s ease;
+        }
+        .week-block {
+            transition: all 0.2s ease;
+        }
+        .week-block:hover {
+            transform: scale(1.1);
+        }
+        @keyframes pulse-warning {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .warning-pulse {
+            animation: pulse-warning 1s infinite;
+        }
+        .flame {
+            display: inline-block;
+            animation: flicker 0.3s infinite;
+        }
+        @keyframes flicker {
+            0%, 100% { transform: scale(1) rotate(-2deg); }
+            50% { transform: scale(1.1) rotate(2deg); }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-purple-50 to-indigo-100 min-h-screen p-8">
+    <div class="max-w-5xl mx-auto">
+        <h1 class="text-4xl font-bold text-purple-900 mb-2">The Burnout Equation</h1>
+        <p class="text-purple-700 mb-8 text-lg">Watch how unsustainable pace compounds over time</p>
+
+        <div class="grid md:grid-cols-2 gap-6">
+            <!-- Controls Panel -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Your Work Pattern</h2>
+
+                <!-- Weekly Hours -->
+                <div class="mb-6">
+                    <div class="flex justify-between mb-2">
+                        <label class="text-gray-700 font-medium">Weekly Hours</label>
+                        <span id="hours-display" class="text-purple-600 font-bold">45</span>
+                    </div>
+                    <div class="slider-container">
+                        <input type="range" id="weekly-hours" min="30" max="80" value="45">
+                    </div>
+                    <div class="flex justify-between text-xs text-gray-400 mt-1">
+                        <span>Part-time (30)</span>
+                        <span>Crunch (80)</span>
+                    </div>
+                </div>
+
+                <!-- Recovery Quality -->
+                <div class="mb-6">
+                    <div class="flex justify-between mb-2">
+                        <label class="text-gray-700 font-medium">Weekend Recovery</label>
+                        <span id="recovery-display" class="text-purple-600 font-bold">60%</span>
+                    </div>
+                    <div class="slider-container">
+                        <input type="range" id="recovery" min="0" max="100" value="60">
+                    </div>
+                    <div class="flex justify-between text-xs text-gray-400 mt-1">
+                        <span>Work weekends</span>
+                        <span>Full disconnect</span>
+                    </div>
+                </div>
+
+                <!-- Sleep Quality -->
+                <div class="mb-6">
+                    <div class="flex justify-between mb-2">
+                        <label class="text-gray-700 font-medium">Sleep Quality</label>
+                        <span id="sleep-display" class="text-purple-600 font-bold">70%</span>
+                    </div>
+                    <div class="slider-container">
+                        <input type="range" id="sleep" min="20" max="100" value="70">
+                    </div>
+                    <div class="flex justify-between text-xs text-gray-400 mt-1">
+                        <span>Exhausted (5h)</span>
+                        <span>Well-rested (8h)</span>
+                    </div>
+                </div>
+
+                <!-- Support System -->
+                <div class="mb-6">
+                    <div class="flex justify-between mb-2">
+                        <label class="text-gray-700 font-medium">Support & Boundaries</label>
+                        <span id="support-display" class="text-purple-600 font-bold">50%</span>
+                    </div>
+                    <div class="slider-container">
+                        <input type="range" id="support" min="0" max="100" value="50">
+                    </div>
+                    <div class="flex justify-between text-xs text-gray-400 mt-1">
+                        <span>Always available</span>
+                        <span>Strong boundaries</span>
+                    </div>
+                </div>
+
+                <!-- Work Meaning -->
+                <div class="mb-6">
+                    <div class="flex justify-between mb-2">
+                        <label class="text-gray-700 font-medium">Work Meaning/Autonomy</label>
+                        <span id="meaning-display" class="text-purple-600 font-bold">60%</span>
+                    </div>
+                    <div class="slider-container">
+                        <input type="range" id="meaning" min="0" max="100" value="60">
+                    </div>
+                    <div class="flex justify-between text-xs text-gray-400 mt-1">
+                        <span>Pointless grind</span>
+                        <span>Purpose-driven</span>
+                    </div>
+                </div>
+
+                <!-- Scenario Presets -->
+                <div class="border-t pt-4 mt-4">
+                    <p class="text-sm text-gray-500 mb-3">Quick Presets:</p>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="setPreset('startup')" class="px-3 py-1 text-sm rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200">Startup Crunch</button>
+                        <button onclick="setPreset('sustainable')" class="px-3 py-1 text-sm rounded-full bg-green-100 text-green-700 hover:bg-green-200">Sustainable</button>
+                        <button onclick="setPreset('bigtech')" class="px-3 py-1 text-sm rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200">Big Tech</button>
+                        <button onclick="setPreset('agency')" class="px-3 py-1 text-sm rounded-full bg-orange-100 text-orange-700 hover:bg-orange-200">Agency Life</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Energy & Metrics Panel -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Your Energy Over Time</h2>
+
+                <!-- Current State -->
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-gray-600">Current Energy</span>
+                        <span id="energy-value" class="text-2xl font-bold text-purple-600">100%</span>
+                    </div>
+                    <div class="w-full h-6 bg-gray-100 rounded-full overflow-hidden">
+                        <div id="energy-bar" class="energy-bar h-full bg-gradient-to-r from-green-400 to-green-500 rounded-full" style="width: 100%"></div>
+                    </div>
+                </div>
+
+                <!-- Weekly Breakdown -->
+                <div class="mb-6">
+                    <div class="flex justify-between text-sm text-gray-500 mb-2">
+                        <span>Week-by-week (52 weeks)</span>
+                        <span id="burnout-week" class="text-red-500 font-medium"></span>
+                    </div>
+                    <div id="week-grid" class="grid grid-cols-13 gap-1"></div>
+                </div>
+
+                <!-- Key Metrics -->
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="bg-gray-50 rounded-lg p-3">
+                        <div class="text-sm text-gray-500">Sustainable for</div>
+                        <div id="sustainable-weeks" class="text-xl font-bold text-purple-600">∞ weeks</div>
+                    </div>
+                    <div class="bg-gray-50 rounded-lg p-3">
+                        <div class="text-sm text-gray-500">Net weekly drain</div>
+                        <div id="net-drain" class="text-xl font-bold text-red-500">-0%</div>
+                    </div>
+                    <div class="bg-gray-50 rounded-lg p-3">
+                        <div class="text-sm text-gray-500">Output quality</div>
+                        <div id="output-quality" class="text-xl font-bold text-blue-500">100%</div>
+                    </div>
+                    <div class="bg-gray-50 rounded-lg p-3">
+                        <div class="text-sm text-gray-500">Health risk</div>
+                        <div id="health-risk" class="text-xl font-bold text-green-500">Low</div>
+                    </div>
+                </div>
+
+                <!-- Warning Zone -->
+                <div id="warning-zone" class="hidden p-4 rounded-lg bg-red-50 border-l-4 border-red-400">
+                    <p class="text-red-800 font-medium" id="warning-text"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- The Math Section -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mt-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">The Burnout Math</h2>
+
+            <div class="grid md:grid-cols-3 gap-6">
+                <!-- Energy Drain -->
+                <div class="bg-purple-50 rounded-lg p-4">
+                    <h3 class="font-semibold text-purple-800 mb-2">Weekly Energy Cost</h3>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Base work drain:</span>
+                            <span id="base-drain" class="text-purple-700 font-medium">-40%</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Overtime penalty:</span>
+                            <span id="overtime-penalty" class="text-purple-700 font-medium">-5%</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Meaning buffer:</span>
+                            <span id="meaning-buffer" class="text-green-600 font-medium">+6%</span>
+                        </div>
+                        <div class="flex justify-between border-t pt-2 mt-2">
+                            <span class="text-gray-800 font-medium">Total drain:</span>
+                            <span id="total-drain" class="text-purple-800 font-bold">-39%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Energy Recovery -->
+                <div class="bg-green-50 rounded-lg p-4">
+                    <h3 class="font-semibold text-green-800 mb-2">Weekend Recovery</h3>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Rest recovery:</span>
+                            <span id="rest-recovery" class="text-green-700 font-medium">+30%</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Sleep bonus:</span>
+                            <span id="sleep-bonus" class="text-green-700 font-medium">+14%</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Support bonus:</span>
+                            <span id="support-bonus" class="text-green-700 font-medium">+5%</span>
+                        </div>
+                        <div class="flex justify-between border-t pt-2 mt-2">
+                            <span class="text-gray-800 font-medium">Total recovery:</span>
+                            <span id="total-recovery" class="text-green-800 font-bold">+49%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Net Result -->
+                <div id="net-result-box" class="bg-blue-50 rounded-lg p-4">
+                    <h3 class="font-semibold text-blue-800 mb-2">Net Weekly Change</h3>
+                    <div class="text-center py-4">
+                        <div id="net-change" class="text-4xl font-bold text-blue-600">+10%</div>
+                        <div id="trajectory" class="text-sm text-gray-600 mt-2">Energy building over time</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Insights Section -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mt-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">What the Research Shows</h2>
+
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="space-y-4">
+                    <div class="flex items-start gap-3">
+                        <span class="text-purple-500 text-xl">📊</span>
+                        <div>
+                            <p class="text-gray-700"><strong>After 50 hours/week</strong>, productivity per hour drops sharply. At 60+ hours, you produce less total work than at 40 hours.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="text-purple-500 text-xl">🔋</span>
+                        <div>
+                            <p class="text-gray-700"><strong>Recovery is non-linear.</strong> One day off after burnout doesn't restore a week of overwork. It takes 3-4x longer to recover than to deplete.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="text-purple-500 text-xl">💡</span>
+                        <div>
+                            <p class="text-gray-700"><strong>Meaning is protective.</strong> Engaged, purposeful work depletes energy slower than meaningless grind at the same hours.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <div class="flex items-start gap-3">
+                        <span class="text-purple-500 text-xl">😴</span>
+                        <div>
+                            <p class="text-gray-700"><strong>Sleep is compound interest.</strong> Each hour of sleep debt accumulates. You can't "catch up" on weekends.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="text-purple-500 text-xl">🎯</span>
+                        <div>
+                            <p class="text-gray-700"><strong>Burnout is invisible until it isn't.</strong> You feel fine right up until you don't. By then, recovery takes months.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="text-purple-500 text-xl">⚡</span>
+                        <div>
+                            <p class="text-gray-700"><strong>Sustainable pace wins.</strong> Teams that maintain 40-hour weeks outperform crunch teams over any period longer than 3 weeks.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dynamic Commentary -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mt-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Your Situation</h2>
+            <div id="commentary" class="prose text-gray-700">
+                <p>Adjust the sliders above to see how different work patterns affect your energy over time.</p>
+            </div>
+        </div>
+
+        <p class="text-center text-purple-600 mt-8 text-sm">
+            Based on research from "Dying for a Paycheck" (Pfeffer), "Rest" (Pang), and Maslach Burnout Inventory studies
+        </p>
+    </div>
+
+    <script>
+        const sliders = {
+            hours: document.getElementById('weekly-hours'),
+            recovery: document.getElementById('recovery'),
+            sleep: document.getElementById('sleep'),
+            support: document.getElementById('support'),
+            meaning: document.getElementById('meaning')
+        };
+
+        const displays = {
+            hours: document.getElementById('hours-display'),
+            recovery: document.getElementById('recovery-display'),
+            sleep: document.getElementById('sleep-display'),
+            support: document.getElementById('support-display'),
+            meaning: document.getElementById('meaning-display')
+        };
+
+        const presets = {
+            startup: { hours: 65, recovery: 30, sleep: 50, support: 20, meaning: 80 },
+            sustainable: { hours: 40, recovery: 80, sleep: 85, support: 70, meaning: 65 },
+            bigtech: { hours: 50, recovery: 60, sleep: 70, support: 50, meaning: 55 },
+            agency: { hours: 55, recovery: 40, sleep: 55, support: 35, meaning: 45 }
+        };
+
+        function setPreset(name) {
+            const preset = presets[name];
+            Object.keys(preset).forEach(key => {
+                sliders[key].value = preset[key];
+            });
+            updateSimulation();
+        }
+
+        function calculateEnergy() {
+            const hours = parseInt(sliders.hours.value);
+            const recovery = parseInt(sliders.recovery.value);
+            const sleep = parseInt(sliders.sleep.value);
+            const support = parseInt(sliders.support.value);
+            const meaning = parseInt(sliders.meaning.value);
+
+            // Base drain increases with hours (non-linear after 40)
+            let baseDrain = 40; // Base 40% drain for 40 hours
+            if (hours > 40) {
+                // Each hour over 40 costs increasingly more
+                const overtime = hours - 40;
+                baseDrain += overtime * 1.5 + Math.pow(overtime / 10, 2) * 5;
+            } else {
+                // Under 40 hours, less drain
+                baseDrain = hours * 1;
+            }
+
+            // Meaning reduces effective drain (up to 15% reduction)
+            const meaningBuffer = meaning * 0.15;
+
+            // Total drain
+            const totalDrain = Math.max(baseDrain - meaningBuffer, 10);
+
+            // Recovery calculation
+            const baseRecovery = recovery * 0.5; // Weekend recovery
+            const sleepBonus = sleep * 0.2; // Daily sleep compounds
+            const supportBonus = support * 0.1; // Boundaries help
+
+            const totalRecovery = baseRecovery + sleepBonus + supportBonus;
+
+            // Net change
+            const netChange = totalRecovery - totalDrain;
+
+            // Overtime penalty (separate multiplier for extreme hours)
+            const overtimePenalty = hours > 50 ? (hours - 50) * 2 : 0;
+
+            return {
+                baseDrain: -baseDrain,
+                overtimePenalty: -overtimePenalty,
+                meaningBuffer: meaningBuffer,
+                totalDrain: -(totalDrain + overtimePenalty),
+                restRecovery: baseRecovery,
+                sleepBonus: sleepBonus,
+                supportBonus: supportBonus,
+                totalRecovery: totalRecovery,
+                netChange: netChange - overtimePenalty
+            };
+        }
+
+        function simulateYear(netChange) {
+            const weeks = [];
+            let energy = 100;
+            let burnoutWeek = null;
+
+            for (let i = 0; i < 52; i++) {
+                // Apply weekly change
+                energy = Math.max(0, Math.min(100, energy + netChange));
+
+                // Detect burnout (below 20%)
+                if (energy <= 20 && burnoutWeek === null) {
+                    burnoutWeek = i + 1;
+                }
+
+                weeks.push({
+                    week: i + 1,
+                    energy: energy
+                });
+            }
+
+            return { weeks, burnoutWeek };
+        }
+
+        function getEnergyColor(energy) {
+            if (energy >= 70) return 'bg-green-400';
+            if (energy >= 50) return 'bg-yellow-400';
+            if (energy >= 30) return 'bg-orange-400';
+            return 'bg-red-500';
+        }
+
+        function updateSimulation() {
+            // Update displays
+            displays.hours.textContent = sliders.hours.value;
+            displays.recovery.textContent = sliders.recovery.value + '%';
+            displays.sleep.textContent = sliders.sleep.value + '%';
+            displays.support.textContent = sliders.support.value + '%';
+            displays.meaning.textContent = sliders.meaning.value + '%';
+
+            const calc = calculateEnergy();
+            const { weeks, burnoutWeek } = simulateYear(calc.netChange);
+
+            // Update math breakdown
+            document.getElementById('base-drain').textContent = calc.baseDrain.toFixed(0) + '%';
+            document.getElementById('overtime-penalty').textContent = calc.overtimePenalty.toFixed(0) + '%';
+            document.getElementById('meaning-buffer').textContent = '+' + calc.meaningBuffer.toFixed(0) + '%';
+            document.getElementById('total-drain').textContent = calc.totalDrain.toFixed(0) + '%';
+
+            document.getElementById('rest-recovery').textContent = '+' + calc.restRecovery.toFixed(0) + '%';
+            document.getElementById('sleep-bonus').textContent = '+' + calc.sleepBonus.toFixed(0) + '%';
+            document.getElementById('support-bonus').textContent = '+' + calc.supportBonus.toFixed(0) + '%';
+            document.getElementById('total-recovery').textContent = '+' + calc.totalRecovery.toFixed(0) + '%';
+
+            const netChangeEl = document.getElementById('net-change');
+            const netResultBox = document.getElementById('net-result-box');
+            const trajectoryEl = document.getElementById('trajectory');
+
+            if (calc.netChange >= 0) {
+                netChangeEl.textContent = '+' + calc.netChange.toFixed(0) + '%';
+                netChangeEl.className = 'text-4xl font-bold text-green-600';
+                netResultBox.className = 'bg-green-50 rounded-lg p-4';
+                trajectoryEl.textContent = 'Energy building over time ↗';
+            } else {
+                netChangeEl.textContent = calc.netChange.toFixed(0) + '%';
+                netChangeEl.className = 'text-4xl font-bold text-red-600';
+                netResultBox.className = 'bg-red-50 rounded-lg p-4';
+                trajectoryEl.textContent = 'Energy depleting over time ↘';
+            }
+
+            // Update metrics
+            const finalEnergy = weeks[51].energy;
+            document.getElementById('energy-value').textContent = finalEnergy.toFixed(0) + '%';
+
+            const energyBar = document.getElementById('energy-bar');
+            energyBar.style.width = finalEnergy + '%';
+            energyBar.className = `energy-bar h-full rounded-full ${getEnergyColor(finalEnergy)}`;
+
+            // Sustainable weeks
+            const sustainableEl = document.getElementById('sustainable-weeks');
+            if (calc.netChange >= 0) {
+                sustainableEl.textContent = '∞ weeks';
+                sustainableEl.className = 'text-xl font-bold text-green-600';
+            } else if (burnoutWeek) {
+                sustainableEl.textContent = burnoutWeek + ' weeks';
+                sustainableEl.className = 'text-xl font-bold text-red-600';
+            } else {
+                sustainableEl.textContent = '52+ weeks';
+                sustainableEl.className = 'text-xl font-bold text-yellow-600';
+            }
+
+            // Net drain
+            const netDrainEl = document.getElementById('net-drain');
+            if (calc.netChange >= 0) {
+                netDrainEl.textContent = '+' + calc.netChange.toFixed(0) + '%';
+                netDrainEl.className = 'text-xl font-bold text-green-500';
+            } else {
+                netDrainEl.textContent = calc.netChange.toFixed(0) + '%';
+                netDrainEl.className = 'text-xl font-bold text-red-500';
+            }
+
+            // Output quality (degrades with low energy)
+            const avgEnergy = weeks.reduce((a, w) => a + w.energy, 0) / 52;
+            const outputQuality = Math.min(100, avgEnergy + 10);
+            document.getElementById('output-quality').textContent = outputQuality.toFixed(0) + '%';
+
+            // Health risk
+            const healthRiskEl = document.getElementById('health-risk');
+            const hours = parseInt(sliders.hours.value);
+            if (hours > 55 && finalEnergy < 40) {
+                healthRiskEl.textContent = 'Critical';
+                healthRiskEl.className = 'text-xl font-bold text-red-600';
+            } else if (hours > 50 || finalEnergy < 50) {
+                healthRiskEl.textContent = 'High';
+                healthRiskEl.className = 'text-xl font-bold text-orange-500';
+            } else if (calc.netChange < 0) {
+                healthRiskEl.textContent = 'Moderate';
+                healthRiskEl.className = 'text-xl font-bold text-yellow-500';
+            } else {
+                healthRiskEl.textContent = 'Low';
+                healthRiskEl.className = 'text-xl font-bold text-green-500';
+            }
+
+            // Burnout week display
+            const burnoutWeekEl = document.getElementById('burnout-week');
+            if (burnoutWeek) {
+                burnoutWeekEl.innerHTML = '<span class="flame">🔥</span> Burnout at week ' + burnoutWeek;
+            } else if (calc.netChange < 0 && finalEnergy < 40) {
+                burnoutWeekEl.textContent = '⚠️ Approaching burnout';
+            } else {
+                burnoutWeekEl.textContent = '';
+            }
+
+            // Week grid
+            const weekGrid = document.getElementById('week-grid');
+            weekGrid.innerHTML = '';
+            weeks.forEach(w => {
+                const block = document.createElement('div');
+                block.className = `week-block w-full h-4 rounded ${getEnergyColor(w.energy)} cursor-pointer`;
+                block.title = `Week ${w.week}: ${w.energy.toFixed(0)}% energy`;
+                weekGrid.appendChild(block);
+            });
+
+            // Warning zone
+            const warningZone = document.getElementById('warning-zone');
+            const warningText = document.getElementById('warning-text');
+
+            if (burnoutWeek && burnoutWeek < 12) {
+                warningZone.classList.remove('hidden');
+                warningZone.classList.add('warning-pulse');
+                warningText.innerHTML = `<span class="flame">🔥</span> At this pace, you'll burn out in ${burnoutWeek} weeks. This isn't sustainable even short-term.`;
+            } else if (burnoutWeek && burnoutWeek < 26) {
+                warningZone.classList.remove('hidden');
+                warningZone.classList.remove('warning-pulse');
+                warningText.textContent = `⚠️ You'll hit burnout around week ${burnoutWeek}. This might feel okay now, but it won't last.`;
+            } else if (calc.netChange < -5) {
+                warningZone.classList.remove('hidden');
+                warningZone.classList.remove('warning-pulse');
+                warningText.textContent = `⚡ You're slowly depleting. Fine for a sprint, dangerous as a default.`;
+            } else {
+                warningZone.classList.add('hidden');
+            }
+
+            // Update commentary
+            updateCommentary(calc, burnoutWeek, finalEnergy);
+        }
+
+        function updateCommentary(calc, burnoutWeek, finalEnergy) {
+            const hours = parseInt(sliders.hours.value);
+            const recovery = parseInt(sliders.recovery.value);
+            const sleep = parseInt(sliders.sleep.value);
+            const meaning = parseInt(sliders.meaning.value);
+
+            let commentary = '';
+
+            if (calc.netChange >= 5) {
+                commentary = `<p><strong>This is sustainable.</strong> You're building energy reserves over time, which gives you resilience for inevitable crunch periods. This is what "sustainable pace" looks like.</p>`;
+            } else if (calc.netChange >= 0) {
+                commentary = `<p><strong>You're at equilibrium.</strong> You're recovering roughly what you spend, which is stable but leaves no margin for error. A bad week or unexpected project could tip you into deficit.</p>`;
+            } else if (burnoutWeek && burnoutWeek < 26) {
+                commentary = `<p><strong>This pace has an expiration date.</strong> You're spending more than you're recovering, and the math doesn't lie. Week ${burnoutWeek} is when the bill comes due.</p>`;
+            } else {
+                commentary = `<p><strong>You're running a slow deficit.</strong> It won't feel dangerous day-to-day, but you're gradually depleting reserves you'll need when things get hard.</p>`;
+            }
+
+            // Add specific observations
+            if (hours > 55) {
+                commentary += `<p>At ${hours} hours/week, research shows your per-hour output is actually <em>lower</em> than if you worked 45 hours. You're not getting more done — you're just feeling more tired.</p>`;
+            }
+
+            if (sleep < 60) {
+                commentary += `<p>Sleep debt is real and cumulative. At ${sleep}% sleep quality, you're losing cognitive function that no amount of coffee can replace.</p>`;
+            }
+
+            if (recovery < 40 && hours > 50) {
+                commentary += `<p>Working long hours <em>and</em> not disconnecting on weekends is the fastest path to burnout. You need at least one to survive.</p>`;
+            }
+
+            if (meaning > 70 && calc.netChange < 0) {
+                commentary += `<p>Loving your work is protective — but not infinitely. Passionate people are <em>more</em> susceptible to burnout because they don't feel it coming.</p>`;
+            }
+
+            document.getElementById('commentary').innerHTML = commentary;
+        }
+
+        // Attach listeners
+        Object.values(sliders).forEach(slider => {
+            slider.addEventListener('input', updateSimulation);
+        });
+
+        // Initialize
+        updateSimulation();
+    </script>
+</body>
+</html>

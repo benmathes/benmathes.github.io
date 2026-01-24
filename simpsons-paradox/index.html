@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simpson's Paradox</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Source Serif 4', serif; }
+        .mono { font-family: 'Space Grotesk', sans-serif; }
+
+        .slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #e5e7eb;
+            outline: none;
+        }
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #1f2937;
+            cursor: pointer;
+            border: 3px solid white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        .section-break {
+            border: none;
+            height: 2px;
+            background: linear-gradient(to right, transparent, #d1d5db, transparent);
+            margin: 2rem 0;
+        }
+
+        .bar {
+            transition: width 0.4s ease;
+            height: 32px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+        }
+
+        .toggle-btn {
+            transition: all 0.2s ease;
+        }
+        .toggle-btn.active {
+            background: #1f2937;
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-stone-50 text-stone-800">
+    <div class="max-w-3xl mx-auto px-6 py-12">
+        <header class="mb-8">
+            <h1 class="mono text-3xl font-bold text-stone-900 mb-2">Simpson's Paradox</h1>
+            <p class="text-stone-600 mono text-sm">When aggregated data tells the opposite story</p>
+        </header>
+
+        <article class="space-y-6">
+            <p>
+                A treatment can help <em>every group</em> individually, yet appear to <em>hurt</em> when you
+                combine the groups. This isn't a statistical trick—it's a fundamental feature of how
+                aggregation can reverse conclusions.
+            </p>
+
+            <p class="text-stone-600">
+                Adjust the parameters and watch the paradox emerge. The treatment helps both groups, but hurts overall.
+            </p>
+
+            <hr class="section-break">
+
+            <!-- Scenario -->
+            <div class="bg-white rounded-xl border border-stone-200 p-6 mb-6">
+                <h2 class="mono text-lg font-semibold text-stone-900 mb-4">Scenario: Medical Treatment Trial</h2>
+                <p class="text-stone-600 text-sm">
+                    Two hospitals test a new treatment. Hospital A treats mostly mild cases. Hospital B treats mostly severe cases.
+                    The treatment helps patients at <em>both</em> hospitals. But when you combine the data...
+                </p>
+            </div>
+
+            <!-- Controls -->
+            <div class="bg-white rounded-xl border border-stone-200 p-6 space-y-5">
+                <h3 class="mono font-semibold text-stone-700 mb-4">Hospital A (Mild Cases)</h3>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="mono text-xs text-stone-500">Treated patients</label>
+                        <div class="flex items-center gap-2 mt-1">
+                            <input type="range" id="a_treated" class="slider flex-1" min="10" max="200" value="20" oninput="runSimulation()">
+                            <span id="a_treated_val" class="mono text-sm w-12 text-right">20</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="mono text-xs text-stone-500">Control patients</label>
+                        <div class="flex items-center gap-2 mt-1">
+                            <input type="range" id="a_control" class="slider flex-1" min="10" max="200" value="100" oninput="runSimulation()">
+                            <span id="a_control_val" class="mono text-sm w-12 text-right">100</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="mono text-xs text-stone-500">Treated recovery rate</label>
+                        <div class="flex items-center gap-2 mt-1">
+                            <input type="range" id="a_treated_rate" class="slider flex-1" min="50" max="100" value="85" oninput="runSimulation()">
+                            <span id="a_treated_rate_val" class="mono text-sm w-12 text-right">85%</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="mono text-xs text-stone-500">Control recovery rate</label>
+                        <div class="flex items-center gap-2 mt-1">
+                            <input type="range" id="a_control_rate" class="slider flex-1" min="50" max="100" value="80" oninput="runSimulation()">
+                            <span id="a_control_rate_val" class="mono text-sm w-12 text-right">80%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl border border-stone-200 p-6 space-y-5">
+                <h3 class="mono font-semibold text-stone-700 mb-4">Hospital B (Severe Cases)</h3>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="mono text-xs text-stone-500">Treated patients</label>
+                        <div class="flex items-center gap-2 mt-1">
+                            <input type="range" id="b_treated" class="slider flex-1" min="10" max="200" value="100" oninput="runSimulation()">
+                            <span id="b_treated_val" class="mono text-sm w-12 text-right">100</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="mono text-xs text-stone-500">Control patients</label>
+                        <div class="flex items-center gap-2 mt-1">
+                            <input type="range" id="b_control" class="slider flex-1" min="10" max="200" value="20" oninput="runSimulation()">
+                            <span id="b_control_val" class="mono text-sm w-12 text-right">20</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="mono text-xs text-stone-500">Treated recovery rate</label>
+                        <div class="flex items-center gap-2 mt-1">
+                            <input type="range" id="b_treated_rate" class="slider flex-1" min="10" max="80" value="50" oninput="runSimulation()">
+                            <span id="b_treated_rate_val" class="mono text-sm w-12 text-right">50%</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="mono text-xs text-stone-500">Control recovery rate</label>
+                        <div class="flex items-center gap-2 mt-1">
+                            <input type="range" id="b_control_rate" class="slider flex-1" min="10" max="80" value="40" oninput="runSimulation()">
+                            <span id="b_control_rate_val" class="mono text-sm w-12 text-right">40%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="section-break">
+
+            <!-- View Toggle -->
+            <div class="flex justify-center gap-2 mb-6">
+                <button id="btnSeparate" class="toggle-btn mono text-sm px-4 py-2 border border-stone-300 rounded-lg active" onclick="setView('separate')">
+                    📊 By Hospital
+                </button>
+                <button id="btnCombined" class="toggle-btn mono text-sm px-4 py-2 border border-stone-300 rounded-lg" onclick="setView('combined')">
+                    📈 Combined
+                </button>
+            </div>
+
+            <!-- Results Visualization -->
+            <div id="separateView" class="space-y-6">
+                <!-- Hospital A -->
+                <div class="bg-blue-50 rounded-xl p-6 border border-blue-200">
+                    <h3 class="mono font-semibold text-blue-900 mb-4">Hospital A (Mild Cases)</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-blue-700">Treated</span>
+                                <span id="a_treated_result" class="mono font-semibold text-blue-900">85%</span>
+                            </div>
+                            <div class="bg-blue-200 rounded-full h-8 overflow-hidden">
+                                <div id="a_treated_bar" class="bar bg-blue-500 text-white text-xs mono" style="width: 85%">
+                                    <span id="a_treated_count">17/20</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-blue-700">Control</span>
+                                <span id="a_control_result" class="mono font-semibold text-blue-900">80%</span>
+                            </div>
+                            <div class="bg-blue-200 rounded-full h-8 overflow-hidden">
+                                <div id="a_control_bar" class="bar bg-blue-400 text-white text-xs mono" style="width: 80%">
+                                    <span id="a_control_count">80/100</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="a_verdict" class="mt-4 p-3 rounded-lg bg-emerald-100 border border-emerald-300">
+                        <span class="mono text-sm font-semibold text-emerald-800">✓ Treatment helps (+5%)</span>
+                    </div>
+                </div>
+
+                <!-- Hospital B -->
+                <div class="bg-amber-50 rounded-xl p-6 border border-amber-200">
+                    <h3 class="mono font-semibold text-amber-900 mb-4">Hospital B (Severe Cases)</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-amber-700">Treated</span>
+                                <span id="b_treated_result" class="mono font-semibold text-amber-900">50%</span>
+                            </div>
+                            <div class="bg-amber-200 rounded-full h-8 overflow-hidden">
+                                <div id="b_treated_bar" class="bar bg-amber-500 text-white text-xs mono" style="width: 50%">
+                                    <span id="b_treated_count">50/100</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-amber-700">Control</span>
+                                <span id="b_control_result" class="mono font-semibold text-amber-900">40%</span>
+                            </div>
+                            <div class="bg-amber-200 rounded-full h-8 overflow-hidden">
+                                <div id="b_control_bar" class="bar bg-amber-400 text-white text-xs mono" style="width: 40%">
+                                    <span id="b_control_count">8/20</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="b_verdict" class="mt-4 p-3 rounded-lg bg-emerald-100 border border-emerald-300">
+                        <span class="mono text-sm font-semibold text-emerald-800">✓ Treatment helps (+10%)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Combined View -->
+            <div id="combinedView" class="hidden">
+                <div class="bg-purple-50 rounded-xl p-6 border border-purple-200">
+                    <h3 class="mono font-semibold text-purple-900 mb-4">Combined (All Patients)</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-purple-700">All Treated</span>
+                                <span id="total_treated_result" class="mono font-semibold text-purple-900">55%</span>
+                            </div>
+                            <div class="bg-purple-200 rounded-full h-8 overflow-hidden">
+                                <div id="total_treated_bar" class="bar bg-purple-500 text-white text-xs mono" style="width: 55%">
+                                    <span id="total_treated_count">67/120</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-purple-700">All Control</span>
+                                <span id="total_control_result" class="mono font-semibold text-purple-900">73%</span>
+                            </div>
+                            <div class="bg-purple-200 rounded-full h-8 overflow-hidden">
+                                <div id="total_control_bar" class="bar bg-purple-400 text-white text-xs mono" style="width: 73%">
+                                    <span id="total_control_count">88/120</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="total_verdict" class="mt-4 p-3 rounded-lg bg-red-100 border border-red-300">
+                        <span class="mono text-sm font-semibold text-red-800">✗ Treatment appears to HURT (-18%)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- The Paradox Box -->
+            <div id="paradoxBox" class="p-6 rounded-xl border-2 border-red-200 bg-red-50">
+                <h3 class="mono font-semibold text-red-900 mb-2">🤯 The Paradox</h3>
+                <p id="paradoxText" class="text-red-800"></p>
+            </div>
+
+            <hr class="section-break">
+
+            <!-- Explanation -->
+            <h2 class="mono text-lg font-semibold text-stone-900">Why this happens</h2>
+
+            <div class="space-y-4 text-stone-700">
+                <p>
+                    The key is <strong>unequal group sizes</strong> combined with <strong>different base rates</strong>.
+                </p>
+                <p>
+                    Hospital A (mild cases, high recovery) mostly uses the control. Hospital B (severe cases, low recovery)
+                    mostly uses the treatment. When you combine them, the treatment group is dominated by severe cases,
+                    making it look worse overall.
+                </p>
+                <p>
+                    The treatment genuinely helps at both hospitals! But the aggregated data hides this because it
+                    confounds treatment effect with case severity.
+                </p>
+            </div>
+
+            <hr class="section-break">
+
+            <!-- Real Examples -->
+            <h2 class="mono text-lg font-semibold text-stone-900">Real-world examples</h2>
+
+            <div class="space-y-4">
+                <div class="flex gap-4 items-start p-4 bg-white rounded-lg border border-stone-200">
+                    <span class="text-2xl">🎓</span>
+                    <div>
+                        <h3 class="mono font-semibold text-stone-900">UC Berkeley Admissions (1973)</h3>
+                        <p class="text-sm text-stone-600">Overall, men were admitted at higher rates than women. But in nearly every department, women had equal or higher admission rates. Women applied more to competitive departments.</p>
+                    </div>
+                </div>
+                <div class="flex gap-4 items-start p-4 bg-white rounded-lg border border-stone-200">
+                    <span class="text-2xl">⚾</span>
+                    <div>
+                        <h3 class="mono font-semibold text-stone-900">Baseball Batting Averages</h3>
+                        <p class="text-sm text-stone-600">Player A can have a higher batting average than Player B in both halves of the season, yet a lower average for the full season. It depends on how many at-bats they had in each half.</p>
+                    </div>
+                </div>
+                <div class="flex gap-4 items-start p-4 bg-white rounded-lg border border-stone-200">
+                    <span class="text-2xl">💊</span>
+                    <div>
+                        <h3 class="mono font-semibold text-stone-900">Kidney Stone Treatment</h3>
+                        <p class="text-sm text-stone-600">Treatment A had better success for small stones AND large stones, but Treatment B looked better overall—because A was used more on large (harder) stones.</p>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <footer class="mt-12 pt-8 border-t border-stone-200 text-center">
+            <a href="/" class="mono text-sm text-stone-500 hover:text-stone-700">← Back to Projects</a>
+            <p class="mt-4 text-xs text-stone-400">
+                Explorable format inspired by <a href="https://worrydream.com/ExplorableExplanations/" class="underline hover:text-stone-600">Bret Victor</a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        let currentView = 'separate';
+
+        function setView(view) {
+            currentView = view;
+            document.getElementById('btnSeparate').classList.toggle('active', view === 'separate');
+            document.getElementById('btnCombined').classList.toggle('active', view === 'combined');
+            document.getElementById('separateView').classList.toggle('hidden', view === 'combined');
+            document.getElementById('combinedView').classList.toggle('hidden', view === 'separate');
+        }
+
+        function runSimulation() {
+            // Get all values
+            const a_treated = parseInt(document.getElementById('a_treated').value);
+            const a_control = parseInt(document.getElementById('a_control').value);
+            const a_treated_rate = parseInt(document.getElementById('a_treated_rate').value);
+            const a_control_rate = parseInt(document.getElementById('a_control_rate').value);
+
+            const b_treated = parseInt(document.getElementById('b_treated').value);
+            const b_control = parseInt(document.getElementById('b_control').value);
+            const b_treated_rate = parseInt(document.getElementById('b_treated_rate').value);
+            const b_control_rate = parseInt(document.getElementById('b_control_rate').value);
+
+            // Update displays
+            document.getElementById('a_treated_val').textContent = a_treated;
+            document.getElementById('a_control_val').textContent = a_control;
+            document.getElementById('a_treated_rate_val').textContent = a_treated_rate + '%';
+            document.getElementById('a_control_rate_val').textContent = a_control_rate + '%';
+
+            document.getElementById('b_treated_val').textContent = b_treated;
+            document.getElementById('b_control_val').textContent = b_control;
+            document.getElementById('b_treated_rate_val').textContent = b_treated_rate + '%';
+            document.getElementById('b_control_rate_val').textContent = b_control_rate + '%';
+
+            // Calculate outcomes
+            const a_treated_success = Math.round(a_treated * a_treated_rate / 100);
+            const a_control_success = Math.round(a_control * a_control_rate / 100);
+            const b_treated_success = Math.round(b_treated * b_treated_rate / 100);
+            const b_control_success = Math.round(b_control * b_control_rate / 100);
+
+            // Hospital A results
+            document.getElementById('a_treated_result').textContent = a_treated_rate + '%';
+            document.getElementById('a_control_result').textContent = a_control_rate + '%';
+            document.getElementById('a_treated_bar').style.width = a_treated_rate + '%';
+            document.getElementById('a_control_bar').style.width = a_control_rate + '%';
+            document.getElementById('a_treated_count').textContent = `${a_treated_success}/${a_treated}`;
+            document.getElementById('a_control_count').textContent = `${a_control_success}/${a_control}`;
+
+            const a_diff = a_treated_rate - a_control_rate;
+            const a_verdict = document.getElementById('a_verdict');
+            if (a_diff > 0) {
+                a_verdict.className = 'mt-4 p-3 rounded-lg bg-emerald-100 border border-emerald-300';
+                a_verdict.innerHTML = `<span class="mono text-sm font-semibold text-emerald-800">✓ Treatment helps (+${a_diff}%)</span>`;
+            } else if (a_diff < 0) {
+                a_verdict.className = 'mt-4 p-3 rounded-lg bg-red-100 border border-red-300';
+                a_verdict.innerHTML = `<span class="mono text-sm font-semibold text-red-800">✗ Treatment hurts (${a_diff}%)</span>`;
+            } else {
+                a_verdict.className = 'mt-4 p-3 rounded-lg bg-stone-100 border border-stone-300';
+                a_verdict.innerHTML = `<span class="mono text-sm font-semibold text-stone-800">— No difference</span>`;
+            }
+
+            // Hospital B results
+            document.getElementById('b_treated_result').textContent = b_treated_rate + '%';
+            document.getElementById('b_control_result').textContent = b_control_rate + '%';
+            document.getElementById('b_treated_bar').style.width = b_treated_rate + '%';
+            document.getElementById('b_control_bar').style.width = b_control_rate + '%';
+            document.getElementById('b_treated_count').textContent = `${b_treated_success}/${b_treated}`;
+            document.getElementById('b_control_count').textContent = `${b_control_success}/${b_control}`;
+
+            const b_diff = b_treated_rate - b_control_rate;
+            const b_verdict = document.getElementById('b_verdict');
+            if (b_diff > 0) {
+                b_verdict.className = 'mt-4 p-3 rounded-lg bg-emerald-100 border border-emerald-300';
+                b_verdict.innerHTML = `<span class="mono text-sm font-semibold text-emerald-800">✓ Treatment helps (+${b_diff}%)</span>`;
+            } else if (b_diff < 0) {
+                b_verdict.className = 'mt-4 p-3 rounded-lg bg-red-100 border border-red-300';
+                b_verdict.innerHTML = `<span class="mono text-sm font-semibold text-red-800">✗ Treatment hurts (${b_diff}%)</span>`;
+            } else {
+                b_verdict.className = 'mt-4 p-3 rounded-lg bg-stone-100 border border-stone-300';
+                b_verdict.innerHTML = `<span class="mono text-sm font-semibold text-stone-800">— No difference</span>`;
+            }
+
+            // Combined results
+            const total_treated = a_treated + b_treated;
+            const total_control = a_control + b_control;
+            const total_treated_success = a_treated_success + b_treated_success;
+            const total_control_success = a_control_success + b_control_success;
+            const total_treated_rate = Math.round(total_treated_success / total_treated * 100);
+            const total_control_rate = Math.round(total_control_success / total_control * 100);
+
+            document.getElementById('total_treated_result').textContent = total_treated_rate + '%';
+            document.getElementById('total_control_result').textContent = total_control_rate + '%';
+            document.getElementById('total_treated_bar').style.width = total_treated_rate + '%';
+            document.getElementById('total_control_bar').style.width = total_control_rate + '%';
+            document.getElementById('total_treated_count').textContent = `${total_treated_success}/${total_treated}`;
+            document.getElementById('total_control_count').textContent = `${total_control_success}/${total_control}`;
+
+            const total_diff = total_treated_rate - total_control_rate;
+            const total_verdict = document.getElementById('total_verdict');
+            if (total_diff > 0) {
+                total_verdict.className = 'mt-4 p-3 rounded-lg bg-emerald-100 border border-emerald-300';
+                total_verdict.innerHTML = `<span class="mono text-sm font-semibold text-emerald-800">✓ Treatment appears to HELP (+${total_diff}%)</span>`;
+            } else if (total_diff < 0) {
+                total_verdict.className = 'mt-4 p-3 rounded-lg bg-red-100 border border-red-300';
+                total_verdict.innerHTML = `<span class="mono text-sm font-semibold text-red-800">✗ Treatment appears to HURT (${total_diff}%)</span>`;
+            } else {
+                total_verdict.className = 'mt-4 p-3 rounded-lg bg-stone-100 border border-stone-300';
+                total_verdict.innerHTML = `<span class="mono text-sm font-semibold text-stone-800">— No apparent difference</span>`;
+            }
+
+            // Check for paradox
+            const paradoxBox = document.getElementById('paradoxBox');
+            const paradoxText = document.getElementById('paradoxText');
+
+            const hasParadox = (a_diff > 0 && b_diff > 0 && total_diff < 0) ||
+                              (a_diff < 0 && b_diff < 0 && total_diff > 0);
+
+            if (hasParadox) {
+                paradoxBox.className = 'p-6 rounded-xl border-2 border-red-200 bg-red-50';
+                if (a_diff > 0 && b_diff > 0 && total_diff < 0) {
+                    paradoxText.textContent = `The treatment helps at Hospital A (+${a_diff}%) AND Hospital B (+${b_diff}%), but appears to hurt overall (${total_diff}%). This is Simpson's Paradox! The aggregated data gives the opposite conclusion from the disaggregated data.`;
+                } else {
+                    paradoxText.textContent = `The treatment hurts at both hospitals, but appears to help overall. The aggregated data reverses the true effect.`;
+                }
+            } else {
+                paradoxBox.className = 'p-6 rounded-xl border-2 border-emerald-200 bg-emerald-50';
+                paradoxText.textContent = `No paradox with current settings. The combined data agrees with the individual hospitals. Try making the group sizes more unequal (e.g., Hospital A mostly control, Hospital B mostly treated).`;
+            }
+        }
+
+        // Initialize
+        runSimulation();
+    </script>
+</body>
+</html>

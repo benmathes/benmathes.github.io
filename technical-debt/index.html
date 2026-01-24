@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Technical Debt Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Source Serif 4', serif; }
+        .mono { font-family: 'Space Grotesk', sans-serif; }
+
+        .slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #e5e7eb;
+            outline: none;
+        }
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #1f2937;
+            cursor: pointer;
+            border: 3px solid white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        .section-break {
+            border: none;
+            height: 2px;
+            background: linear-gradient(to right, transparent, #d1d5db, transparent);
+            margin: 2rem 0;
+        }
+
+        .velocity-bar {
+            transition: width 0.3s ease, background 0.3s ease;
+        }
+
+        .debt-meter {
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-stone-50 text-stone-800">
+    <div class="max-w-3xl mx-auto px-6 py-12">
+        <header class="mb-8">
+            <h1 class="mono text-3xl font-bold text-stone-900 mb-2">Technical Debt Simulator</h1>
+            <p class="text-stone-600 mono text-sm">"Just this once" adds up to bankruptcy</p>
+        </header>
+
+        <article class="space-y-6">
+            <p>
+                Technical debt is like financial debt: taking shortcuts now means paying interest later.
+                The interest comes as slower development, more bugs, and eventually—if left unchecked—total paralysis.
+            </p>
+
+            <p class="text-stone-600">
+                Adjust the parameters and watch how your codebase health evolves over
+                <span class="mono font-semibold">52 sprints (1 year)</span>.
+            </p>
+
+            <hr class="section-break">
+
+            <!-- Controls -->
+            <div class="bg-white rounded-xl border border-stone-200 p-6 space-y-5">
+                <h2 class="mono text-lg font-semibold text-stone-900 mb-4">Your Development Environment</h2>
+
+                <div>
+                    <div class="flex justify-between mb-2">
+                        <label class="mono text-sm font-semibold text-stone-700">🏃 Velocity Pressure</label>
+                        <span id="pressureValue" class="mono text-sm text-stone-500">50%</span>
+                    </div>
+                    <input type="range" id="pressure" class="slider" min="0" max="100" value="50" oninput="runSimulation()">
+                    <p class="text-xs text-stone-400 mt-1">How hard you're pushed to ship fast. Higher = more shortcuts.</p>
+                </div>
+
+                <div>
+                    <div class="flex justify-between mb-2">
+                        <label class="mono text-sm font-semibold text-stone-700">🧹 Refactoring Time</label>
+                        <span id="refactorValue" class="mono text-sm text-stone-500">20%</span>
+                    </div>
+                    <input type="range" id="refactor" class="slider" min="0" max="50" value="20" oninput="runSimulation()">
+                    <p class="text-xs text-stone-400 mt-1">Percentage of each sprint dedicated to paying down debt.</p>
+                </div>
+
+                <div>
+                    <div class="flex justify-between mb-2">
+                        <label class="mono text-sm font-semibold text-stone-700">👥 Team Size</label>
+                        <span id="teamValue" class="mono text-sm text-stone-500">5</span>
+                    </div>
+                    <input type="range" id="team" class="slider" min="1" max="20" value="5" oninput="runSimulation()">
+                    <p class="text-xs text-stone-400 mt-1">Larger teams accumulate debt faster (coordination overhead).</p>
+                </div>
+
+                <div>
+                    <div class="flex justify-between mb-2">
+                        <label class="mono text-sm font-semibold text-stone-700">📅 Starting Debt</label>
+                        <span id="startDebtValue" class="mono text-sm text-stone-500">10%</span>
+                    </div>
+                    <input type="range" id="startDebt" class="slider" min="0" max="50" value="10" oninput="runSimulation()">
+                    <p class="text-xs text-stone-400 mt-1">How much debt the codebase already has.</p>
+                </div>
+            </div>
+
+            <hr class="section-break">
+
+            <!-- Visualization -->
+            <div class="bg-white rounded-xl border border-stone-200 p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="mono text-lg font-semibold text-stone-900">Velocity & Debt Over Time</h2>
+                    <button onclick="runSimulation()" class="mono text-sm px-3 py-1 bg-stone-100 hover:bg-stone-200 rounded">
+                        Re-run ↻
+                    </button>
+                </div>
+
+                <svg id="chart" viewBox="0 0 600 250" class="w-full bg-stone-50 rounded-lg mb-4">
+                    <!-- Grid -->
+                    <g stroke="#e5e7eb" stroke-width="1">
+                        <line x1="50" y1="220" x2="580" y2="220"></line>
+                        <line x1="50" y1="170" x2="580" y2="170" stroke-dasharray="4,4"></line>
+                        <line x1="50" y1="120" x2="580" y2="120" stroke-dasharray="4,4"></line>
+                        <line x1="50" y1="70" x2="580" y2="70" stroke-dasharray="4,4"></line>
+                        <line x1="50" y1="20" x2="580" y2="20" stroke-dasharray="4,4"></line>
+                        <line x1="50" y1="20" x2="50" y2="220"></line>
+                    </g>
+
+                    <!-- Bankruptcy line -->
+                    <line x1="50" y1="45" x2="580" y2="45" stroke="#ef4444" stroke-width="2" stroke-dasharray="8,4"></line>
+                    <text x="55" y="40" font-size="10" fill="#ef4444" class="mono">BANKRUPTCY</text>
+
+                    <!-- Labels -->
+                    <text x="315" y="245" text-anchor="middle" font-size="11" fill="#6b7280" class="mono">Sprints →</text>
+
+                    <!-- Lines -->
+                    <path id="velocityLine" fill="none" stroke="#10b981" stroke-width="3"></path>
+                    <path id="debtLine" fill="none" stroke="#ef4444" stroke-width="3"></path>
+                </svg>
+
+                <div class="flex justify-center gap-8">
+                    <div class="flex items-center gap-2">
+                        <div class="w-4 h-1 bg-emerald-500 rounded"></div>
+                        <span class="mono text-sm text-stone-600">Velocity</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-4 h-1 bg-red-500 rounded"></div>
+                        <span class="mono text-sm text-stone-600">Debt Level</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current State -->
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-white rounded-xl border border-stone-200 p-4">
+                    <h3 class="mono text-sm font-semibold text-stone-700 mb-3">Sprint 1 (Start)</h3>
+                    <div class="space-y-2">
+                        <div class="flex justify-between">
+                            <span class="text-sm text-stone-600">Velocity</span>
+                            <span id="startVelocity" class="mono font-semibold text-emerald-600">100%</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-sm text-stone-600">Debt</span>
+                            <span id="startDebtDisplay" class="mono font-semibold text-red-600">10%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl border border-stone-200 p-4">
+                    <h3 class="mono text-sm font-semibold text-stone-700 mb-3">Sprint 52 (End of Year)</h3>
+                    <div class="space-y-2">
+                        <div class="flex justify-between">
+                            <span class="text-sm text-stone-600">Velocity</span>
+                            <span id="endVelocity" class="mono font-semibold text-emerald-600">100%</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-sm text-stone-600">Debt</span>
+                            <span id="endDebt" class="mono font-semibold text-red-600">10%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total Output -->
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-emerald-50 rounded-xl p-5 border border-emerald-200">
+                    <div class="mono text-xs text-emerald-600 uppercase mb-1">Total Output (Year)</div>
+                    <div id="totalOutput" class="mono text-3xl font-bold text-emerald-800">0</div>
+                    <div class="text-sm text-emerald-600 mt-1">story points delivered</div>
+                </div>
+                <div id="bankruptcyBox" class="bg-stone-100 rounded-xl p-5 border border-stone-200">
+                    <div class="mono text-xs text-stone-500 uppercase mb-1">Bankruptcy Risk</div>
+                    <div id="bankruptcyStatus" class="mono text-xl font-bold text-stone-800">Low</div>
+                    <div id="bankruptcySprint" class="text-sm text-stone-500 mt-1"></div>
+                </div>
+            </div>
+
+            <hr class="section-break">
+
+            <!-- Insight -->
+            <div id="insightBox" class="p-6 rounded-xl border-2 border-amber-200 bg-amber-50">
+                <h3 class="mono font-semibold text-amber-900 mb-2">What's happening</h3>
+                <p id="insightText" class="text-amber-800"></p>
+            </div>
+
+            <hr class="section-break">
+
+            <!-- The Math -->
+            <h2 class="mono text-lg font-semibold text-stone-900">The debt dynamics</h2>
+
+            <div class="space-y-4 text-stone-700">
+                <p>
+                    <strong>Debt accumulates</strong> when you take shortcuts. The rate depends on velocity pressure
+                    and team size (more people = more coordination debt).
+                </p>
+                <p>
+                    <strong>Debt has interest</strong>: existing debt makes new development slower and generates more debt.
+                    This is the compounding effect that makes technical debt so dangerous.
+                </p>
+                <p>
+                    <strong>Refactoring pays it down</strong>, but you're racing against the interest rate.
+                    If you don't allocate enough time, debt grows exponentially until velocity hits zero.
+                </p>
+                <p>
+                    <strong>Bankruptcy</strong> is when debt exceeds 100%—the codebase becomes unmaintainable.
+                    At that point, you're choosing between a rewrite or abandonment.
+                </p>
+            </div>
+        </article>
+
+        <footer class="mt-12 pt-8 border-t border-stone-200 text-center">
+            <a href="/" class="mono text-sm text-stone-500 hover:text-stone-700">← Back to Projects</a>
+            <p class="mt-4 text-xs text-stone-400">
+                Based on <a href="https://adventurecapital.substack.com" class="underline hover:text-stone-600">Adventure Capital</a>
+                · Explorable format inspired by <a href="https://worrydream.com/ExplorableExplanations/" class="underline hover:text-stone-600">Bret Victor</a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        function runSimulation() {
+            const pressure = parseInt(document.getElementById('pressure').value);
+            const refactor = parseInt(document.getElementById('refactor').value);
+            const team = parseInt(document.getElementById('team').value);
+            const startDebt = parseInt(document.getElementById('startDebt').value);
+
+            // Update displays
+            document.getElementById('pressureValue').textContent = pressure + '%';
+            document.getElementById('refactorValue').textContent = refactor + '%';
+            document.getElementById('teamValue').textContent = team;
+            document.getElementById('startDebtValue').textContent = startDebt + '%';
+
+            // Simulation parameters
+            const sprints = 52;
+            const baseVelocity = 100;
+
+            // Debt accumulation rate (per sprint)
+            const debtAccumRate = (pressure / 100) * 0.03 * (1 + team * 0.1);
+
+            // Interest rate on existing debt
+            const interestRate = 0.02;
+
+            // Refactoring effectiveness
+            const refactorEffect = refactor / 100 * 0.8;
+
+            let debt = startDebt / 100;
+            let velocity = baseVelocity * (1 - debt * 0.8);
+
+            const velocityData = [];
+            const debtData = [];
+            let totalOutput = 0;
+            let bankruptcySprint = null;
+
+            for (let i = 0; i < sprints; i++) {
+                // Record current state
+                velocityData.push(velocity);
+                debtData.push(debt * 100);
+
+                // Output this sprint
+                totalOutput += velocity * (1 - refactor / 100);
+
+                // Debt dynamics
+                const newDebt = debtAccumRate * (1 + debt); // More debt = faster accumulation
+                const interest = debt * interestRate;
+                const paydown = refactorEffect * (velocity / baseVelocity);
+
+                debt = Math.max(0, debt + newDebt + interest - paydown);
+
+                // Velocity is inversely related to debt
+                velocity = baseVelocity * Math.max(0, 1 - debt * 0.8);
+
+                // Check bankruptcy
+                if (debt >= 1 && bankruptcySprint === null) {
+                    bankruptcySprint = i + 1;
+                }
+            }
+
+            // Draw chart
+            drawChart(velocityData, debtData);
+
+            // Update stats
+            document.getElementById('startVelocity').textContent = Math.round(velocityData[0]) + '%';
+            document.getElementById('startDebtDisplay').textContent = Math.round(debtData[0]) + '%';
+            document.getElementById('endVelocity').textContent = Math.round(velocityData[velocityData.length - 1]) + '%';
+            document.getElementById('endDebt').textContent = Math.round(debtData[debtData.length - 1]) + '%';
+            document.getElementById('totalOutput').textContent = Math.round(totalOutput);
+
+            // Bankruptcy status
+            const bankruptcyBox = document.getElementById('bankruptcyBox');
+            const bankruptcyStatus = document.getElementById('bankruptcyStatus');
+            const bankruptcySprintEl = document.getElementById('bankruptcySprint');
+
+            if (bankruptcySprint) {
+                bankruptcyBox.className = 'bg-red-50 rounded-xl p-5 border border-red-200';
+                bankruptcyStatus.textContent = 'BANKRUPT';
+                bankruptcyStatus.className = 'mono text-xl font-bold text-red-800';
+                bankruptcySprintEl.textContent = `Collapsed at sprint ${bankruptcySprint}`;
+                bankruptcySprintEl.className = 'text-sm text-red-600 mt-1';
+            } else if (debtData[debtData.length - 1] > 70) {
+                bankruptcyBox.className = 'bg-amber-50 rounded-xl p-5 border border-amber-200';
+                bankruptcyStatus.textContent = 'HIGH RISK';
+                bankruptcyStatus.className = 'mono text-xl font-bold text-amber-800';
+                bankruptcySprintEl.textContent = 'Approaching unsustainable levels';
+                bankruptcySprintEl.className = 'text-sm text-amber-600 mt-1';
+            } else {
+                bankruptcyBox.className = 'bg-emerald-50 rounded-xl p-5 border border-emerald-200';
+                bankruptcyStatus.textContent = 'Sustainable';
+                bankruptcyStatus.className = 'mono text-xl font-bold text-emerald-800';
+                bankruptcySprintEl.textContent = 'Debt under control';
+                bankruptcySprintEl.className = 'text-sm text-emerald-600 mt-1';
+            }
+
+            // Update insight
+            updateInsight(pressure, refactor, velocityData, debtData, totalOutput, bankruptcySprint);
+        }
+
+        function drawChart(velocityData, debtData) {
+            const width = 600, height = 250;
+            const padding = { left: 50, right: 20, top: 20, bottom: 30 };
+
+            const xScale = (i) => padding.left + (i / 52) * (width - padding.left - padding.right);
+            const yScale = (v) => height - padding.bottom - (v / 120) * (height - padding.top - padding.bottom);
+
+            const velocityPath = velocityData.map((v, i) =>
+                (i === 0 ? 'M' : 'L') + xScale(i) + ',' + yScale(v)
+            ).join(' ');
+
+            const debtPath = debtData.map((d, i) =>
+                (i === 0 ? 'M' : 'L') + xScale(i) + ',' + yScale(d)
+            ).join(' ');
+
+            document.getElementById('velocityLine').setAttribute('d', velocityPath);
+            document.getElementById('debtLine').setAttribute('d', debtPath);
+        }
+
+        function updateInsight(pressure, refactor, velocityData, debtData, totalOutput, bankruptcySprint) {
+            const startV = velocityData[0];
+            const endV = velocityData[velocityData.length - 1];
+            const endDebt = debtData[debtData.length - 1];
+
+            let insight;
+
+            if (bankruptcySprint) {
+                insight = `With ${pressure}% velocity pressure and only ${refactor}% refactoring time, your codebase collapsed at sprint ${bankruptcySprint}. After that point, velocity dropped to near-zero. Total output: ${Math.round(totalOutput)} points—far less than a sustainable pace would have produced.`;
+            } else if (endDebt > 70) {
+                insight = `You're accumulating debt faster than you're paying it down. Velocity has dropped from ${Math.round(startV)}% to ${Math.round(endV)}%. If this continues, bankruptcy is likely next year. Consider reducing pressure or increasing refactoring time.`;
+            } else if (endDebt > startV && refactor < 15) {
+                insight = `Debt is growing but manageable—for now. Your ${refactor}% refactoring allocation is barely keeping up with the ${pressure}% velocity pressure. A small increase in pressure or decrease in refactoring could tip you into a debt spiral.`;
+            } else if (endV > startV) {
+                insight = `You've found a sustainable balance. Refactoring at ${refactor}% is paying down debt faster than you're accumulating it, so velocity is actually improving. Total yearly output: ${Math.round(totalOutput)} points.`;
+            } else {
+                insight = `Stable but not improving. Debt and velocity are roughly balanced at ${Math.round(endDebt)}% debt and ${Math.round(endV)}% velocity. You're treading water—not getting worse, but not getting better either.`;
+            }
+
+            document.getElementById('insightText').textContent = insight;
+        }
+
+        // Initialize
+        runSimulation();
+    </script>
+</body>
+</html>

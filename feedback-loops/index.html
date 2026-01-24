@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feedback Loop Playground</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Source Serif 4', serif; }
+        .mono { font-family: 'Space Grotesk', sans-serif; }
+
+        .slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #e5e7eb;
+            outline: none;
+        }
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #1f2937;
+            cursor: pointer;
+            border: 3px solid white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        .section-break {
+            border: none;
+            height: 2px;
+            background: linear-gradient(to right, transparent, #d1d5db, transparent);
+            margin: 2rem 0;
+        }
+
+        .loop-type {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .loop-type.selected {
+            border-color: #1f2937;
+            background: #f5f5f4;
+        }
+    </style>
+</head>
+<body class="bg-stone-50 text-stone-800">
+    <div class="max-w-3xl mx-auto px-6 py-12">
+        <header class="mb-8">
+            <h1 class="mono text-3xl font-bold text-stone-900 mb-2">Feedback Loop Playground</h1>
+            <p class="text-stone-600 mono text-sm">Positive loops explode, negative loops stabilize</p>
+        </header>
+
+        <article class="space-y-6">
+            <p>
+                Feedback loops are everywhere: thermostats, social media algorithms, economies, relationships.
+                Understanding them is key to understanding why systems behave the way they do.
+            </p>
+
+            <hr class="section-break">
+
+            <!-- Loop Type Selector -->
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div id="positiveLoop" class="loop-type p-4 rounded-xl border-2 border-stone-200 selected" onclick="selectLoop('positive')">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="text-2xl">🔄</span>
+                        <span class="mono font-semibold text-stone-900">Positive (Reinforcing)</span>
+                    </div>
+                    <p class="text-sm text-stone-600">More leads to more. Growth or collapse.</p>
+                    <p class="text-xs text-stone-400 mt-2">Examples: viral spread, compound interest, arms races, bank runs</p>
+                </div>
+                <div id="negativeLoop" class="loop-type p-4 rounded-xl border-2 border-stone-200" onclick="selectLoop('negative')">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="text-2xl">⚖️</span>
+                        <span class="mono font-semibold text-stone-900">Negative (Balancing)</span>
+                    </div>
+                    <p class="text-sm text-stone-600">Deviations get corrected. Seeks equilibrium.</p>
+                    <p class="text-xs text-stone-400 mt-2">Examples: thermostats, predator-prey, market prices, hunger</p>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="bg-white rounded-xl border border-stone-200 p-6 space-y-5">
+                <div>
+                    <div class="flex justify-between mb-2">
+                        <label class="mono text-sm font-semibold text-stone-700">Loop Strength (Gain)</label>
+                        <span id="gainValue" class="mono text-sm text-stone-500">1.05x</span>
+                    </div>
+                    <input type="range" id="gain" class="slider" min="80" max="150" value="105" oninput="runSimulation()">
+                    <p class="text-xs text-stone-400 mt-1">How much each cycle amplifies (positive) or corrects (negative)</p>
+                </div>
+
+                <div>
+                    <div class="flex justify-between mb-2">
+                        <label class="mono text-sm font-semibold text-stone-700">Delay in Loop</label>
+                        <span id="delayValue" class="mono text-sm text-stone-500">2 cycles</span>
+                    </div>
+                    <input type="range" id="delay" class="slider" min="0" max="10" value="2" oninput="runSimulation()">
+                    <p class="text-xs text-stone-400 mt-1">Time before feedback takes effect. Delays cause oscillation.</p>
+                </div>
+
+                <div>
+                    <div class="flex justify-between mb-2">
+                        <label class="mono text-sm font-semibold text-stone-700">External Shock at t=20</label>
+                        <span id="shockValue" class="mono text-sm text-stone-500">+10</span>
+                    </div>
+                    <input type="range" id="shock" class="slider" min="-50" max="50" value="10" oninput="runSimulation()">
+                    <p class="text-xs text-stone-400 mt-1">A sudden external disturbance to the system</p>
+                </div>
+
+                <div>
+                    <div class="flex justify-between mb-2">
+                        <label class="mono text-sm font-semibold text-stone-700">Target/Equilibrium Level</label>
+                        <span id="targetValue" class="mono text-sm text-stone-500">50</span>
+                    </div>
+                    <input type="range" id="target" class="slider" min="20" max="80" value="50" oninput="runSimulation()">
+                    <p class="text-xs text-stone-400 mt-1">For negative loops: the level the system tries to maintain</p>
+                </div>
+            </div>
+
+            <hr class="section-break">
+
+            <!-- Visualization -->
+            <div class="bg-white rounded-xl border border-stone-200 p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="mono text-lg font-semibold text-stone-900">System State Over Time</h2>
+                    <button onclick="runSimulation()" class="mono text-sm px-3 py-1 bg-stone-100 hover:bg-stone-200 rounded">
+                        Re-run ↻
+                    </button>
+                </div>
+
+                <svg id="chart" viewBox="0 0 600 250" class="w-full bg-stone-50 rounded-lg">
+                    <!-- Grid -->
+                    <g stroke="#e5e7eb" stroke-width="1">
+                        <line x1="50" y1="220" x2="580" y2="220"></line>
+                        <line x1="50" y1="170" x2="580" y2="170" stroke-dasharray="4,4"></line>
+                        <line x1="50" y1="120" x2="580" y2="120" stroke-dasharray="4,4"></line>
+                        <line x1="50" y1="70" x2="580" y2="70" stroke-dasharray="4,4"></line>
+                        <line x1="50" y1="20" x2="580" y2="20" stroke-dasharray="4,4"></line>
+                        <line x1="50" y1="20" x2="50" y2="220"></line>
+                    </g>
+
+                    <!-- Target line (for negative loops) -->
+                    <line id="targetLine" x1="50" y1="120" x2="580" y2="120" stroke="#10b981" stroke-width="2" stroke-dasharray="8,4"></line>
+
+                    <!-- Shock indicator -->
+                    <line id="shockLine" x1="200" y1="20" x2="200" y2="220" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4,4"></line>
+                    <text id="shockLabel" x="205" y="35" font-size="10" fill="#f59e0b" class="mono">SHOCK</text>
+
+                    <!-- System state line -->
+                    <path id="stateLine" fill="none" stroke="#3b82f6" stroke-width="3"></path>
+
+                    <!-- Labels -->
+                    <text x="315" y="245" text-anchor="middle" font-size="11" fill="#6b7280" class="mono">Time →</text>
+                </svg>
+
+                <div class="flex justify-center gap-8 mt-4">
+                    <div class="flex items-center gap-2">
+                        <div class="w-4 h-1 bg-blue-500 rounded"></div>
+                        <span class="mono text-sm text-stone-600">System State</span>
+                    </div>
+                    <div id="targetLegend" class="flex items-center gap-2">
+                        <div class="w-4 h-1 bg-emerald-500 rounded" style="border-bottom: 2px dashed #10b981;"></div>
+                        <span class="mono text-sm text-stone-600">Target</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results -->
+            <div class="grid grid-cols-3 gap-4">
+                <div class="bg-white rounded-xl p-4 border border-stone-200 text-center">
+                    <div class="mono text-xs text-stone-500 uppercase mb-1">Start Value</div>
+                    <div id="startVal" class="mono text-xl font-bold text-stone-800">50</div>
+                </div>
+                <div class="bg-white rounded-xl p-4 border border-stone-200 text-center">
+                    <div class="mono text-xs text-stone-500 uppercase mb-1">End Value</div>
+                    <div id="endVal" class="mono text-xl font-bold text-stone-800">50</div>
+                </div>
+                <div id="behaviorBox" class="bg-blue-50 rounded-xl p-4 border border-blue-200 text-center">
+                    <div class="mono text-xs text-blue-600 uppercase mb-1">Behavior</div>
+                    <div id="behavior" class="mono text-lg font-bold text-blue-800">Stable</div>
+                </div>
+            </div>
+
+            <!-- Insight -->
+            <div id="insightBox" class="p-6 rounded-xl border-2 border-amber-200 bg-amber-50">
+                <h3 class="mono font-semibold text-amber-900 mb-2">What's happening</h3>
+                <p id="insightText" class="text-amber-800"></p>
+            </div>
+
+            <hr class="section-break">
+
+            <!-- Key Concepts -->
+            <h2 class="mono text-lg font-semibold text-stone-900">Key dynamics</h2>
+
+            <div class="space-y-4">
+                <div class="flex gap-4 items-start p-4 bg-white rounded-lg border border-stone-200">
+                    <span class="text-2xl">📈</span>
+                    <div>
+                        <h3 class="mono font-semibold text-stone-900">Positive + Gain > 1 = Explosion</h3>
+                        <p class="text-sm text-stone-600">When each cycle amplifies the signal, small changes become big fast. This is viral growth, compound interest, or runaway inflation.</p>
+                    </div>
+                </div>
+                <div class="flex gap-4 items-start p-4 bg-white rounded-lg border border-stone-200">
+                    <span class="text-2xl">🎯</span>
+                    <div>
+                        <h3 class="mono font-semibold text-stone-900">Negative = Seeking Equilibrium</h3>
+                        <p class="text-sm text-stone-600">Deviations from target get pushed back. Your thermostat, body temperature, and market prices all work this way.</p>
+                    </div>
+                </div>
+                <div class="flex gap-4 items-start p-4 bg-white rounded-lg border border-stone-200">
+                    <span class="text-2xl">〰️</span>
+                    <div>
+                        <h3 class="mono font-semibold text-stone-900">Delay + Feedback = Oscillation</h3>
+                        <p class="text-sm text-stone-600">When feedback is delayed, the system overshoots. This causes boom/bust cycles, oscillating thermostats, and unstable control systems.</p>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <footer class="mt-12 pt-8 border-t border-stone-200 text-center">
+            <a href="/" class="mono text-sm text-stone-500 hover:text-stone-700">← Back to Projects</a>
+            <p class="mt-4 text-xs text-stone-400">
+                Explorable format inspired by <a href="https://worrydream.com/ExplorableExplanations/" class="underline hover:text-stone-600">Bret Victor</a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        let loopType = 'positive';
+
+        function selectLoop(type) {
+            loopType = type;
+            document.getElementById('positiveLoop').classList.toggle('selected', type === 'positive');
+            document.getElementById('negativeLoop').classList.toggle('selected', type === 'negative');
+            document.getElementById('targetLegend').style.opacity = type === 'negative' ? '1' : '0.3';
+            document.getElementById('targetLine').style.opacity = type === 'negative' ? '1' : '0.3';
+            runSimulation();
+        }
+
+        function runSimulation() {
+            const gain = parseInt(document.getElementById('gain').value) / 100;
+            const delay = parseInt(document.getElementById('delay').value);
+            const shock = parseInt(document.getElementById('shock').value);
+            const target = parseInt(document.getElementById('target').value);
+
+            // Update displays
+            document.getElementById('gainValue').textContent = gain.toFixed(2) + 'x';
+            document.getElementById('delayValue').textContent = delay + ' cycles';
+            document.getElementById('shockValue').textContent = (shock >= 0 ? '+' : '') + shock;
+            document.getElementById('targetValue').textContent = target;
+
+            // Simulation
+            const steps = 60;
+            const data = [];
+            const history = new Array(delay + 1).fill(target);
+
+            let state = target;
+
+            for (let t = 0; t < steps; t++) {
+                // Apply shock at t=20
+                if (t === 20) {
+                    state += shock;
+                }
+
+                // Record current state
+                data.push(state);
+
+                // Get delayed state for feedback
+                const delayedState = history[0];
+                history.shift();
+                history.push(state);
+
+                // Apply feedback
+                if (loopType === 'positive') {
+                    // Positive: amplify deviation from initial
+                    const deviation = delayedState - target;
+                    state = target + deviation * gain;
+                } else {
+                    // Negative: correct toward target
+                    const error = target - delayedState;
+                    state = state + error * (gain - 1) * 0.5;
+                }
+
+                // Add small noise
+                state += (Math.random() - 0.5) * 2;
+
+                // Clamp for visualization
+                state = Math.max(-50, Math.min(200, state));
+            }
+
+            // Draw chart
+            drawChart(data, target);
+
+            // Update stats
+            document.getElementById('startVal').textContent = Math.round(data[0]);
+            document.getElementById('endVal').textContent = Math.round(data[data.length - 1]);
+
+            // Determine behavior
+            updateBehavior(data, target, gain, delay);
+        }
+
+        function drawChart(data, target) {
+            const width = 600, height = 250;
+            const padding = { left: 50, right: 20, top: 20, bottom: 30 };
+
+            // Auto-scale Y axis
+            const minVal = Math.min(...data, 0);
+            const maxVal = Math.max(...data, 100);
+            const range = maxVal - minVal || 1;
+
+            const xScale = (i) => padding.left + (i / data.length) * (width - padding.left - padding.right);
+            const yScale = (v) => height - padding.bottom - ((v - minVal) / range) * (height - padding.top - padding.bottom);
+
+            // Draw state line
+            const path = data.map((v, i) =>
+                (i === 0 ? 'M' : 'L') + xScale(i) + ',' + yScale(v)
+            ).join(' ');
+
+            document.getElementById('stateLine').setAttribute('d', path);
+
+            // Update target line position
+            document.getElementById('targetLine').setAttribute('y1', yScale(target));
+            document.getElementById('targetLine').setAttribute('y2', yScale(target));
+
+            // Update shock line position
+            const shockX = xScale(20);
+            document.getElementById('shockLine').setAttribute('x1', shockX);
+            document.getElementById('shockLine').setAttribute('x2', shockX);
+            document.getElementById('shockLabel').setAttribute('x', shockX + 5);
+        }
+
+        function updateBehavior(data, target, gain, delay) {
+            const endVal = data[data.length - 1];
+            const midVal = data[Math.floor(data.length / 2)];
+            const variance = data.slice(-20).reduce((s, v, i, a) => {
+                const mean = a.reduce((x, y) => x + y, 0) / a.length;
+                return s + Math.pow(v - mean, 2);
+            }, 0) / 20;
+
+            let behavior, color;
+            const behaviorBox = document.getElementById('behaviorBox');
+
+            if (loopType === 'positive') {
+                if (endVal > 150) {
+                    behavior = 'Explosive Growth';
+                    color = 'red';
+                } else if (endVal < -20) {
+                    behavior = 'Collapse';
+                    color = 'red';
+                } else if (gain > 1.1) {
+                    behavior = 'Growing';
+                    color = 'amber';
+                } else {
+                    behavior = 'Stable';
+                    color = 'emerald';
+                }
+            } else {
+                if (variance > 200) {
+                    behavior = 'Oscillating';
+                    color = 'amber';
+                } else if (Math.abs(endVal - target) < 5) {
+                    behavior = 'At Equilibrium';
+                    color = 'emerald';
+                } else {
+                    behavior = 'Converging';
+                    color = 'blue';
+                }
+            }
+
+            document.getElementById('behavior').textContent = behavior;
+            behaviorBox.className = `bg-${color}-50 rounded-xl p-4 border border-${color}-200 text-center`;
+            document.getElementById('behavior').className = `mono text-lg font-bold text-${color}-800`;
+
+            // Update insight
+            let insight;
+            if (loopType === 'positive') {
+                if (gain > 1.1) {
+                    insight = `With gain of ${gain.toFixed(2)}x, each cycle amplifies deviations. The shock at t=20 gets magnified exponentially. This is how small events trigger large consequences in reinforcing systems—viral content, market bubbles, or arms races.`;
+                } else if (gain < 0.95) {
+                    insight = `With gain below 1, the positive feedback actually dampens over time. Deviations shrink rather than grow. This is a stable positive loop—rare in nature but possible with friction or loss in the system.`;
+                } else {
+                    insight = `Near gain=1, the system is on the edge. Small changes in gain determine whether disturbances grow or shrink. Many real systems operate near this critical point.`;
+                }
+            } else {
+                if (delay > 5 && gain > 1.1) {
+                    insight = `Long delay (${delay} cycles) plus strong correction (${gain.toFixed(2)}x) causes oscillation. The system overshoots the target, then overcorrects. This is why economies have boom/bust cycles and why poorly tuned thermostats oscillate.`;
+                } else if (delay > 5) {
+                    insight = `The ${delay}-cycle delay means corrections arrive late. The system is trying to hit target ${target}, but keeps over/undershooting. Reducing delay or correction strength would smooth this out.`;
+                } else {
+                    insight = `With quick feedback and moderate correction, the system returns to equilibrium (${target}) after the shock. This is a well-tuned balancing loop—the thermostat works correctly.`;
+                }
+            }
+
+            document.getElementById('insightText').textContent = insight;
+        }
+
+        // Initialize
+        runSimulation();
+    </script>
+</body>
+</html>

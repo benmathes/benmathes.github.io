@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Do / Be / Understand | Life Impulse Triangle</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Georgia', serif; }
+        .triangle-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .triangle-container::before {
+            content: '';
+            display: block;
+            padding-bottom: 86.6%; /* equilateral triangle height ratio */
+        }
+        .triangle-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        .vertex-label {
+            font-size: 14px;
+            font-weight: bold;
+            fill: currentColor;
+        }
+        .draggable-dot {
+            cursor: grab;
+            transition: r 0.2s ease;
+        }
+        .draggable-dot:hover {
+            r: 14;
+        }
+        .draggable-dot:active {
+            cursor: grabbing;
+        }
+        .archetype-card {
+            transition: all 0.3s ease;
+        }
+        .archetype-card.active {
+            transform: scale(1.02);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        }
+        .job-tag {
+            transition: all 0.2s ease;
+        }
+        .job-tag:hover {
+            transform: scale(1.05);
+        }
+        .connection-line {
+            stroke-dasharray: 5 5;
+            animation: dash 1s linear infinite;
+        }
+        @keyframes dash {
+            to { stroke-dashoffset: -10; }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-50 to-purple-100 min-h-screen p-8">
+    <div class="max-w-5xl mx-auto">
+        <h1 class="text-4xl font-bold text-indigo-900 mb-2">The Life Impulse Triangle</h1>
+        <p class="text-indigo-700 mb-8 text-lg">Three drives compete for your energy. You can only truly embody two. Which two are yours?</p>
+
+        <div class="grid md:grid-cols-2 gap-8">
+            <!-- Triangle Visualization -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Position Yourself</h2>
+                <p class="text-sm text-gray-600 mb-4">Drag the dot to where you naturally gravitate. Your position reveals your archetype.</p>
+
+                <div class="triangle-container">
+                    <svg class="triangle-svg" viewBox="0 0 400 350" id="triangle">
+                        <!-- Triangle fill with gradient zones -->
+                        <defs>
+                            <linearGradient id="doGrad" x1="0%" y1="100%" x2="50%" y2="0%">
+                                <stop offset="0%" style="stop-color:#ef4444;stop-opacity:0.3" />
+                                <stop offset="100%" style="stop-color:#ef4444;stop-opacity:0" />
+                            </linearGradient>
+                            <linearGradient id="beGrad" x1="100%" y1="100%" x2="50%" y2="0%">
+                                <stop offset="0%" style="stop-color:#eab308;stop-opacity:0.3" />
+                                <stop offset="100%" style="stop-color:#eab308;stop-opacity:0" />
+                            </linearGradient>
+                            <linearGradient id="understandGrad" x1="50%" y1="0%" x2="50%" y2="100%">
+                                <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:0.3" />
+                                <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:0" />
+                            </linearGradient>
+                        </defs>
+
+                        <!-- Triangle background -->
+                        <polygon points="200,30 50,320 350,320" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2"/>
+
+                        <!-- Zone indicators -->
+                        <polygon points="200,30 125,175 275,175" fill="url(#understandGrad)"/>
+                        <polygon points="50,320 125,175 200,320" fill="url(#doGrad)"/>
+                        <polygon points="350,320 275,175 200,320" fill="url(#beGrad)"/>
+
+                        <!-- Edge labels for combinations -->
+                        <text x="100" y="110" class="text-xs fill-purple-600" transform="rotate(-60, 100, 110)">The Scholar</text>
+                        <text x="275" y="110" class="text-xs fill-teal-600" transform="rotate(60, 275, 110)">The Advisor</text>
+                        <text x="200" y="335" class="text-xs fill-orange-600" text-anchor="middle">The Operator</text>
+
+                        <!-- Vertex labels -->
+                        <text x="200" y="20" text-anchor="middle" class="vertex-label fill-blue-600">🧠 UNDERSTAND</text>
+                        <text x="30" y="335" text-anchor="middle" class="vertex-label fill-red-500">⚡ DO</text>
+                        <text x="370" y="335" text-anchor="middle" class="vertex-label fill-yellow-600">👑 BE</text>
+
+                        <!-- Draggable position dot -->
+                        <circle id="position-dot" cx="200" cy="200" r="12" class="draggable-dot" fill="#6366f1" stroke="white" stroke-width="3"/>
+
+                        <!-- Position readout -->
+                        <text id="position-text" x="200" y="370" text-anchor="middle" class="text-xs fill-gray-500"></text>
+                    </svg>
+                </div>
+
+                <!-- Impulse Breakdown -->
+                <div class="mt-4 space-y-2">
+                    <div class="flex items-center gap-3">
+                        <span class="text-blue-500">🧠</span>
+                        <div class="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                            <div id="understand-bar" class="h-full bg-blue-500 rounded-full transition-all" style="width: 33%"></div>
+                        </div>
+                        <span id="understand-pct" class="text-sm font-medium text-blue-600 w-12">33%</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="text-red-500">⚡</span>
+                        <div class="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                            <div id="do-bar" class="h-full bg-red-500 rounded-full transition-all" style="width: 33%"></div>
+                        </div>
+                        <span id="do-pct" class="text-sm font-medium text-red-500 w-12">33%</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="text-yellow-500">👑</span>
+                        <div class="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                            <div id="be-bar" class="h-full bg-yellow-500 rounded-full transition-all" style="width: 33%"></div>
+                        </div>
+                        <span id="be-pct" class="text-sm font-medium text-yellow-600 w-12">33%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Archetype Result -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Your Archetype</h2>
+
+                <div id="archetype-display" class="space-y-4">
+                    <div class="p-4 bg-indigo-50 rounded-lg">
+                        <h3 id="archetype-name" class="text-2xl font-bold text-indigo-800">The Generalist</h3>
+                        <p id="archetype-tagline" class="text-indigo-600 text-sm italic mt-1">Balanced but unfocused</p>
+                    </div>
+
+                    <div>
+                        <h4 class="font-semibold text-gray-700 mb-2">Your Strengths</h4>
+                        <ul id="archetype-strengths" class="text-sm text-gray-600 space-y-1">
+                            <li>• Adaptable to many situations</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h4 class="font-semibold text-gray-700 mb-2">Your Struggle</h4>
+                        <p id="archetype-struggle" class="text-sm text-gray-600">Without a clear primary/secondary impulse, you may feel pulled in too many directions.</p>
+                    </div>
+
+                    <div>
+                        <h4 class="font-semibold text-gray-700 mb-2">Best-Fit Roles</h4>
+                        <div id="archetype-roles" class="flex flex-wrap gap-2">
+                            <span class="job-tag px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">Generalist PM</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- The Three Impulses -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mt-8">
+            <h2 class="text-xl font-semibold text-gray-800 mb-6">The Three Life Impulses</h2>
+
+            <div class="grid md:grid-cols-3 gap-6">
+                <div class="p-4 bg-red-50 rounded-lg border-l-4 border-red-400">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-2xl">⚡</span>
+                        <h3 class="font-bold text-red-800">Captain DO</h3>
+                    </div>
+                    <p class="text-sm text-red-700 mb-3">The drive to <em>accomplish</em>. Ship things. Make impact. Execute.</p>
+                    <ul class="text-xs text-red-600 space-y-1">
+                        <li>• Values: Velocity, completion, tangible results</li>
+                        <li>• Energy from: Crossing items off, seeing output</li>
+                        <li>• Fear: Stagnation, "all talk no action"</li>
+                    </ul>
+                </div>
+
+                <div class="p-4 bg-yellow-50 rounded-lg border-l-4 border-yellow-400">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-2xl">👑</span>
+                        <h3 class="font-bold text-yellow-800">King BE</h3>
+                    </div>
+                    <p class="text-sm text-yellow-700 mb-3">The drive to <em>influence</em>. Status, relationships, being someone.</p>
+                    <ul class="text-xs text-yellow-600 space-y-1">
+                        <li>• Values: Recognition, network, social capital</li>
+                        <li>• Energy from: Being respected, influencing others</li>
+                        <li>• Fear: Irrelevance, being overlooked</li>
+                    </ul>
+                </div>
+
+                <div class="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-400">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-2xl">🧠</span>
+                        <h3 class="font-bold text-blue-800">Professor UNDERSTAND</h3>
+                    </div>
+                    <p class="text-sm text-blue-700 mb-3">The drive to <em>comprehend</em>. Knowledge, insight, deep learning.</p>
+                    <ul class="text-xs text-blue-600 space-y-1">
+                        <li>• Values: Truth, clarity, expertise</li>
+                        <li>• Energy from: "Aha!" moments, mastery</li>
+                        <li>• Fear: Superficiality, being wrong</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- The Six Archetypes -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mt-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-6">The Six Archetypes (Pick Any Two)</h2>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="archetype-card p-4 rounded-lg border-2 border-purple-200 bg-purple-50" data-archetype="scholar">
+                    <h3 class="font-bold text-purple-800">🎓 The Scholar</h3>
+                    <p class="text-xs text-purple-600 mb-2">DO + UNDERSTAND</p>
+                    <p class="text-sm text-gray-600">Builds deep expertise AND ships things. The indie hacker who masters their domain.</p>
+                    <p class="text-xs text-gray-500 mt-2"><em>"I need to really understand this before I build it, and then I need to build it."</em></p>
+                </div>
+
+                <div class="archetype-card p-4 rounded-lg border-2 border-orange-200 bg-orange-50" data-archetype="operator">
+                    <h3 class="font-bold text-orange-800">🔧 The Operator</h3>
+                    <p class="text-xs text-orange-600 mb-2">DO + BE</p>
+                    <p class="text-sm text-gray-600">Gets things done AND builds relationships. The executive who executes through people.</p>
+                    <p class="text-xs text-gray-500 mt-2"><em>"I achieve impact by mobilizing others. Results and reputation reinforce each other."</em></p>
+                </div>
+
+                <div class="archetype-card p-4 rounded-lg border-2 border-teal-200 bg-teal-50" data-archetype="advisor">
+                    <h3 class="font-bold text-teal-800">🎯 The Advisor</h3>
+                    <p class="text-xs text-teal-600 mb-2">BE + UNDERSTAND</p>
+                    <p class="text-sm text-gray-600">Knows deeply AND influences. The trusted expert who shapes decisions without doing the work.</p>
+                    <p class="text-xs text-gray-500 mt-2"><em>"I understand enough to guide others who actually do. My value is wisdom, not output."</em></p>
+                </div>
+
+                <div class="archetype-card p-4 rounded-lg border-2 border-red-200 bg-red-50" data-archetype="executor">
+                    <h3 class="font-bold text-red-800">⚡ The Pure Executor</h3>
+                    <p class="text-xs text-red-600 mb-2">DO (dominant)</p>
+                    <p class="text-sm text-gray-600">All action. Ships relentlessly. May sacrifice depth or relationships for velocity.</p>
+                    <p class="text-xs text-gray-500 mt-2"><em>"Just tell me what to build and get out of my way."</em></p>
+                </div>
+
+                <div class="archetype-card p-4 rounded-lg border-2 border-yellow-200 bg-yellow-50" data-archetype="influencer">
+                    <h3 class="font-bold text-yellow-800">👑 The Pure Influencer</h3>
+                    <p class="text-xs text-yellow-600 mb-2">BE (dominant)</p>
+                    <p class="text-sm text-gray-600">All presence. Builds networks and reputation. May lack depth or personal output.</p>
+                    <p class="text-xs text-gray-500 mt-2"><em>"Who you know and who knows you matters more than what you personally produce."</em></p>
+                </div>
+
+                <div class="archetype-card p-4 rounded-lg border-2 border-blue-200 bg-blue-50" data-archetype="philosopher">
+                    <h3 class="font-bold text-blue-800">🧠 The Pure Philosopher</h3>
+                    <p class="text-xs text-blue-600 mb-2">UNDERSTAND (dominant)</p>
+                    <p class="text-sm text-gray-600">All insight. Pursues truth for its own sake. May struggle with action or visibility.</p>
+                    <p class="text-xs text-gray-500 mt-2"><em>"I need to understand completely before I could possibly act or speak."</em></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Job-Role Misalignment -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mt-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">When Role Doesn't Match Impulse</h2>
+
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="p-4 bg-red-50 rounded-lg">
+                    <h3 class="font-semibold text-red-800 mb-2">⚠️ The Burnout Pattern</h3>
+                    <p class="text-sm text-gray-600 mb-3">When your job demands an impulse that drains you:</p>
+                    <ul class="text-sm text-gray-700 space-y-2">
+                        <li><strong>Scholar forced to BE:</strong> "You're a scholar forced to be a politician, and the constant performance drains you."</li>
+                        <li><strong>Advisor forced to DO:</strong> Deep thinker stuck in execution mode, no time to reflect.</li>
+                        <li><strong>Operator forced to UNDERSTAND:</strong> Action-oriented person trapped in analysis paralysis.</li>
+                    </ul>
+                </div>
+
+                <div class="p-4 bg-green-50 rounded-lg">
+                    <h3 class="font-semibold text-green-800 mb-2">✓ The Alignment Sweet Spot</h3>
+                    <p class="text-sm text-gray-600 mb-3">When your role lets you lean into your natural two:</p>
+                    <ul class="text-sm text-gray-700 space-y-2">
+                        <li><strong>Scholar as Staff Engineer:</strong> Deep technical expertise + meaningful output.</li>
+                        <li><strong>Operator as COO:</strong> Execution through relationships and influence.</li>
+                        <li><strong>Advisor as Board Member:</strong> Wisdom and status, no execution burden.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <p class="text-center text-indigo-600 mt-8 text-sm">
+            Based on "To Do, To Be, and/or To Understand" from Adventure Capital
+        </p>
+    </div>
+
+    <script>
+        const archetypes = {
+            scholar: {
+                name: "The Scholar",
+                tagline: "Deep expertise meets tangible output",
+                strengths: [
+                    "Masters complex domains thoroughly",
+                    "Ships high-quality, well-understood work",
+                    "Self-sufficient: doesn't need others to validate or execute"
+                ],
+                struggle: "May undervalue relationships and visibility. Risk of being the 'best kept secret' who does great work nobody sees.",
+                roles: ["Staff/Principal Engineer", "Technical Founder", "Researcher who ships", "Indie Hacker"]
+            },
+            operator: {
+                name: "The Operator",
+                tagline: "Results through relationships",
+                strengths: [
+                    "Gets things done through others",
+                    "Builds teams and coalitions naturally",
+                    "Visible impact and recognized for it"
+                ],
+                struggle: "May lack deep expertise. Risk of being seen as 'all politics' or 'just a manager.' Dependent on others for actual output.",
+                roles: ["CEO/COO", "General Manager", "Sales Leader", "Program Manager"]
+            },
+            advisor: {
+                name: "The Advisor",
+                tagline: "Wisdom without execution burden",
+                strengths: [
+                    "Trusted for deep knowledge",
+                    "Influences decisions without doing the work",
+                    "Status comes from being right, not from shipping"
+                ],
+                struggle: "May be seen as 'all talk.' Can become disconnected from reality without execution feedback loops.",
+                roles: ["Board Member", "Consultant", "Professor", "Executive Coach"]
+            },
+            executor: {
+                name: "The Pure Executor",
+                tagline: "Ship, ship, ship",
+                strengths: [
+                    "Unmatched velocity and output",
+                    "Cuts through ambiguity with action",
+                    "Gets to 'done' faster than anyone"
+                ],
+                struggle: "May sacrifice quality for speed. Risk of shipping the wrong thing. Can burn relationships by ignoring politics.",
+                roles: ["Early-stage IC", "Firefighter roles", "Crisis response", "High-volume operations"]
+            },
+            influencer: {
+                name: "The Pure Influencer",
+                tagline: "Presence and connection",
+                strengths: [
+                    "Massive network and social capital",
+                    "Opens doors others can't",
+                    "Makes things happen by knowing people"
+                ],
+                struggle: "May lack substance behind the persona. Risk of being 'famous for being famous.' Dependent on perception.",
+                roles: ["BD/Partnerships", "Evangelist", "Community Builder", "Professional networker"]
+            },
+            philosopher: {
+                name: "The Pure Philosopher",
+                tagline: "Truth above all",
+                strengths: [
+                    "Deepest possible understanding",
+                    "Sees what others miss",
+                    "Intellectually uncompromising"
+                ],
+                struggle: "May never ship. Risk of 'analysis paralysis.' Ideas stay in your head instead of impacting the world.",
+                roles: ["Pure researcher", "Academic", "Think tank", "Deep specialist"]
+            },
+            generalist: {
+                name: "The Generalist",
+                tagline: "Jack of all trades, master of none",
+                strengths: [
+                    "Adaptable to many situations",
+                    "Can do a bit of everything",
+                    "Flexible and context-dependent"
+                ],
+                struggle: "Without a clear primary/secondary impulse, you may feel pulled in too many directions. Hard to build a reputation for anything specific.",
+                roles: ["Generalist PM", "Early startup employee", "Small company everything-doer"]
+            }
+        };
+
+        // Triangle geometry
+        const vertices = {
+            understand: { x: 200, y: 30 },
+            do: { x: 50, y: 320 },
+            be: { x: 350, y: 320 }
+        };
+
+        let isDragging = false;
+        let currentPos = { x: 200, y: 200 };
+
+        const dot = document.getElementById('position-dot');
+        const svg = document.getElementById('triangle');
+
+        // Convert page coordinates to SVG coordinates
+        function pageToSVG(pageX, pageY) {
+            const svgRect = svg.getBoundingClientRect();
+            const viewBox = svg.viewBox.baseVal;
+
+            return {
+                x: ((pageX - svgRect.left) / svgRect.width) * viewBox.width,
+                y: ((pageY - svgRect.top) / svgRect.height) * viewBox.height
+            };
+        }
+
+        // Check if point is inside triangle using barycentric coordinates
+        function isInsideTriangle(px, py) {
+            const { understand: A, do: B, be: C } = vertices;
+
+            const v0x = C.x - A.x, v0y = C.y - A.y;
+            const v1x = B.x - A.x, v1y = B.y - A.y;
+            const v2x = px - A.x, v2y = py - A.y;
+
+            const dot00 = v0x * v0x + v0y * v0y;
+            const dot01 = v0x * v1x + v0y * v1y;
+            const dot02 = v0x * v2x + v0y * v2y;
+            const dot11 = v1x * v1x + v1y * v1y;
+            const dot12 = v1x * v2x + v1y * v2y;
+
+            const invDenom = 1 / (dot00 * dot11 - dot01 * dot01);
+            const u = (dot11 * dot02 - dot01 * dot12) * invDenom;
+            const v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+
+            return (u >= 0) && (v >= 0) && (u + v <= 1);
+        }
+
+        // Get barycentric weights (how close to each vertex)
+        function getBarycentricWeights(px, py) {
+            const { understand: A, do: B, be: C } = vertices;
+
+            const denom = (B.y - C.y) * (A.x - C.x) + (C.x - B.x) * (A.y - C.y);
+
+            const wUnderstand = ((B.y - C.y) * (px - C.x) + (C.x - B.x) * (py - C.y)) / denom;
+            const wDo = ((C.y - A.y) * (px - C.x) + (A.x - C.x) * (py - C.y)) / denom;
+            const wBe = 1 - wUnderstand - wDo;
+
+            return {
+                understand: Math.max(0, Math.min(1, wUnderstand)),
+                do: Math.max(0, Math.min(1, wDo)),
+                be: Math.max(0, Math.min(1, wBe))
+            };
+        }
+
+        function updatePosition(x, y) {
+            // Constrain to triangle
+            if (!isInsideTriangle(x, y)) {
+                // Find nearest point on triangle edge
+                // Simple approximation: clamp to centroid direction
+                const centroid = {
+                    x: (vertices.understand.x + vertices.do.x + vertices.be.x) / 3,
+                    y: (vertices.understand.y + vertices.do.y + vertices.be.y) / 3
+                };
+
+                // Binary search for edge
+                let inside = centroid;
+                let outside = { x, y };
+                for (let i = 0; i < 10; i++) {
+                    const mid = {
+                        x: (inside.x + outside.x) / 2,
+                        y: (inside.y + outside.y) / 2
+                    };
+                    if (isInsideTriangle(mid.x, mid.y)) {
+                        inside = mid;
+                    } else {
+                        outside = mid;
+                    }
+                }
+                x = inside.x;
+                y = inside.y;
+            }
+
+            currentPos = { x, y };
+            dot.setAttribute('cx', x);
+            dot.setAttribute('cy', y);
+
+            updateWeightsDisplay();
+            updateArchetype();
+        }
+
+        function updateWeightsDisplay() {
+            const weights = getBarycentricWeights(currentPos.x, currentPos.y);
+
+            document.getElementById('understand-bar').style.width = `${weights.understand * 100}%`;
+            document.getElementById('do-bar').style.width = `${weights.do * 100}%`;
+            document.getElementById('be-bar').style.width = `${weights.be * 100}%`;
+
+            document.getElementById('understand-pct').textContent = `${Math.round(weights.understand * 100)}%`;
+            document.getElementById('do-pct').textContent = `${Math.round(weights.do * 100)}%`;
+            document.getElementById('be-pct').textContent = `${Math.round(weights.be * 100)}%`;
+        }
+
+        function updateArchetype() {
+            const weights = getBarycentricWeights(currentPos.x, currentPos.y);
+            const sorted = Object.entries(weights).sort((a, b) => b[1] - a[1]);
+
+            let archetype;
+            const [first, second, third] = sorted;
+
+            // Determine archetype based on weights
+            if (first[1] > 0.5) {
+                // One dominant impulse
+                if (first[0] === 'do') archetype = 'executor';
+                else if (first[0] === 'be') archetype = 'influencer';
+                else archetype = 'philosopher';
+            } else if (first[1] > 0.35 && second[1] > 0.35) {
+                // Two strong impulses
+                const combo = [first[0], second[0]].sort().join('-');
+                if (combo === 'do-understand') archetype = 'scholar';
+                else if (combo === 'be-do') archetype = 'operator';
+                else if (combo === 'be-understand') archetype = 'advisor';
+                else archetype = 'generalist';
+            } else {
+                archetype = 'generalist';
+            }
+
+            const data = archetypes[archetype];
+
+            document.getElementById('archetype-name').textContent = data.name;
+            document.getElementById('archetype-tagline').textContent = data.tagline;
+            document.getElementById('archetype-strengths').innerHTML = data.strengths.map(s => `<li>• ${s}</li>`).join('');
+            document.getElementById('archetype-struggle').textContent = data.struggle;
+            document.getElementById('archetype-roles').innerHTML = data.roles.map(r => `<span class="job-tag px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm">${r}</span>`).join('');
+
+            // Highlight matching archetype card
+            document.querySelectorAll('.archetype-card').forEach(card => {
+                card.classList.remove('active');
+                if (card.dataset.archetype === archetype) {
+                    card.classList.add('active');
+                }
+            });
+        }
+
+        // Mouse/touch handlers
+        function startDrag(e) {
+            isDragging = true;
+            e.preventDefault();
+        }
+
+        function moveDrag(e) {
+            if (!isDragging) return;
+
+            const point = e.touches ? e.touches[0] : e;
+            const svgPos = pageToSVG(point.clientX, point.clientY);
+            updatePosition(svgPos.x, svgPos.y);
+        }
+
+        function endDrag() {
+            isDragging = false;
+        }
+
+        dot.addEventListener('mousedown', startDrag);
+        dot.addEventListener('touchstart', startDrag);
+        document.addEventListener('mousemove', moveDrag);
+        document.addEventListener('touchmove', moveDrag);
+        document.addEventListener('mouseup', endDrag);
+        document.addEventListener('touchend', endDrag);
+
+        // Click anywhere in triangle to move dot
+        svg.addEventListener('click', (e) => {
+            const svgPos = pageToSVG(e.clientX, e.clientY);
+            if (isInsideTriangle(svgPos.x, svgPos.y)) {
+                updatePosition(svgPos.x, svgPos.y);
+            }
+        });
+
+        // Archetype card clicks move the dot
+        document.querySelectorAll('.archetype-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const archetype = card.dataset.archetype;
+                let targetPos;
+
+                switch(archetype) {
+                    case 'scholar':
+                        targetPos = { x: 125, y: 175 }; // DO-UNDERSTAND edge
+                        break;
+                    case 'operator':
+                        targetPos = { x: 200, y: 320 }; // DO-BE edge
+                        break;
+                    case 'advisor':
+                        targetPos = { x: 275, y: 175 }; // BE-UNDERSTAND edge
+                        break;
+                    case 'executor':
+                        targetPos = { x: 80, y: 280 }; // Near DO
+                        break;
+                    case 'influencer':
+                        targetPos = { x: 320, y: 280 }; // Near BE
+                        break;
+                    case 'philosopher':
+                        targetPos = { x: 200, y: 80 }; // Near UNDERSTAND
+                        break;
+                    default:
+                        targetPos = { x: 200, y: 200 }; // Center
+                }
+
+                updatePosition(targetPos.x, targetPos.y);
+            });
+        });
+
+        // Initialize
+        updatePosition(200, 200);
+    </script>
+</body>
+</html>

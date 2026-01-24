@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Goodhart's Gambler</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Source Serif 4', serif; }
+        .mono { font-family: 'Space Grotesk', sans-serif; }
+
+        .slider-container { position: relative; }
+        .slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #e5e7eb;
+            outline: none;
+        }
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #1f2937;
+            cursor: pointer;
+            border: 3px solid white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        canvas {
+            width: 100%;
+            height: 300px;
+            border-radius: 8px;
+            background: white;
+        }
+
+        .metric-line { stroke: #3b82f6; stroke-width: 3; fill: none; }
+        .reality-line { stroke: #10b981; stroke-width: 3; fill: none; stroke-dasharray: 8,4; }
+        .divergence-fill { fill: rgba(239, 68, 68, 0.2); }
+
+        .section-break {
+            border: none;
+            height: 2px;
+            background: linear-gradient(to right, transparent, #d1d5db, transparent);
+            margin: 2rem 0;
+        }
+    </style>
+</head>
+<body class="bg-stone-50 text-stone-800">
+    <div class="max-w-3xl mx-auto px-6 py-12">
+        <header class="mb-8">
+            <h1 class="mono text-3xl font-bold text-stone-900 mb-2">Goodhart's Gambler</h1>
+            <p class="text-stone-600 mono text-sm">When a measure becomes a target, it ceases to be a good measure</p>
+        </header>
+
+        <article class="space-y-6">
+            <p>
+                You've chosen a metric to optimize. People will now optimize for that metric.
+                The problem? They'll find ways to hit the number <em>without</em> achieving your actual goal.
+            </p>
+
+            <p class="text-stone-600">
+                Adjust the parameters below and watch how the <span class="mono font-semibold text-blue-600">measured metric</span>
+                diverges from <span class="mono font-semibold text-emerald-600">actual reality</span> over time.
+            </p>
+
+            <hr class="section-break">
+
+            <!-- Scenario Selector -->
+            <div class="mb-6">
+                <label class="block mono text-sm font-semibold text-stone-700 mb-2">Scenario</label>
+                <select id="scenario" class="w-full p-3 rounded-lg border border-stone-300 bg-white mono" onchange="updateScenario()">
+                    <option value="engagement">Social Media: Optimize for "Engagement"</option>
+                    <option value="tests">Education: Optimize for "Test Scores"</option>
+                    <option value="arrests">Policing: Optimize for "Arrest Numbers"</option>
+                    <option value="lines">Engineering: Optimize for "Lines of Code"</option>
+                    <option value="clicks">Ads: Optimize for "Click-Through Rate"</option>
+                </select>
+            </div>
+
+            <!-- Controls -->
+            <div class="bg-white rounded-xl border border-stone-200 p-6 space-y-6">
+                <div>
+                    <div class="flex justify-between mb-2">
+                        <label class="mono text-sm font-semibold text-stone-700">Stakes (how much people care)</label>
+                        <span id="stakesValue" class="mono text-sm text-stone-500">50%</span>
+                    </div>
+                    <input type="range" id="stakes" class="slider" min="0" max="100" value="50" oninput="runSimulation()">
+                    <p class="text-xs text-stone-400 mt-1">Higher stakes = more incentive to game the metric</p>
+                </div>
+
+                <div>
+                    <div class="flex justify-between mb-2">
+                        <label class="mono text-sm font-semibold text-stone-700">Gaming Creativity</label>
+                        <span id="creativityValue" class="mono text-sm text-stone-500">50%</span>
+                    </div>
+                    <input type="range" id="creativity" class="slider" min="0" max="100" value="50" oninput="runSimulation()">
+                    <p class="text-xs text-stone-400 mt-1">How clever people are at finding loopholes</p>
+                </div>
+
+                <div>
+                    <div class="flex justify-between mb-2">
+                        <label class="mono text-sm font-semibold text-stone-700">Detection Lag</label>
+                        <span id="lagValue" class="mono text-sm text-stone-500">50%</span>
+                    </div>
+                    <input type="range" id="lag" class="slider" min="0" max="100" value="50" oninput="runSimulation()">
+                    <p class="text-xs text-stone-400 mt-1">How long before you notice gaming and adjust</p>
+                </div>
+
+                <div>
+                    <div class="flex justify-between mb-2">
+                        <label class="mono text-sm font-semibold text-stone-700">Metric Visibility</label>
+                        <span id="visibilityValue" class="mono text-sm text-stone-500">50%</span>
+                    </div>
+                    <input type="range" id="visibility" class="slider" min="0" max="100" value="50" oninput="runSimulation()">
+                    <p class="text-xs text-stone-400 mt-1">How publicly the metric is reported</p>
+                </div>
+            </div>
+
+            <hr class="section-break">
+
+            <!-- The Graph -->
+            <div class="bg-white rounded-xl border border-stone-200 p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="mono text-lg font-semibold text-stone-900">Metric vs Reality Over Time</h2>
+                    <button onclick="runSimulation()" class="mono text-sm px-3 py-1 bg-stone-100 hover:bg-stone-200 rounded-lg">
+                        Re-run ↻
+                    </button>
+                </div>
+
+                <svg id="chart" viewBox="0 0 600 300" class="w-full h-64 bg-stone-50 rounded-lg">
+                    <!-- Grid lines -->
+                    <g class="grid" stroke="#e5e7eb" stroke-width="1">
+                        <line x1="50" y1="250" x2="580" y2="250"></line>
+                        <line x1="50" y1="200" x2="580" y2="200" stroke-dasharray="4,4"></line>
+                        <line x1="50" y1="150" x2="580" y2="150" stroke-dasharray="4,4"></line>
+                        <line x1="50" y1="100" x2="580" y2="100" stroke-dasharray="4,4"></line>
+                        <line x1="50" y1="50" x2="580" y2="50" stroke-dasharray="4,4"></line>
+                        <line x1="50" y1="50" x2="50" y2="250"></line>
+                    </g>
+
+                    <!-- Labels -->
+                    <text x="315" y="290" text-anchor="middle" class="mono" font-size="12" fill="#6b7280">Time →</text>
+                    <text x="20" y="150" text-anchor="middle" class="mono" font-size="12" fill="#6b7280" transform="rotate(-90, 20, 150)">Value</text>
+
+                    <!-- Divergence area -->
+                    <path id="divergenceArea" class="divergence-fill"></path>
+
+                    <!-- Lines -->
+                    <path id="metricLine" class="metric-line"></path>
+                    <path id="realityLine" class="reality-line"></path>
+                </svg>
+
+                <!-- Legend -->
+                <div class="flex justify-center gap-8 mt-4">
+                    <div class="flex items-center gap-2">
+                        <div class="w-4 h-1 bg-blue-500 rounded"></div>
+                        <span class="mono text-sm text-stone-600">Measured Metric</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-4 h-1 bg-emerald-500 rounded" style="border-bottom: 2px dashed #10b981;"></div>
+                        <span class="mono text-sm text-stone-600">Actual Reality</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-4 h-4 bg-red-100 border border-red-300 rounded"></div>
+                        <span class="mono text-sm text-stone-600">Divergence</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="grid grid-cols-3 gap-4">
+                <div class="bg-blue-50 rounded-xl p-4 border border-blue-200 text-center">
+                    <div class="mono text-xs text-blue-600 uppercase mb-1">Metric Shows</div>
+                    <div id="metricFinal" class="mono text-2xl font-bold text-blue-800">+0%</div>
+                </div>
+                <div class="bg-emerald-50 rounded-xl p-4 border border-emerald-200 text-center">
+                    <div class="mono text-xs text-emerald-600 uppercase mb-1">Reality Is</div>
+                    <div id="realityFinal" class="mono text-2xl font-bold text-emerald-800">+0%</div>
+                </div>
+                <div class="bg-red-50 rounded-xl p-4 border border-red-200 text-center">
+                    <div class="mono text-xs text-red-600 uppercase mb-1">You're Fooled By</div>
+                    <div id="divergenceFinal" class="mono text-2xl font-bold text-red-800">0%</div>
+                </div>
+            </div>
+
+            <hr class="section-break">
+
+            <!-- Dynamic Insight -->
+            <div id="insightBox" class="p-6 rounded-xl border-2 border-amber-200 bg-amber-50">
+                <h3 class="mono font-semibold text-amber-900 mb-2">What's happening</h3>
+                <p id="insightText" class="text-amber-800"></p>
+            </div>
+
+            <hr class="section-break">
+
+            <!-- Scenario-specific examples -->
+            <div id="examplesBox" class="bg-stone-100 rounded-xl p-6">
+                <h3 class="mono font-semibold text-stone-900 mb-3">Real-world gaming examples</h3>
+                <ul id="examplesList" class="space-y-2 text-stone-700 text-sm">
+                </ul>
+            </div>
+        </article>
+
+        <footer class="mt-12 pt-8 border-t border-stone-200 text-center">
+            <a href="/" class="mono text-sm text-stone-500 hover:text-stone-700">← Back to Projects</a>
+            <p class="mt-4 text-xs text-stone-400">
+                Based on <a href="https://adventurecapital.substack.com" class="underline hover:text-stone-600">Adventure Capital</a>
+                · Explorable format inspired by <a href="https://worrydream.com/ExplorableExplanations/" class="underline hover:text-stone-600">Bret Victor</a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        const scenarios = {
+            engagement: {
+                name: "Engagement",
+                goal: "meaningful user value",
+                metric: "time on site / clicks",
+                examples: [
+                    "Autoplay videos that users don't actually want",
+                    "Infinite scroll that captures attention without satisfaction",
+                    "Rage-bait content that drives clicks but harms discourse",
+                    "Notification spam to drive opens",
+                    "Dark patterns that prevent leaving"
+                ]
+            },
+            tests: {
+                name: "Test Scores",
+                goal: "actual learning",
+                metric: "standardized test results",
+                examples: [
+                    "Teaching to the test instead of broader understanding",
+                    "Narrowing curriculum to tested subjects only",
+                    "Strategic student exclusions on test days",
+                    "Drill-and-kill memorization over critical thinking",
+                    "Cheating scandals when stakes are high enough"
+                ]
+            },
+            arrests: {
+                name: "Arrest Numbers",
+                goal: "public safety",
+                metric: "arrests per officer",
+                examples: [
+                    "Targeting easy arrests over serious crimes",
+                    "Arresting for minor infractions that were previously warnings",
+                    "Focusing on high-volume areas regardless of actual danger",
+                    "Avoiding difficult cases that might not close",
+                    "Quotas leading to wrongful arrests"
+                ]
+            },
+            lines: {
+                name: "Lines of Code",
+                goal: "software value delivered",
+                metric: "lines written per sprint",
+                examples: [
+                    "Verbose code instead of elegant solutions",
+                    "Copy-pasting with minor changes instead of abstraction",
+                    "Avoiding refactoring that would reduce line count",
+                    "Adding unnecessary features to pad numbers",
+                    "Not deleting deprecated code"
+                ]
+            },
+            clicks: {
+                name: "Click-Through Rate",
+                goal: "actual conversions / customer value",
+                metric: "ad clicks",
+                examples: [
+                    "Misleading ad copy that gets clicks but not conversions",
+                    "Accidentally clickable ad placements",
+                    "Bait-and-switch landing pages",
+                    "Click farms and bot traffic",
+                    "Targeting people who click everything but buy nothing"
+                ]
+            }
+        };
+
+        let currentScenario = 'engagement';
+
+        function updateScenario() {
+            currentScenario = document.getElementById('scenario').value;
+            const s = scenarios[currentScenario];
+
+            document.getElementById('examplesList').innerHTML = s.examples
+                .map(e => `<li class="flex gap-2"><span class="text-amber-600">→</span> ${e}</li>`)
+                .join('');
+
+            runSimulation();
+        }
+
+        function runSimulation() {
+            const stakes = parseInt(document.getElementById('stakes').value);
+            const creativity = parseInt(document.getElementById('creativity').value);
+            const lag = parseInt(document.getElementById('lag').value);
+            const visibility = parseInt(document.getElementById('visibility').value);
+
+            // Update displayed values
+            document.getElementById('stakesValue').textContent = stakes + '%';
+            document.getElementById('creativityValue').textContent = creativity + '%';
+            document.getElementById('lagValue').textContent = lag + '%';
+            document.getElementById('visibilityValue').textContent = visibility + '%';
+
+            // Calculate gaming intensity
+            const gamingIntensity = (stakes * 0.4 + creativity * 0.3 + visibility * 0.3) / 100;
+            const correctionSpeed = (100 - lag) / 100;
+
+            // Generate data points
+            const points = 50;
+            const metricData = [];
+            const realityData = [];
+
+            let metric = 100;
+            let reality = 100;
+            let gaming = 0;
+
+            for (let i = 0; i < points; i++) {
+                const t = i / points;
+
+                // Gaming increases over time, faster with higher intensity
+                gaming += gamingIntensity * 0.5 * (1 + Math.random() * 0.5);
+
+                // Some correction happens based on lag
+                gaming *= (1 - correctionSpeed * 0.02);
+
+                // Metric goes up (looks good!)
+                metric = 100 + gaming * 50 + Math.random() * 5;
+
+                // Reality grows slowly or even declines as gaming takes over
+                const realGrowth = 0.3 - gamingIntensity * 0.4;
+                reality = 100 + (i * realGrowth) + Math.random() * 3 - gaming * 10;
+                reality = Math.max(60, reality); // Floor
+
+                metricData.push({ x: i, y: metric });
+                realityData.push({ x: i, y: reality });
+            }
+
+            // Draw the chart
+            drawChart(metricData, realityData);
+
+            // Update stats
+            const finalMetric = metricData[metricData.length - 1].y;
+            const finalReality = realityData[realityData.length - 1].y;
+            const divergence = finalMetric - finalReality;
+
+            document.getElementById('metricFinal').textContent = '+' + Math.round(finalMetric - 100) + '%';
+            document.getElementById('realityFinal').textContent = (finalReality >= 100 ? '+' : '') + Math.round(finalReality - 100) + '%';
+            document.getElementById('divergenceFinal').textContent = Math.round(divergence) + '%';
+
+            // Update insight
+            updateInsight(gamingIntensity, divergence);
+        }
+
+        function drawChart(metricData, realityData) {
+            const width = 600, height = 300;
+            const padding = { left: 50, right: 20, top: 30, bottom: 50 };
+
+            const xScale = (x) => padding.left + (x / 50) * (width - padding.left - padding.right);
+            const yScale = (y) => height - padding.bottom - ((y - 50) / 150) * (height - padding.top - padding.bottom);
+
+            // Create paths
+            const metricPath = metricData.map((d, i) =>
+                (i === 0 ? 'M' : 'L') + xScale(d.x) + ',' + yScale(d.y)
+            ).join(' ');
+
+            const realityPath = realityData.map((d, i) =>
+                (i === 0 ? 'M' : 'L') + xScale(d.x) + ',' + yScale(d.y)
+            ).join(' ');
+
+            // Divergence area
+            const areaPath = metricData.map((d, i) =>
+                (i === 0 ? 'M' : 'L') + xScale(d.x) + ',' + yScale(d.y)
+            ).join(' ') +
+            realityData.slice().reverse().map((d) =>
+                'L' + xScale(d.x) + ',' + yScale(d.y)
+            ).join(' ') + 'Z';
+
+            document.getElementById('metricLine').setAttribute('d', metricPath);
+            document.getElementById('realityLine').setAttribute('d', realityPath);
+            document.getElementById('divergenceArea').setAttribute('d', areaPath);
+        }
+
+        function updateInsight(intensity, divergence) {
+            const s = scenarios[currentScenario];
+            let insight;
+
+            if (intensity < 0.3) {
+                insight = `With low stakes and limited gaming creativity, the ${s.metric} metric stays reasonably aligned with ${s.goal}. But watch what happens as you increase the pressure...`;
+            } else if (intensity < 0.6) {
+                insight = `Gaming is emerging. People have figured out how to boost ${s.metric} without actually improving ${s.goal}. The ${Math.round(divergence)}% gap represents pure illusion—you think things are better than they are.`;
+            } else {
+                insight = `Severe Goodhart's Law in effect. The ${s.metric} metric has become nearly meaningless. It shows improvement while ${s.goal} may actually be declining. You're now optimizing for a number, not the thing you actually care about.`;
+            }
+
+            document.getElementById('insightText').textContent = insight;
+        }
+
+        // Initialize
+        updateScenario();
+    </script>
+</body>
+</html>

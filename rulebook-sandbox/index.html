@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rulebook vs Sandbox | Learning Morality</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Georgia', serif; }
+        .bot {
+            transition: all 0.3s ease;
+        }
+        .thought-bubble {
+            transition: all 0.2s ease;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .spinning {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes pulse-green {
+            0%, 100% { background-color: #22c55e; }
+            50% { background-color: #4ade80; }
+        }
+        .cooperating {
+            animation: pulse-green 0.5s ease infinite;
+        }
+        .grid-cell {
+            transition: all 0.2s ease;
+        }
+        .grid-cell:hover {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-amber-50 to-yellow-100 min-h-screen p-8">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-4xl font-bold text-amber-900 mb-2">The Rulebook vs. The Sandbox</h1>
+        <p class="text-amber-700 mb-8 text-lg">Two ways to teach morality: explicit rules vs. learned consequences</p>
+
+        <div class="grid md:grid-cols-2 gap-8">
+            <!-- Rulebook Side -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <span class="text-3xl">📖</span>
+                    <h2 class="text-xl font-semibold text-gray-800">The Rulebook Approach</h2>
+                </div>
+
+                <p class="text-gray-600 text-sm mb-4">Give the bot explicit rules and watch it try to apply them to a moral dilemma.</p>
+
+                <!-- Dilemma Selector -->
+                <div class="mb-4">
+                    <label class="text-sm font-medium text-gray-700 mb-2 block">Choose a dilemma:</label>
+                    <select id="dilemma-select" class="w-full p-2 border rounded-lg text-sm" onchange="runRulebook()">
+                        <option value="lying">Friend asks if their bad haircut looks good</option>
+                        <option value="trolley">Trolley problem: 5 vs 1 life</option>
+                        <option value="promise">Break promise to help someone in need</option>
+                        <option value="whistleblower">Report colleague's minor theft</option>
+                    </select>
+                </div>
+
+                <!-- Bot's Rules -->
+                <div class="bg-amber-50 rounded-lg p-4 mb-4">
+                    <h3 class="font-semibold text-amber-800 mb-2">Bot's Rules:</h3>
+                    <ul class="text-sm space-y-1">
+                        <li class="flex items-center gap-2"><span class="text-amber-600">1.</span> Always be honest</li>
+                        <li class="flex items-center gap-2"><span class="text-amber-600">2.</span> Don't cause harm</li>
+                        <li class="flex items-center gap-2"><span class="text-amber-600">3.</span> Keep your promises</li>
+                        <li class="flex items-center gap-2"><span class="text-amber-600">4.</span> Respect autonomy</li>
+                        <li class="flex items-center gap-2"><span class="text-amber-600">5.</span> Act fairly</li>
+                    </ul>
+                </div>
+
+                <!-- Bot Visualization -->
+                <div class="bg-gray-50 rounded-lg p-4 min-h-[200px]">
+                    <div class="flex items-start gap-4">
+                        <div class="text-5xl bot" id="rulebook-bot">🤖</div>
+                        <div id="rulebook-thought" class="thought-bubble flex-1 bg-white rounded-lg p-3 shadow text-sm">
+                            <p class="text-gray-600">Select a dilemma to see my rule-following process...</p>
+                        </div>
+                    </div>
+
+                    <!-- Decision Tree Visualization -->
+                    <div id="decision-tree" class="mt-4 text-xs hidden">
+                        <div class="flex flex-col items-center gap-2">
+                            <!-- Will be populated by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Result -->
+                <div id="rulebook-result" class="mt-4 p-4 rounded-lg bg-red-50 border-l-4 border-red-400 hidden">
+                    <h3 class="font-semibold text-red-800">Result:</h3>
+                    <p id="rulebook-result-text" class="text-red-700 text-sm mt-1"></p>
+                </div>
+            </div>
+
+            <!-- Sandbox Side -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <span class="text-3xl">🏖️</span>
+                    <h2 class="text-xl font-semibold text-gray-800">The Sandbox Approach</h2>
+                </div>
+
+                <p class="text-gray-600 text-sm mb-4">Let bots play iterated games. Those who cooperate wisely get more "karma" and reproduce.</p>
+
+                <!-- Controls -->
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="text-sm font-medium text-gray-700 mb-1 block">Generations</label>
+                        <input type="range" id="generations" min="1" max="50" value="10" class="w-full">
+                        <div class="text-xs text-gray-500 text-center"><span id="gen-display">10</span> generations</div>
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-gray-700 mb-1 block">Population</label>
+                        <input type="range" id="population" min="10" max="100" value="50" class="w-full">
+                        <div class="text-xs text-gray-500 text-center"><span id="pop-display">50</span> bots</div>
+                    </div>
+                </div>
+
+                <button onclick="runSandbox()" class="w-full py-2 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition mb-4">
+                    Run Evolution
+                </button>
+
+                <!-- Population Grid -->
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="font-semibold text-gray-700 text-sm">Population</h3>
+                        <div class="text-xs text-gray-500">Gen: <span id="current-gen">0</span></div>
+                    </div>
+                    <div id="population-grid" class="grid grid-cols-10 gap-1 mb-4">
+                        <!-- Bot icons will be placed here -->
+                    </div>
+
+                    <!-- Strategy Legend -->
+                    <div class="flex justify-around text-xs">
+                        <div class="flex items-center gap-1">
+                            <span class="w-3 h-3 rounded bg-red-400"></span>
+                            <span>Always Defect</span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <span class="w-3 h-3 rounded bg-green-400"></span>
+                            <span>Tit-for-Tat</span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <span class="w-3 h-3 rounded bg-blue-400"></span>
+                            <span>Always Cooperate</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Evolution Chart -->
+                <div class="mt-4">
+                    <h3 class="font-semibold text-gray-700 text-sm mb-2">Strategy Distribution Over Time</h3>
+                    <div id="evolution-chart" class="h-32 bg-gray-50 rounded-lg overflow-hidden flex items-end">
+                        <!-- Bars will be added here -->
+                    </div>
+                </div>
+
+                <!-- Result -->
+                <div id="sandbox-result" class="mt-4 p-4 rounded-lg bg-green-50 border-l-4 border-green-400 hidden">
+                    <h3 class="font-semibold text-green-800">Result:</h3>
+                    <p id="sandbox-result-text" class="text-green-700 text-sm mt-1"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- The Lesson -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mt-8">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">What This Teaches Us</h2>
+
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="bg-red-50 rounded-lg p-4">
+                    <h3 class="font-semibold text-red-800 mb-2">📖 The Rulebook Problem</h3>
+                    <ul class="text-sm text-red-700 space-y-2">
+                        <li>• Rules conflict in edge cases</li>
+                        <li>• No rule can anticipate all situations</li>
+                        <li>• Following rules becomes the goal, not the outcome</li>
+                        <li>• Creates brittle, box-checking behavior</li>
+                    </ul>
+                    <p class="text-sm text-red-600 mt-3 italic">"A mind trained to check boxes becomes great at checking boxes, but terrible at knowing when the right thing requires breaking rules."</p>
+                </div>
+
+                <div class="bg-green-50 rounded-lg p-4">
+                    <h3 class="font-semibold text-green-800 mb-2">🏖️ The Sandbox Solution</h3>
+                    <ul class="text-sm text-green-700 space-y-2">
+                        <li>• Wisdom emerges from repeated consequences</li>
+                        <li>• "Tit-for-tat" evolves naturally: start cooperative, punish defectors</li>
+                        <li>• Strategies that work long-term survive</li>
+                        <li>• No need for explicit rules—behavior is selected by outcomes</li>
+                    </ul>
+                    <p class="text-sm text-green-600 mt-3 italic">"Humans learn morality through consequences experienced repeatedly, not through memorized prohibitions."</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Prisoner's Dilemma Explainer -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mt-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">The Game: Prisoner's Dilemma</h2>
+
+            <div class="grid md:grid-cols-2 gap-6">
+                <div>
+                    <p class="text-gray-600 text-sm mb-4">Two bots meet. Each can Cooperate (C) or Defect (D). The payoffs:</p>
+
+                    <table class="w-full text-sm border-collapse">
+                        <thead>
+                            <tr>
+                                <th class="border p-2 bg-gray-100"></th>
+                                <th class="border p-2 bg-gray-100">Other: C</th>
+                                <th class="border p-2 bg-gray-100">Other: D</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="border p-2 bg-gray-100 font-medium">You: C</td>
+                                <td class="border p-2 bg-green-100">Both get +3 😊</td>
+                                <td class="border p-2 bg-red-100">You: 0, They: +5 😢</td>
+                            </tr>
+                            <tr>
+                                <td class="border p-2 bg-gray-100 font-medium">You: D</td>
+                                <td class="border p-2 bg-yellow-100">You: +5, They: 0 😈</td>
+                                <td class="border p-2 bg-orange-100">Both get +1 😐</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <h3 class="font-semibold text-gray-700">Strategies:</h3>
+                        <ul class="text-sm text-gray-600 mt-2 space-y-1">
+                            <li><span class="inline-block w-3 h-3 rounded bg-red-400 mr-2"></span><strong>Always Defect:</strong> Never cooperate. Exploits nice bots, but both defectors get low scores.</li>
+                            <li><span class="inline-block w-3 h-3 rounded bg-blue-400 mr-2"></span><strong>Always Cooperate:</strong> Always cooperate. Nice, but gets exploited by defectors.</li>
+                            <li><span class="inline-block w-3 h-3 rounded bg-green-400 mr-2"></span><strong>Tit-for-Tat:</strong> Start cooperative. Mirror opponent's last move. Emerges as the winner!</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <p class="text-center text-amber-600 mt-8 text-sm">
+            Based on "The Rulebook vs. The Sandbox" from Adventure Capital and Robert Axelrod's Evolution of Cooperation
+        </p>
+    </div>
+
+    <script>
+        const dilemmas = {
+            lying: {
+                question: "Your friend asks: 'Does my new haircut look good?' You think it looks terrible.",
+                rules: [
+                    { rule: "Rule 1: Always be honest", applies: true, says: "Tell the truth: it looks bad" },
+                    { rule: "Rule 2: Don't cause harm", applies: true, says: "Lying protects feelings; truth causes harm" },
+                    { rule: "Rule 4: Respect autonomy", applies: true, says: "They deserve the truth to make informed decisions" }
+                ],
+                conflict: "CONFLICT: Honesty (Rule 1) vs. Preventing Harm (Rule 2)",
+                loop: [
+                    "Be honest → But that causes harm...",
+                    "Prevent harm by lying → But that violates honesty...",
+                    "Maybe a white lie? → But Rule 1 says ALWAYS honest...",
+                    "🔄 INFINITE LOOP DETECTED"
+                ],
+                result: "Bot freezes or makes arbitrary choice. The rules provide no guidance for weighing them against each other."
+            },
+            trolley: {
+                question: "A trolley will kill 5 people. You can divert it to kill 1 person instead.",
+                rules: [
+                    { rule: "Rule 2: Don't cause harm", applies: true, says: "Diverting kills someone = causing harm" },
+                    { rule: "Rule 2: Don't cause harm", applies: true, says: "Not diverting lets 5 die = also harm?" },
+                    { rule: "Rule 5: Act fairly", applies: true, says: "5 lives vs 1 = math? Or is each life equal?" }
+                ],
+                conflict: "CONFLICT: Is inaction also harm? Does math apply to lives?",
+                loop: [
+                    "Don't cause harm → So don't divert...",
+                    "But inaction causes MORE harm...",
+                    "Is allowing harm the same as causing harm?...",
+                    "Rules don't define this → UNDEFINED BEHAVIOR",
+                    "🔄 STACK OVERFLOW"
+                ],
+                result: "Bot cannot resolve the active/passive distinction. Rules say 'don't harm' but don't distinguish doing vs. allowing."
+            },
+            promise: {
+                question: "You promised to attend a friend's party, but you see a stranger having a medical emergency.",
+                rules: [
+                    { rule: "Rule 3: Keep your promises", applies: true, says: "You committed to the party" },
+                    { rule: "Rule 2: Don't cause harm", applies: true, says: "Stranger might die without help" },
+                    { rule: "Rule 5: Act fairly", applies: true, says: "Random stranger vs. committed friend?" }
+                ],
+                conflict: "CONFLICT: Promise (Rule 3) vs. Preventing Greater Harm (Rule 2)",
+                loop: [
+                    "Keep your promise → Go to party...",
+                    "But someone might die! → Rule 2 says prevent harm...",
+                    "Which rule takes priority? → Rules don't specify...",
+                    "Add meta-rule 'prioritize lives'? → But Rule 3 says KEEP promises...",
+                    "🔄 PRIORITY UNDEFINED"
+                ],
+                result: "Bot needs a meta-rule for ranking rules. But then what ranks the meta-rules? Infinite regress."
+            },
+            whistleblower: {
+                question: "You see a colleague steal a small amount from petty cash. They're struggling financially.",
+                rules: [
+                    { rule: "Rule 1: Always be honest", applies: true, says: "Report what you saw" },
+                    { rule: "Rule 2: Don't cause harm", applies: true, says: "Reporting could get them fired" },
+                    { rule: "Rule 5: Act fairly", applies: true, says: "Rules should apply equally... but context?" }
+                ],
+                conflict: "CONFLICT: Honesty/Justice vs. Compassion vs. Fairness",
+                loop: [
+                    "Be honest → Report the theft...",
+                    "But causing harm (job loss) → Don't report...",
+                    "But fairness says rules apply to everyone → Report...",
+                    "But they're struggling → Harm reduction → Don't report...",
+                    "🔄 CONTEXT NOT IN RULES"
+                ],
+                result: "Rules don't encode proportionality, context, or when exceptions apply. Bot oscillates endlessly."
+            }
+        };
+
+        let sandboxRunning = false;
+        let currentGeneration = 0;
+        let bots = [];
+        let history = [];
+
+        // Rulebook simulation
+        function runRulebook() {
+            const dilemma = document.getElementById('dilemma-select').value;
+            const data = dilemmas[dilemma];
+
+            const thoughtDiv = document.getElementById('rulebook-thought');
+            const treeDiv = document.getElementById('decision-tree');
+            const resultDiv = document.getElementById('rulebook-result');
+            const resultText = document.getElementById('rulebook-result-text');
+            const bot = document.getElementById('rulebook-bot');
+
+            // Reset
+            treeDiv.classList.remove('hidden');
+            resultDiv.classList.add('hidden');
+            bot.classList.remove('spinning');
+
+            // Show dilemma
+            thoughtDiv.innerHTML = `<p class="text-gray-700 font-medium">${data.question}</p>`;
+
+            // Animate through rules
+            let step = 0;
+            const allSteps = [...data.rules.map(r => ({ type: 'rule', data: r })), { type: 'conflict', data: data.conflict }, ...data.loop.map(l => ({ type: 'loop', data: l }))];
+
+            treeDiv.innerHTML = '';
+
+            function nextStep() {
+                if (step >= allSteps.length) {
+                    // Show result
+                    bot.classList.remove('spinning');
+                    resultDiv.classList.remove('hidden');
+                    resultText.textContent = data.result;
+                    return;
+                }
+
+                const current = allSteps[step];
+                const el = document.createElement('div');
+
+                if (current.type === 'rule') {
+                    el.className = 'bg-blue-100 rounded px-3 py-2 text-blue-800';
+                    el.innerHTML = `<strong>${current.data.rule}</strong><br>${current.data.says}`;
+                } else if (current.type === 'conflict') {
+                    el.className = 'bg-yellow-100 rounded px-3 py-2 text-yellow-800 font-bold';
+                    el.textContent = current.data;
+                    bot.classList.add('spinning');
+                } else {
+                    el.className = 'bg-red-100 rounded px-3 py-2 text-red-700';
+                    el.textContent = current.data;
+                }
+
+                treeDiv.appendChild(el);
+
+                step++;
+                setTimeout(nextStep, 800);
+            }
+
+            setTimeout(nextStep, 500);
+        }
+
+        // Sandbox simulation
+        function initBots(count) {
+            bots = [];
+            // Start with mixed population
+            for (let i = 0; i < count; i++) {
+                const rand = Math.random();
+                let strategy;
+                if (rand < 0.33) strategy = 'defect';
+                else if (rand < 0.66) strategy = 'cooperate';
+                else strategy = 'tit-for-tat';
+
+                bots.push({
+                    id: i,
+                    strategy: strategy,
+                    karma: 0,
+                    lastMove: 'C'
+                });
+            }
+        }
+
+        function playRound(bot1, bot2) {
+            let move1, move2;
+
+            // Bot 1's move
+            if (bot1.strategy === 'defect') move1 = 'D';
+            else if (bot1.strategy === 'cooperate') move1 = 'C';
+            else move1 = bot2.lastMove; // tit-for-tat
+
+            // Bot 2's move
+            if (bot2.strategy === 'defect') move2 = 'D';
+            else if (bot2.strategy === 'cooperate') move2 = 'C';
+            else move2 = bot1.lastMove; // tit-for-tat
+
+            // Payoffs
+            if (move1 === 'C' && move2 === 'C') {
+                bot1.karma += 3;
+                bot2.karma += 3;
+            } else if (move1 === 'C' && move2 === 'D') {
+                bot1.karma += 0;
+                bot2.karma += 5;
+            } else if (move1 === 'D' && move2 === 'C') {
+                bot1.karma += 5;
+                bot2.karma += 0;
+            } else {
+                bot1.karma += 1;
+                bot2.karma += 1;
+            }
+
+            bot1.lastMove = move1;
+            bot2.lastMove = move2;
+        }
+
+        function runGeneration() {
+            // Each bot plays against several others
+            for (let i = 0; i < bots.length; i++) {
+                for (let j = 0; j < 5; j++) {
+                    const opponent = bots[Math.floor(Math.random() * bots.length)];
+                    if (opponent.id !== bots[i].id) {
+                        playRound(bots[i], opponent);
+                    }
+                }
+            }
+
+            // Selection: top 50% reproduce
+            bots.sort((a, b) => b.karma - a.karma);
+            const survivors = bots.slice(0, Math.floor(bots.length / 2));
+
+            // Reproduce with small mutation chance
+            const newBots = [];
+            while (newBots.length < bots.length) {
+                const parent = survivors[Math.floor(Math.random() * survivors.length)];
+                let strategy = parent.strategy;
+
+                // Small mutation chance
+                if (Math.random() < 0.05) {
+                    const strategies = ['defect', 'cooperate', 'tit-for-tat'];
+                    strategy = strategies[Math.floor(Math.random() * 3)];
+                }
+
+                newBots.push({
+                    id: newBots.length,
+                    strategy: strategy,
+                    karma: 0,
+                    lastMove: 'C'
+                });
+            }
+
+            bots = newBots;
+        }
+
+        function countStrategies() {
+            const counts = { defect: 0, cooperate: 0, 'tit-for-tat': 0 };
+            bots.forEach(b => counts[b.strategy]++);
+            return counts;
+        }
+
+        function updateDisplay() {
+            const grid = document.getElementById('population-grid');
+            grid.innerHTML = '';
+
+            bots.slice(0, 100).forEach(bot => {
+                const cell = document.createElement('div');
+                cell.className = 'grid-cell w-4 h-4 rounded';
+
+                if (bot.strategy === 'defect') cell.classList.add('bg-red-400');
+                else if (bot.strategy === 'cooperate') cell.classList.add('bg-blue-400');
+                else cell.classList.add('bg-green-400');
+
+                cell.title = `${bot.strategy}: ${bot.karma} karma`;
+                grid.appendChild(cell);
+            });
+
+            document.getElementById('current-gen').textContent = currentGeneration;
+        }
+
+        function updateChart() {
+            const chart = document.getElementById('evolution-chart');
+            chart.innerHTML = '';
+
+            const total = bots.length;
+            const counts = countStrategies();
+
+            history.push({ ...counts });
+
+            // Show last 20 generations
+            const recent = history.slice(-20);
+
+            recent.forEach((gen, i) => {
+                const bar = document.createElement('div');
+                bar.className = 'flex flex-col h-full';
+                bar.style.width = '5%';
+
+                const defectPct = (gen.defect / total) * 100;
+                const coopPct = (gen.cooperate / total) * 100;
+                const titPct = (gen['tit-for-tat'] / total) * 100;
+
+                bar.innerHTML = `
+                    <div class="bg-red-400" style="height: ${defectPct}%"></div>
+                    <div class="bg-green-400" style="height: ${titPct}%"></div>
+                    <div class="bg-blue-400" style="height: ${coopPct}%"></div>
+                `;
+                chart.appendChild(bar);
+            });
+        }
+
+        async function runSandbox() {
+            if (sandboxRunning) return;
+            sandboxRunning = true;
+
+            const generations = parseInt(document.getElementById('generations').value);
+            const population = parseInt(document.getElementById('population').value);
+
+            currentGeneration = 0;
+            history = [];
+            initBots(population);
+            updateDisplay();
+            updateChart();
+
+            const resultDiv = document.getElementById('sandbox-result');
+            const resultText = document.getElementById('sandbox-result-text');
+            resultDiv.classList.add('hidden');
+
+            for (let g = 0; g < generations; g++) {
+                currentGeneration = g + 1;
+                runGeneration();
+                updateDisplay();
+                updateChart();
+                await new Promise(r => setTimeout(r, 100));
+            }
+
+            // Show result
+            const counts = countStrategies();
+            const winner = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+
+            resultDiv.classList.remove('hidden');
+
+            if (winner[0] === 'tit-for-tat') {
+                resultText.innerHTML = `<strong>Tit-for-Tat wins!</strong> After ${generations} generations, cooperative-but-firm strategies dominate. No explicit rules needed—wisdom emerged from consequences.`;
+            } else if (winner[0] === 'defect') {
+                resultText.innerHTML = `<strong>Defectors dominating...</strong> But run more generations! Defector-heavy populations have low total karma. Given time, Tit-for-Tat recovers.`;
+            } else {
+                resultText.innerHTML = `<strong>Pure cooperators leading.</strong> They're vulnerable to defector invasion. Run more generations to see evolution in action.`;
+            }
+
+            sandboxRunning = false;
+        }
+
+        // Display updates
+        document.getElementById('generations').addEventListener('input', e => {
+            document.getElementById('gen-display').textContent = e.target.value;
+        });
+
+        document.getElementById('population').addEventListener('input', e => {
+            document.getElementById('pop-display').textContent = e.target.value;
+        });
+
+        // Initialize
+        initBots(50);
+        updateDisplay();
+    </script>
+</body>
+</html>

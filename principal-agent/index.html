@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Principal-Agent Problem</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Source Serif 4', serif; }
+        .mono { font-family: 'Space Grotesk', sans-serif; }
+
+        .slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #e5e7eb;
+            outline: none;
+        }
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #1f2937;
+            cursor: pointer;
+            border: 3px solid white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        .section-break {
+            border: none;
+            height: 2px;
+            background: linear-gradient(to right, transparent, #d1d5db, transparent);
+            margin: 2rem 0;
+        }
+
+        .person-icon {
+            font-size: 3rem;
+            line-height: 1;
+        }
+
+        .divergence-meter {
+            height: 12px;
+            background: #e5e7eb;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .divergence-fill {
+            height: 100%;
+            border-radius: 6px;
+            transition: width 0.4s ease, background 0.4s ease;
+        }
+    </style>
+</head>
+<body class="bg-stone-50 text-stone-800">
+    <div class="max-w-3xl mx-auto px-6 py-12">
+        <header class="mb-8">
+            <h1 class="mono text-3xl font-bold text-stone-900 mb-2">Principal-Agent Problem</h1>
+            <p class="text-stone-600 mono text-sm">Why your incentives aren't my incentives</p>
+        </header>
+
+        <article class="space-y-6">
+            <p>
+                When you hire someone (agent) to act on your behalf (principal), their interests
+                may not align with yours. They know more than you, and you can't watch everything they do.
+            </p>
+
+            <hr class="section-break">
+
+            <!-- The Players -->
+            <div class="grid grid-cols-2 gap-6 mb-6">
+                <div class="bg-blue-50 rounded-xl p-6 border border-blue-200 text-center">
+                    <div class="person-icon mb-2">👔</div>
+                    <div class="mono font-semibold text-blue-900">Principal</div>
+                    <div class="text-sm text-blue-600 mt-1">You (the one delegating)</div>
+                    <div class="mono text-xs text-blue-500 mt-2">Wants: maximize outcome value</div>
+                </div>
+                <div class="bg-amber-50 rounded-xl p-6 border border-amber-200 text-center">
+                    <div class="person-icon mb-2">🧑‍💼</div>
+                    <div class="mono font-semibold text-amber-900">Agent</div>
+                    <div class="text-sm text-amber-600 mt-1">Them (the one acting)</div>
+                    <div class="mono text-xs text-amber-500 mt-2">Wants: maximize personal utility</div>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="bg-white rounded-xl border border-stone-200 p-6 space-y-5">
+                <h2 class="mono text-lg font-semibold text-stone-900 mb-4">Relationship Parameters</h2>
+
+                <div>
+                    <div class="flex justify-between mb-2">
+                        <label class="mono text-sm font-semibold text-stone-700">Information Asymmetry</label>
+                        <span id="asymmetryValue" class="mono text-sm text-stone-500">50%</span>
+                    </div>
+                    <input type="range" id="asymmetry" class="slider" min="0" max="100" value="50" oninput="calculate()">
+                    <p class="text-xs text-stone-400 mt-1">How much more does the agent know than the principal?</p>
+                </div>
+
+                <div>
+                    <div class="flex justify-between mb-2">
+                        <label class="mono text-sm font-semibold text-stone-700">Monitoring Ability</label>
+                        <span id="monitoringValue" class="mono text-sm text-stone-500">50%</span>
+                    </div>
+                    <input type="range" id="monitoring" class="slider" min="0" max="100" value="50" oninput="calculate()">
+                    <p class="text-xs text-stone-400 mt-1">How well can the principal observe the agent's actions?</p>
+                </div>
+
+                <div>
+                    <div class="flex justify-between mb-2">
+                        <label class="mono text-sm font-semibold text-stone-700">Incentive Alignment</label>
+                        <span id="alignmentValue" class="mono text-sm text-stone-500">50%</span>
+                    </div>
+                    <input type="range" id="alignment" class="slider" min="0" max="100" value="50" oninput="calculate()">
+                    <p class="text-xs text-stone-400 mt-1">How much of the agent's pay depends on principal's outcomes?</p>
+                </div>
+
+                <div>
+                    <div class="flex justify-between mb-2">
+                        <label class="mono text-sm font-semibold text-stone-700">Agent's Risk Aversion</label>
+                        <span id="riskValue" class="mono text-sm text-stone-500">50%</span>
+                    </div>
+                    <input type="range" id="risk" class="slider" min="0" max="100" value="50" oninput="calculate()">
+                    <p class="text-xs text-stone-400 mt-1">How much does the agent prefer safe options over risky ones?</p>
+                </div>
+
+                <div>
+                    <div class="flex justify-between mb-2">
+                        <label class="mono text-sm font-semibold text-stone-700">Relationship Duration</label>
+                        <span id="durationValue" class="mono text-sm text-stone-500">Medium</span>
+                    </div>
+                    <input type="range" id="duration" class="slider" min="0" max="100" value="50" oninput="calculate()">
+                    <p class="text-xs text-stone-400 mt-1">One-time vs long-term relationship (affects reputation effects)</p>
+                </div>
+            </div>
+
+            <hr class="section-break">
+
+            <!-- Outcome Visualization -->
+            <div class="bg-white rounded-xl border border-stone-200 p-6">
+                <h2 class="mono text-lg font-semibold text-stone-900 mb-4">Behavior Divergence</h2>
+
+                <div class="space-y-6">
+                    <!-- What principal wants -->
+                    <div>
+                        <div class="flex justify-between mb-2">
+                            <span class="mono text-sm font-semibold text-blue-700">What Principal Wants</span>
+                            <span id="principalWants" class="mono text-sm text-blue-600">Maximize long-term value</span>
+                        </div>
+                        <div class="divergence-meter">
+                            <div class="divergence-fill bg-blue-500" style="width: 100%"></div>
+                        </div>
+                    </div>
+
+                    <!-- What agent does -->
+                    <div>
+                        <div class="flex justify-between mb-2">
+                            <span class="mono text-sm font-semibold text-amber-700">What Agent Does</span>
+                            <span id="agentDoes" class="mono text-sm text-amber-600">Varies...</span>
+                        </div>
+                        <div class="divergence-meter">
+                            <div id="agentBar" class="divergence-fill bg-amber-500" style="width: 50%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Gap -->
+                    <div class="pt-4 border-t border-stone-200">
+                        <div class="flex justify-between items-center">
+                            <span class="mono font-semibold text-stone-700">Interest Divergence</span>
+                            <span id="divergencePercent" class="mono text-2xl font-bold text-red-600">35%</span>
+                        </div>
+                        <div class="divergence-meter mt-2">
+                            <div id="divergenceBar" class="divergence-fill bg-red-500" style="width: 35%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Behaviors -->
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-white rounded-xl p-5 border border-stone-200">
+                    <h3 class="mono text-sm font-semibold text-stone-700 mb-3">Agent Likely To:</h3>
+                    <ul id="likelyBehaviors" class="space-y-2 text-sm text-stone-600">
+                    </ul>
+                </div>
+                <div class="bg-white rounded-xl p-5 border border-stone-200">
+                    <h3 class="mono text-sm font-semibold text-stone-700 mb-3">Agent Unlikely To:</h3>
+                    <ul id="unlikelyBehaviors" class="space-y-2 text-sm text-stone-600">
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Insight -->
+            <div id="insightBox" class="p-6 rounded-xl border-2 border-amber-200 bg-amber-50">
+                <h3 class="mono font-semibold text-amber-900 mb-2">The dynamic</h3>
+                <p id="insightText" class="text-amber-800"></p>
+            </div>
+
+            <hr class="section-break">
+
+            <!-- Real Examples -->
+            <h2 class="mono text-lg font-semibold text-stone-900">Real-world examples</h2>
+
+            <div class="space-y-4">
+                <div class="flex gap-4 items-start p-4 bg-white rounded-lg border border-stone-200">
+                    <span class="text-2xl">🏦</span>
+                    <div>
+                        <h3 class="mono font-semibold text-stone-900">Fund Managers</h3>
+                        <p class="text-sm text-stone-600">Paid on assets under management, not returns. Incentive: gather assets, not outperform. Taking big risks could lose assets; safer to be mediocre.</p>
+                    </div>
+                </div>
+                <div class="flex gap-4 items-start p-4 bg-white rounded-lg border border-stone-200">
+                    <span class="text-2xl">🏥</span>
+                    <div>
+                        <h3 class="mono font-semibold text-stone-900">Doctors (Fee-for-Service)</h3>
+                        <p class="text-sm text-stone-600">Paid per procedure. Incentive: more procedures, regardless of whether they help. Patient wants health; doctor's income tied to activity.</p>
+                    </div>
+                </div>
+                <div class="flex gap-4 items-start p-4 bg-white rounded-lg border border-stone-200">
+                    <span class="text-2xl">🏠</span>
+                    <div>
+                        <h3 class="mono font-semibold text-stone-900">Real Estate Agents</h3>
+                        <p class="text-sm text-stone-600">Paid % of sale price, but their time is valuable. Incentive: close deals fast, not get you the best price. An extra $10K for you is only $300 for them.</p>
+                    </div>
+                </div>
+                <div class="flex gap-4 items-start p-4 bg-white rounded-lg border border-stone-200">
+                    <span class="text-2xl">👔</span>
+                    <div>
+                        <h3 class="mono font-semibold text-stone-900">CEOs (Quarterly Targets)</h3>
+                        <p class="text-sm text-stone-600">Compensated on short-term stock price and quarterly earnings. Incentive: pump short-term numbers, even at long-term cost. Shareholders want lasting value.</p>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="section-break">
+
+            <!-- Solutions -->
+            <h2 class="mono text-lg font-semibold text-stone-900">Mitigating the problem</h2>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="p-4 bg-emerald-50 rounded-lg border border-emerald-200">
+                    <div class="mono font-semibold text-emerald-900 mb-2">Align Incentives</div>
+                    <p class="text-sm text-emerald-700">Equity, profit sharing, skin in the game. Make agent's success depend on principal's success.</p>
+                </div>
+                <div class="p-4 bg-emerald-50 rounded-lg border border-emerald-200">
+                    <div class="mono font-semibold text-emerald-900 mb-2">Increase Monitoring</div>
+                    <p class="text-sm text-emerald-700">Better reporting, transparency, audits. Reduce information asymmetry.</p>
+                </div>
+                <div class="p-4 bg-emerald-50 rounded-lg border border-emerald-200">
+                    <div class="mono font-semibold text-emerald-900 mb-2">Extend Time Horizon</div>
+                    <p class="text-sm text-emerald-700">Long vesting, deferred compensation. Make reputation matter more.</p>
+                </div>
+                <div class="p-4 bg-emerald-50 rounded-lg border border-emerald-200">
+                    <div class="mono font-semibold text-emerald-900 mb-2">Select Better</div>
+                    <p class="text-sm text-emerald-700">Choose agents with intrinsic motivation aligned with your goals. Culture fit matters.</p>
+                </div>
+            </div>
+        </article>
+
+        <footer class="mt-12 pt-8 border-t border-stone-200 text-center">
+            <a href="/" class="mono text-sm text-stone-500 hover:text-stone-700">← Back to Projects</a>
+            <p class="mt-4 text-xs text-stone-400">
+                Explorable format inspired by <a href="https://worrydream.com/ExplorableExplanations/" class="underline hover:text-stone-600">Bret Victor</a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        function calculate() {
+            const asymmetry = parseInt(document.getElementById('asymmetry').value);
+            const monitoring = parseInt(document.getElementById('monitoring').value);
+            const alignment = parseInt(document.getElementById('alignment').value);
+            const risk = parseInt(document.getElementById('risk').value);
+            const duration = parseInt(document.getElementById('duration').value);
+
+            // Update displays
+            document.getElementById('asymmetryValue').textContent = asymmetry + '%';
+            document.getElementById('monitoringValue').textContent = monitoring + '%';
+            document.getElementById('alignmentValue').textContent = alignment + '%';
+            document.getElementById('riskValue').textContent = risk + '%';
+
+            const durationLabels = ['One-time', 'Short', 'Medium', 'Long', 'Career'];
+            document.getElementById('durationValue').textContent = durationLabels[Math.floor(duration / 25)];
+
+            // Calculate divergence
+            // High asymmetry + low monitoring + low alignment = high divergence
+            // Duration helps because of reputation effects
+            const rawDivergence = (asymmetry * 0.3) + ((100 - monitoring) * 0.25) + ((100 - alignment) * 0.35);
+            const reputationDiscount = duration * 0.1;
+            const divergence = Math.max(0, Math.min(100, rawDivergence - reputationDiscount));
+
+            // Update divergence display
+            document.getElementById('divergencePercent').textContent = Math.round(divergence) + '%';
+            document.getElementById('divergenceBar').style.width = divergence + '%';
+
+            if (divergence < 20) {
+                document.getElementById('divergencePercent').className = 'mono text-2xl font-bold text-emerald-600';
+                document.getElementById('divergenceBar').className = 'divergence-fill bg-emerald-500';
+            } else if (divergence < 50) {
+                document.getElementById('divergencePercent').className = 'mono text-2xl font-bold text-amber-600';
+                document.getElementById('divergenceBar').className = 'divergence-fill bg-amber-500';
+            } else {
+                document.getElementById('divergencePercent').className = 'mono text-2xl font-bold text-red-600';
+                document.getElementById('divergenceBar').className = 'divergence-fill bg-red-500';
+            }
+
+            // Agent alignment bar
+            document.getElementById('agentBar').style.width = (100 - divergence) + '%';
+
+            // Update agent description
+            if (divergence < 20) {
+                document.getElementById('agentDoes').textContent = 'Mostly aligned with principal';
+            } else if (divergence < 50) {
+                document.getElementById('agentDoes').textContent = 'Partially serves own interests';
+            } else {
+                document.getElementById('agentDoes').textContent = 'Primarily serves own interests';
+            }
+
+            // Update behaviors
+            updateBehaviors(asymmetry, monitoring, alignment, risk, duration, divergence);
+            updateInsight(asymmetry, monitoring, alignment, risk, duration, divergence);
+        }
+
+        function updateBehaviors(asymmetry, monitoring, alignment, risk, duration, divergence) {
+            const likely = [];
+            const unlikely = [];
+
+            // High asymmetry behaviors
+            if (asymmetry > 60) {
+                likely.push('• Hide unfavorable information');
+                likely.push('• Oversell their contributions');
+            }
+
+            // Low monitoring behaviors
+            if (monitoring < 40) {
+                likely.push('• Shirk on unobserved tasks');
+                likely.push('• Prioritize visible work over important work');
+            }
+
+            // Low alignment behaviors
+            if (alignment < 40) {
+                likely.push('• Optimize for personal metrics');
+                likely.push('• Empire build / expand scope');
+            }
+
+            // High risk aversion behaviors
+            if (risk > 60) {
+                likely.push('• Avoid innovative but risky projects');
+                likely.push('• Stick with safe, conventional choices');
+            } else if (risk < 30 && alignment < 50) {
+                likely.push('• Take excessive risks with your money');
+            }
+
+            // Short duration behaviors
+            if (duration < 30) {
+                likely.push('• Prioritize short-term over long-term');
+                likely.push('• Less concerned about reputation');
+            }
+
+            // Positive behaviors (unlikely in bad situations)
+            if (divergence > 40) {
+                unlikely.push('• Surface problems early');
+                unlikely.push('• Recommend against their interests');
+                unlikely.push('• Take ownership of failures');
+            }
+
+            if (alignment < 50) {
+                unlikely.push('• Go above and beyond');
+                unlikely.push('• Sacrifice personal gain for you');
+            }
+
+            if (monitoring < 40 && alignment < 50) {
+                unlikely.push('• Work hard when unobserved');
+            }
+
+            // Good behaviors in good situations
+            if (divergence < 30) {
+                likely.push('• Act in good faith');
+                likely.push('• Communicate honestly');
+            }
+
+            if (duration > 70) {
+                likely.push('• Protect the relationship');
+                likely.push('• Think long-term');
+            }
+
+            document.getElementById('likelyBehaviors').innerHTML = likely.length > 0
+                ? likely.map(b => `<li>${b}</li>`).join('')
+                : '<li class="text-stone-400">Minimal problematic behaviors</li>';
+
+            document.getElementById('unlikelyBehaviors').innerHTML = unlikely.length > 0
+                ? unlikely.map(b => `<li>${b}</li>`).join('')
+                : '<li class="text-stone-400">Most positive behaviors present</li>';
+        }
+
+        function updateInsight(asymmetry, monitoring, alignment, risk, duration, divergence) {
+            let insight;
+
+            if (divergence < 20) {
+                insight = `This is a well-aligned principal-agent relationship. High monitoring (${monitoring}%) and strong incentive alignment (${alignment}%) keep the agent's behavior close to what you want. The ${duration > 50 ? 'long-term' : 'relationship'} nature also helps.`;
+            } else if (divergence < 50) {
+                const mainIssue = asymmetry > monitoring ? 'information asymmetry' :
+                                 alignment < 50 ? 'weak incentive alignment' : 'insufficient monitoring';
+                insight = `Moderate divergence. The main issue is ${mainIssue}. The agent will generally act in your interest, but will quietly optimize for themselves in gray areas. Watch for gradual drift.`;
+            } else {
+                const issues = [];
+                if (asymmetry > 60) issues.push('they know much more than you');
+                if (monitoring < 40) issues.push("you can't see what they're doing");
+                if (alignment < 40) issues.push("they don't share in your success");
+                if (duration < 30) issues.push('they have no long-term stake');
+
+                insight = `High divergence: ${issues.join(', ')}. This is a setup for the agent to serve their interests, not yours. Either restructure the relationship or expect to be subtly exploited.`;
+            }
+
+            document.getElementById('insightText').textContent = insight;
+        }
+
+        // Initialize
+        calculate();
+    </script>
+</body>
+</html>
