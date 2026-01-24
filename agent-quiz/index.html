@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Librarian or Butler? - AI Agent Explorer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Source Serif 4', serif;
+            font-size: 1.1rem;
+            line-height: 1.7;
+        }
+        .mono { font-family: 'Space Grotesk', sans-serif; }
+
+        /* 2D positioning canvas */
+        .position-canvas {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, #dbeafe 0%, #f0fdf4 50%, #fef3c7 100%);
+            border-radius: 16px;
+            border: 2px solid #e5e7eb;
+            overflow: hidden;
+            cursor: crosshair;
+            touch-action: none;
+        }
+
+        /* Quadrant labels */
+        .quadrant-label {
+            position: absolute;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        /* The draggable point */
+        .position-dot {
+            position: absolute;
+            width: 28px;
+            height: 28px;
+            background: #1f2937;
+            border: 3px solid white;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            cursor: grab;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+            z-index: 10;
+        }
+
+        .position-dot:hover {
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+
+        .position-dot:active {
+            cursor: grabbing;
+            transform: translate(-50%, -50%) scale(0.95);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+        }
+
+        .position-dot::after {
+            content: 'YOU';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-top: 4px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.6rem;
+            font-weight: 700;
+            color: #1f2937;
+            white-space: nowrap;
+        }
+
+        /* Axis labels */
+        .axis-label {
+            position: absolute;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6b7280;
+        }
+
+        .axis-label.x-axis {
+            bottom: -24px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .axis-label.y-axis {
+            left: -60px;
+            top: 50%;
+            transform: translateY(-50%) rotate(-90deg);
+            white-space: nowrap;
+        }
+
+        /* Zones overlay */
+        .zone-librarian {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 50%;
+            height: 50%;
+            background: rgba(59, 130, 246, 0.1);
+            border-right: 2px dashed rgba(59, 130, 246, 0.3);
+            border-bottom: 2px dashed rgba(59, 130, 246, 0.3);
+        }
+
+        .zone-butler {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 50%;
+            height: 50%;
+            background: rgba(16, 185, 129, 0.1);
+            border-left: 2px dashed rgba(16, 185, 129, 0.3);
+            border-top: 2px dashed rgba(16, 185, 129, 0.3);
+        }
+
+        /* Result styling */
+        .result-card {
+            transition: all 0.3s ease;
+        }
+
+        .result-librarian {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border-color: #93c5fd;
+        }
+
+        .result-butler {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border-color: #86efac;
+        }
+
+        .result-hybrid {
+            background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+            border-color: #d8b4fe;
+        }
+
+        .result-danger {
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            border-color: #fca5a5;
+        }
+
+        /* Section styling */
+        .section-break {
+            border: none;
+            height: 2px;
+            background: linear-gradient(to right, transparent, #d1d5db, transparent);
+            margin: 2.5rem 0;
+        }
+
+        /* Example dots */
+        .example-dot {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0.6;
+            cursor: help;
+            transition: opacity 0.2s, transform 0.2s;
+        }
+
+        .example-dot:hover {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1.3);
+        }
+
+        .example-dot::before {
+            content: attr(data-label);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 4px 8px;
+            background: #1f2937;
+            color: white;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.65rem;
+            border-radius: 4px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+
+        .example-dot:hover::before {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="bg-stone-50 text-stone-800">
+    <div class="max-w-2xl mx-auto px-6 py-16">
+        <!-- Header -->
+        <header class="mb-10">
+            <h1 class="mono text-3xl font-bold text-stone-900 mb-2">Librarian or Butler?</h1>
+            <p class="text-stone-500 text-base mono">An explorable guide to choosing AI agent types</p>
+        </header>
+
+        <!-- Introduction -->
+        <article class="space-y-6">
+            <p>
+                There are two fundamentally different things you can ask an AI to do:
+                <strong>find and present information</strong> (Librarian), or
+                <strong>take action on your behalf</strong> (Butler).
+            </p>
+
+            <p>
+                The right choice depends on two factors:
+                <span class="mono font-semibold text-blue-600">how costly errors are</span> and
+                <span class="mono font-semibold text-emerald-600">how easily you can verify the output</span>.
+            </p>
+
+            <p class="text-stone-600 text-base">
+                Drag the dot below to position your use case. The recommendation updates in real-time.
+            </p>
+
+            <hr class="section-break">
+
+            <!-- The 2D Canvas -->
+            <div class="relative my-8" style="padding: 0 70px 40px 70px;">
+                <div id="canvas" class="position-canvas">
+                    <!-- Zones -->
+                    <div class="zone-librarian"></div>
+                    <div class="zone-butler"></div>
+
+                    <!-- Quadrant labels -->
+                    <span class="quadrant-label" style="top: 20%; left: 20%; transform: translate(-50%, -50%); color: #2563eb;">LIBRARIAN</span>
+                    <span class="quadrant-label" style="bottom: 20%; right: 20%; transform: translate(50%, 50%); color: #059669;">BUTLER</span>
+                    <span class="quadrant-label" style="top: 20%; right: 20%; transform: translate(50%, -50%); color: #dc2626;">DANGER ZONE</span>
+                    <span class="quadrant-label" style="bottom: 20%; left: 20%; transform: translate(-50%, 50%); color: #7c3aed;">HYBRID OK</span>
+
+                    <!-- Example use cases -->
+                    <div class="example-dot bg-blue-500" style="left: 25%; top: 30%;" data-label="Research assistant"></div>
+                    <div class="example-dot bg-blue-500" style="left: 35%; top: 20%;" data-label="Code review helper"></div>
+                    <div class="example-dot bg-emerald-500" style="left: 75%; top: 75%;" data-label="File organizer"></div>
+                    <div class="example-dot bg-emerald-500" style="left: 85%; top: 85%;" data-label="Calendar scheduler"></div>
+                    <div class="example-dot bg-purple-500" style="left: 30%; top: 70%;" data-label="Email drafts"></div>
+                    <div class="example-dot bg-rose-500" style="left: 80%; top: 25%;" data-label="Auto-trading bot"></div>
+                    <div class="example-dot bg-rose-500" style="left: 70%; top: 15%;" data-label="Auto-reply to customers"></div>
+
+                    <!-- The draggable dot -->
+                    <div id="dot" class="position-dot" style="left: 50%; top: 50%;"></div>
+                </div>
+
+                <!-- Axis labels -->
+                <div class="axis-label" style="bottom: 8px; left: 70px;">Low error cost</div>
+                <div class="axis-label" style="bottom: 8px; right: 70px;">High error cost →</div>
+                <div class="axis-label" style="top: 0; left: 30px; transform: rotate(-90deg); transform-origin: left top;">Hard to verify →</div>
+                <div class="axis-label" style="bottom: 45px; left: 30px; transform: rotate(-90deg); transform-origin: left bottom;">Easy to verify</div>
+            </div>
+
+            <hr class="section-break">
+
+            <!-- Dynamic Result -->
+            <div id="result" class="result-card p-6 rounded-xl border-2 result-hybrid">
+                <div class="flex items-center gap-3 mb-4">
+                    <span id="result-emoji" class="text-3xl">🔄</span>
+                    <div>
+                        <h2 id="result-title" class="mono text-xl font-bold text-stone-900">Hybrid Approach</h2>
+                        <p id="result-subtitle" class="mono text-sm text-stone-500">Both modes may apply</p>
+                    </div>
+                </div>
+                <p id="result-description" class="text-stone-700 mb-4">
+                    Your use case sits in the middle. You might use AI for research and drafting, with human review before any actions are taken.
+                </p>
+                <div id="result-advice" class="bg-white/50 rounded-lg p-4">
+                    <h3 class="mono text-sm font-semibold text-stone-600 mb-2">Recommendation</h3>
+                    <p id="advice-text" class="text-sm text-stone-600"></p>
+                </div>
+            </div>
+
+            <hr class="section-break">
+
+            <!-- Explanation section that updates -->
+            <h2 class="mono text-lg font-semibold text-stone-900">Why position matters</h2>
+
+            <div class="grid grid-cols-2 gap-4 my-6">
+                <div class="p-4 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200">
+                    <div class="text-2xl mb-2">📚</div>
+                    <h3 class="mono font-semibold text-blue-900">Librarian</h3>
+                    <p class="text-sm text-blue-700 mt-2">Retrieves, synthesizes, presents. Says "here's what I found." You decide what to do with it.</p>
+                </div>
+                <div class="p-4 rounded-lg bg-gradient-to-br from-emerald-50 to-emerald-100 border border-emerald-200">
+                    <div class="text-2xl mb-2">🎩</div>
+                    <h3 class="mono font-semibold text-emerald-900">Butler</h3>
+                    <p class="text-sm text-emerald-700 mt-2">Executes and reports. Says "I've done the thing." You verify (or trust) afterward.</p>
+                </div>
+            </div>
+
+            <p>
+                The difference isn't about AI capability—both can be sophisticated.
+                It's about <strong>accountability and reversibility</strong>.
+            </p>
+
+            <p>
+                When errors are costly or hard to detect, you want the AI to
+                <em>inform</em> your decisions, not <em>make</em> them.
+                When errors are cheap and obvious, automation saves time without adding risk.
+            </p>
+
+            <hr class="section-break">
+
+            <!-- Current position readout -->
+            <div class="bg-stone-100 rounded-xl p-6">
+                <h3 class="mono text-sm font-semibold text-stone-500 mb-4">Your current position</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <div class="mono text-xs text-stone-400 uppercase">Error Cost</div>
+                        <div id="error-cost-label" class="mono text-lg font-bold text-stone-700">Medium</div>
+                        <div class="h-2 bg-stone-200 rounded-full mt-2 overflow-hidden">
+                            <div id="error-cost-bar" class="h-full bg-blue-500 rounded-full transition-all duration-200" style="width: 50%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="mono text-xs text-stone-400 uppercase">Verification Difficulty</div>
+                        <div id="verify-label" class="mono text-lg font-bold text-stone-700">Medium</div>
+                        <div class="h-2 bg-stone-200 rounded-full mt-2 overflow-hidden">
+                            <div id="verify-bar" class="h-full bg-emerald-500 rounded-full transition-all duration-200" style="width: 50%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <!-- Footer -->
+        <footer class="mt-16 pt-8 border-t border-stone-200 text-center">
+            <a href="/" class="mono text-sm text-stone-500 hover:text-stone-700">← Back to Projects</a>
+            <p class="mt-4 text-xs text-stone-400">
+                Based on <a href="https://adventurecapital.substack.com" class="underline hover:text-stone-600">"Agents: Librarians or Butlers?"</a>
+                · Explorable format inspired by <a href="https://worrydream.com/ExplorableExplanations/" class="underline hover:text-stone-600">Bret Victor</a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const dot = document.getElementById('dot');
+        let isDragging = false;
+        let position = { x: 0.5, y: 0.5 }; // 0-1 normalized
+
+        function updateDotPosition() {
+            dot.style.left = (position.x * 100) + '%';
+            dot.style.top = (position.y * 100) + '%';
+            updateResult();
+        }
+
+        function getPositionFromEvent(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: Math.max(0.05, Math.min(0.95, (clientX - rect.left) / rect.width)),
+                y: Math.max(0.05, Math.min(0.95, (clientY - rect.top) / rect.height))
+            };
+        }
+
+        // Mouse events
+        dot.addEventListener('mousedown', e => {
+            isDragging = true;
+            e.preventDefault();
+        });
+
+        canvas.addEventListener('click', e => {
+            if (e.target === dot) return;
+            position = getPositionFromEvent(e);
+            updateDotPosition();
+        });
+
+        document.addEventListener('mousemove', e => {
+            if (!isDragging) return;
+            position = getPositionFromEvent(e);
+            updateDotPosition();
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        // Touch events
+        dot.addEventListener('touchstart', e => {
+            isDragging = true;
+            e.preventDefault();
+        });
+
+        document.addEventListener('touchmove', e => {
+            if (!isDragging) return;
+            position = getPositionFromEvent(e);
+            updateDotPosition();
+        });
+
+        document.addEventListener('touchend', () => {
+            isDragging = false;
+        });
+
+        function updateResult() {
+            // x = error cost (0=low, 1=high)
+            // y = verification difficulty (0=easy, 1=hard)
+            const errorCost = position.x;
+            const verifyDifficulty = position.y;
+
+            // Update bars
+            document.getElementById('error-cost-bar').style.width = (errorCost * 100) + '%';
+            document.getElementById('verify-bar').style.width = (verifyDifficulty * 100) + '%';
+
+            // Update labels
+            const errorLabels = ['Very Low', 'Low', 'Medium', 'High', 'Critical'];
+            const verifyLabels = ['Trivial', 'Easy', 'Moderate', 'Hard', 'Impossible'];
+            document.getElementById('error-cost-label').textContent = errorLabels[Math.floor(errorCost * 4.99)];
+            document.getElementById('verify-label').textContent = verifyLabels[Math.floor(verifyDifficulty * 4.99)];
+
+            // Determine zone and update result
+            const result = document.getElementById('result');
+            const emoji = document.getElementById('result-emoji');
+            const title = document.getElementById('result-title');
+            const subtitle = document.getElementById('result-subtitle');
+            const description = document.getElementById('result-description');
+            const advice = document.getElementById('advice-text');
+
+            result.classList.remove('result-librarian', 'result-butler', 'result-hybrid', 'result-danger');
+
+            // Top-right: Danger zone (high error cost + hard to verify)
+            if (errorCost > 0.5 && verifyDifficulty > 0.5) {
+                result.classList.add('result-danger');
+                emoji.textContent = '⚠️';
+                title.textContent = 'Danger Zone';
+                subtitle.textContent = 'Proceed with extreme caution';
+                description.textContent = `High-stakes decisions that are hard to verify afterward. This is where AI autonomy goes wrong—errors compound invisibly. Even sophisticated AI shouldn't operate autonomously here.`;
+                advice.textContent = 'Use AI as a Librarian only: research, analysis, options presented for human decision. Build in mandatory human checkpoints. Consider whether AI should be involved at all.';
+            }
+            // Top-left: Librarian (low error cost but hard to verify)
+            else if (errorCost <= 0.5 && verifyDifficulty > 0.5) {
+                result.classList.add('result-librarian');
+                emoji.textContent = '📚';
+                title.textContent = 'Librarian Mode';
+                subtitle.textContent = 'Research and synthesis';
+                description.textContent = `Even though errors aren't catastrophic, they're hard to catch. You want AI that surfaces information and drafts content, but keeps you in the decision loop.`;
+                advice.textContent = 'Good fits: research assistants, summarization, content drafting, exploratory analysis. Review outputs before acting on them, even if stakes feel low.';
+            }
+            // Bottom-right: Also Librarian (high error cost, easy to verify)
+            else if (errorCost > 0.5 && verifyDifficulty <= 0.5) {
+                result.classList.add('result-librarian');
+                emoji.textContent = '📚';
+                title.textContent = 'Librarian Mode';
+                subtitle.textContent = 'High stakes, but checkable';
+                description.textContent = `Errors are costly, but at least you can verify before committing. Have AI prepare and propose, but maintain approval authority over final actions.`;
+                advice.textContent = 'Good fits: code generation with review, email drafting before send, financial analysis with human sign-off. The verification is your safety net—use it.';
+            }
+            // Bottom-left: Butler territory (low error cost + easy to verify)
+            else if (errorCost <= 0.35 && verifyDifficulty <= 0.35) {
+                result.classList.add('result-butler');
+                emoji.textContent = '🎩';
+                title.textContent = 'Butler Mode';
+                subtitle.textContent = 'Automation appropriate';
+                description.textContent = `Low stakes and easy verification: this is where AI autonomy shines. Let the Butler handle routine operations while you spot-check occasionally.`;
+                advice.textContent = 'Good fits: file organization, calendar scheduling, routine data entry, formatting tasks. Build in logging so you can audit if needed, but don\'t require approval for every action.';
+            }
+            // Middle ground: Hybrid
+            else {
+                result.classList.add('result-hybrid');
+                emoji.textContent = '🔄';
+                title.textContent = 'Hybrid Approach';
+                subtitle.textContent = 'Context-dependent';
+                description.textContent = `You're in the middle ground where the right approach depends on specifics. Consider splitting the workflow: Butler for preparation, Librarian for decisions.`;
+                advice.textContent = 'Use automation for reversible steps, human review for commitments. Example: AI schedules meetings (Butler), but you approve external communications (Librarian).';
+            }
+        }
+
+        // Initial render
+        updateDotPosition();
+    </script>
+</body>
+</html>

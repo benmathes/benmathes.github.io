@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Sticky Starter - Anchoring Effect Visualizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Source Serif 4', serif;
+            font-size: 1.1rem;
+            line-height: 1.7;
+        }
+        .mono { font-family: 'Space Grotesk', sans-serif; }
+
+        /* Draggable score */
+        .draggable-score {
+            cursor: ew-resize;
+            user-select: none;
+            transition: transform 0.1s;
+        }
+
+        .draggable-score:hover {
+            transform: scale(1.05);
+        }
+
+        .draggable-score:active {
+            transform: scale(0.98);
+        }
+
+        /* Rater cards */
+        .rater-card {
+            transition: all 0.3s ease;
+        }
+
+        .rater-card.submitted {
+            opacity: 1;
+        }
+
+        .rater-card.pending {
+            opacity: 0.4;
+        }
+
+        .rater-card.first-rater {
+            border: 2px solid #f59e0b;
+            box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.2);
+        }
+
+        /* Score bar */
+        .score-bar-container {
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .score-bar {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.4s ease, background 0.4s ease;
+        }
+
+        /* Histogram */
+        .histogram-bar {
+            transition: height 0.4s ease;
+        }
+
+        /* Mode toggle */
+        .mode-toggle {
+            position: relative;
+            width: 200px;
+            height: 40px;
+            background: #e5e7eb;
+            border-radius: 20px;
+            cursor: pointer;
+            overflow: hidden;
+        }
+
+        .mode-toggle-slider {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: calc(50% - 4px);
+            height: 32px;
+            background: white;
+            border-radius: 16px;
+            transition: left 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .mode-toggle.independent .mode-toggle-slider {
+            left: calc(50%);
+        }
+
+        .mode-toggle-label {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 600;
+            transition: color 0.3s;
+        }
+
+        .mode-toggle-label.left {
+            left: 16px;
+            color: #1f2937;
+        }
+
+        .mode-toggle-label.right {
+            right: 16px;
+            color: #9ca3af;
+        }
+
+        .mode-toggle.independent .mode-toggle-label.left {
+            color: #9ca3af;
+        }
+
+        .mode-toggle.independent .mode-toggle-label.right {
+            color: #1f2937;
+        }
+
+        /* Section break */
+        .section-break {
+            border: none;
+            height: 2px;
+            background: linear-gradient(to right, transparent, #d1d5db, transparent);
+            margin: 2.5rem 0;
+        }
+
+        /* Animation for ratings appearing */
+        @keyframes rateIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .rate-in {
+            animation: rateIn 0.3s ease forwards;
+        }
+
+        /* Anchor indicator */
+        .anchor-line {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #f59e0b;
+            z-index: 5;
+        }
+
+        .anchor-line::after {
+            content: 'ANCHOR';
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.6rem;
+            font-weight: 700;
+            color: #f59e0b;
+            white-space: nowrap;
+        }
+
+        /* Stats highlight */
+        .stat-value {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .stat-consensus { background: #fef3c7; color: #92400e; }
+        .stat-independent { background: #dbeafe; color: #1e40af; }
+    </style>
+</head>
+<body class="bg-stone-50 text-stone-800">
+    <div class="max-w-2xl mx-auto px-6 py-16">
+        <!-- Header -->
+        <header class="mb-10">
+            <h1 class="mono text-3xl font-bold text-stone-900 mb-2">The Sticky Starter</h1>
+            <p class="text-stone-500 text-base mono">How first impressions calcify in consensus cultures</p>
+        </header>
+
+        <!-- Introduction -->
+        <article class="space-y-6">
+            <p>
+                Imagine a team evaluating a new idea, candidate, or proposal.
+                The first person to speak sets an <strong>anchor</strong>.
+                In consensus-driven cultures, subsequent opinions cluster around that anchor—even when people have independent information.
+            </p>
+
+            <p>
+                <span class="mono font-semibold text-amber-600">Drag the first rater's score</span> below and watch what happens to everyone else.
+            </p>
+
+            <hr class="section-break">
+
+            <!-- Mode Toggle -->
+            <div class="flex justify-center mb-8">
+                <div id="modeToggle" class="mode-toggle" onclick="toggleMode()">
+                    <div class="mode-toggle-slider"></div>
+                    <span class="mode-toggle-label left">Consensus</span>
+                    <span class="mode-toggle-label right">Independent</span>
+                </div>
+            </div>
+
+            <!-- The Rating Simulation -->
+            <div class="bg-white rounded-xl border border-stone-200 p-6 mb-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="mono text-lg font-semibold text-stone-900">Team Rating: "New Feature Proposal"</h2>
+                    <button onclick="rerunSimulation()" class="mono text-sm px-3 py-1 bg-stone-100 hover:bg-stone-200 rounded-lg transition">
+                        Re-run ↻
+                    </button>
+                </div>
+
+                <!-- Raters Grid -->
+                <div id="ratersGrid" class="grid grid-cols-2 gap-4 mb-8">
+                    <!-- Raters will be injected here -->
+                </div>
+
+                <!-- Histogram -->
+                <div class="mt-8">
+                    <h3 class="mono text-sm font-semibold text-stone-500 mb-4">Distribution of Ratings</h3>
+                    <div class="relative h-32 flex items-end justify-between gap-1 px-4">
+                        <!-- Anchor line -->
+                        <div id="anchorLine" class="anchor-line" style="left: 50%;"></div>
+
+                        <!-- Histogram bars -->
+                        <div id="histogram" class="flex items-end justify-between gap-1 w-full h-full">
+                            <!-- Bars will be injected -->
+                        </div>
+                    </div>
+                    <div class="flex justify-between px-4 mt-2">
+                        <span class="mono text-xs text-stone-400">1</span>
+                        <span class="mono text-xs text-stone-400">2</span>
+                        <span class="mono text-xs text-stone-400">3</span>
+                        <span class="mono text-xs text-stone-400">4</span>
+                        <span class="mono text-xs text-stone-400">5</span>
+                        <span class="mono text-xs text-stone-400">6</span>
+                        <span class="mono text-xs text-stone-400">7</span>
+                        <span class="mono text-xs text-stone-400">8</span>
+                        <span class="mono text-xs text-stone-400">9</span>
+                        <span class="mono text-xs text-stone-400">10</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Comparison -->
+            <div class="grid grid-cols-2 gap-4 mb-8">
+                <div class="p-4 rounded-lg bg-amber-50 border border-amber-200">
+                    <div class="mono text-xs text-amber-600 uppercase mb-1">Consensus Mode</div>
+                    <div class="flex items-baseline gap-2">
+                        <span class="mono text-2xl font-bold text-amber-800" id="consensusMean">7.2</span>
+                        <span class="text-sm text-amber-600">mean</span>
+                    </div>
+                    <div class="mono text-sm text-amber-600 mt-1">
+                        σ = <span id="consensusStd">0.8</span>
+                    </div>
+                </div>
+                <div class="p-4 rounded-lg bg-blue-50 border border-blue-200">
+                    <div class="mono text-xs text-blue-600 uppercase mb-1">Independent Mode</div>
+                    <div class="flex items-baseline gap-2">
+                        <span class="mono text-2xl font-bold text-blue-800" id="independentMean">5.8</span>
+                        <span class="text-sm text-blue-600">mean</span>
+                    </div>
+                    <div class="mono text-sm text-blue-600 mt-1">
+                        σ = <span id="independentStd">2.1</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dynamic insight -->
+            <div id="insightBox" class="p-6 rounded-xl border-2 border-amber-200 bg-amber-50">
+                <p id="insightText" class="text-amber-900"></p>
+            </div>
+
+            <hr class="section-break">
+
+            <!-- Explanation -->
+            <h2 class="mono text-lg font-semibold text-stone-900">Why this happens</h2>
+
+            <p>
+                <strong>Anchoring bias</strong>: The first number we hear disproportionately influences our judgment, even when we know it's arbitrary.
+            </p>
+
+            <p>
+                <strong>Social proof</strong>: In group settings, we look to others' opinions as evidence of the "correct" view. Early opinions carry extra weight.
+            </p>
+
+            <p>
+                <strong>Conformity pressure</strong>: Deviating significantly from the group feels risky. We self-censor extreme opinions to avoid seeming "difficult."
+            </p>
+
+            <hr class="section-break">
+
+            <!-- Solutions -->
+            <h2 class="mono text-lg font-semibold text-stone-900">How to break the pattern</h2>
+
+            <div class="space-y-4">
+                <div class="flex gap-4 items-start p-4 bg-white rounded-lg border border-stone-200">
+                    <span class="text-2xl">🔒</span>
+                    <div>
+                        <h3 class="mono font-semibold text-stone-900">Blind voting first</h3>
+                        <p class="text-sm text-stone-600">Collect ratings before anyone speaks. Reveal simultaneously.</p>
+                    </div>
+                </div>
+                <div class="flex gap-4 items-start p-4 bg-white rounded-lg border border-stone-200">
+                    <span class="text-2xl">🎲</span>
+                    <div>
+                        <h3 class="mono font-semibold text-stone-900">Randomize speaking order</h3>
+                        <p class="text-sm text-stone-600">Don't let seniority or confidence determine who anchors.</p>
+                    </div>
+                </div>
+                <div class="flex gap-4 items-start p-4 bg-white rounded-lg border border-stone-200">
+                    <span class="text-2xl">😈</span>
+                    <div>
+                        <h3 class="mono font-semibold text-stone-900">Assign a devil's advocate</h3>
+                        <p class="text-sm text-stone-600">Someone whose job is to argue the opposite, breaking consensus pressure.</p>
+                    </div>
+                </div>
+                <div class="flex gap-4 items-start p-4 bg-white rounded-lg border border-stone-200">
+                    <span class="text-2xl">✍️</span>
+                    <div>
+                        <h3 class="mono font-semibold text-stone-900">Written input before discussion</h3>
+                        <p class="text-sm text-stone-600">Have everyone write their view before the meeting starts.</p>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <!-- Footer -->
+        <footer class="mt-16 pt-8 border-t border-stone-200 text-center">
+            <a href="/" class="mono text-sm text-stone-500 hover:text-stone-700">← Back to Projects</a>
+            <p class="mt-4 text-xs text-stone-400">
+                Based on <a href="https://adventurecapital.substack.com" class="underline hover:text-stone-600">"The Sticky Starter Shadow"</a>
+                · Explorable format inspired by <a href="https://worrydream.com/ExplorableExplanations/" class="underline hover:text-stone-600">Bret Victor</a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // State
+        let isConsensusMode = true;
+        let firstRaterScore = 7;
+        let isDragging = false;
+
+        // Rater data - each has a "true" opinion and will be influenced by anchor in consensus mode
+        const raters = [
+            { name: 'Alex', role: 'Product Lead', trueScore: 6, avatar: '👤' },
+            { name: 'Jordan', role: 'Engineer', trueScore: 5, avatar: '👩‍💻' },
+            { name: 'Sam', role: 'Designer', trueScore: 7, avatar: '🎨' },
+            { name: 'Taylor', role: 'Data Analyst', trueScore: 4, avatar: '📊' },
+            { name: 'Morgan', role: 'Marketing', trueScore: 8, avatar: '📣' },
+            { name: 'Casey', role: 'QA Lead', trueScore: 5, avatar: '🔍' },
+            { name: 'Riley', role: 'DevOps', trueScore: 6, avatar: '⚙️' },
+        ];
+
+        function getAnchoredScore(trueScore, anchorScore, position) {
+            // The further back in line, the more influenced by both anchor and accumulating consensus
+            const anchorWeight = 0.4 + (position * 0.05); // Gets stronger as more people have voted
+            const noise = (Math.random() - 0.5) * 1.5; // Some variation
+            const anchored = trueScore * (1 - anchorWeight) + anchorScore * anchorWeight + noise;
+            return Math.max(1, Math.min(10, Math.round(anchored)));
+        }
+
+        function renderRaters() {
+            const grid = document.getElementById('ratersGrid');
+            grid.innerHTML = '';
+
+            // First rater (draggable)
+            const firstRaterHtml = `
+                <div class="rater-card first-rater p-4 rounded-lg bg-amber-50 border border-amber-200">
+                    <div class="flex items-center gap-3 mb-3">
+                        <span class="text-2xl">⭐</span>
+                        <div>
+                            <div class="mono font-semibold text-stone-900">First Rater</div>
+                            <div class="text-xs text-stone-500">Sets the anchor</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div
+                            id="firstRaterScore"
+                            class="draggable-score mono text-3xl font-bold text-amber-600 bg-white px-4 py-2 rounded-lg border-2 border-amber-300"
+                            onmousedown="startDrag(event)"
+                            ontouchstart="startDrag(event)"
+                        >${firstRaterScore}</div>
+                        <div class="flex-1">
+                            <div class="score-bar-container">
+                                <div class="score-bar bg-amber-400" style="width: ${firstRaterScore * 10}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-xs text-amber-600 mt-2 mono">← Drag to change →</div>
+                </div>
+            `;
+            grid.innerHTML = firstRaterHtml;
+
+            // Other raters
+            raters.forEach((rater, i) => {
+                const score = isConsensusMode
+                    ? getAnchoredScore(rater.trueScore, firstRaterScore, i)
+                    : rater.trueScore + Math.round((Math.random() - 0.5) * 2);
+
+                const clampedScore = Math.max(1, Math.min(10, score));
+
+                const raterHtml = `
+                    <div class="rater-card submitted p-4 rounded-lg bg-white border border-stone-200 rate-in" style="animation-delay: ${i * 100}ms">
+                        <div class="flex items-center gap-3 mb-3">
+                            <span class="text-2xl">${rater.avatar}</span>
+                            <div>
+                                <div class="mono font-semibold text-stone-900">${rater.name}</div>
+                                <div class="text-xs text-stone-500">${rater.role}</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="mono text-2xl font-bold ${isConsensusMode ? 'text-amber-600' : 'text-blue-600'}">${clampedScore}</div>
+                            <div class="flex-1">
+                                <div class="score-bar-container">
+                                    <div class="score-bar ${isConsensusMode ? 'bg-amber-400' : 'bg-blue-400'}" style="width: ${clampedScore * 10}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        ${isConsensusMode ? `<div class="text-xs text-stone-400 mt-2">True opinion: ${rater.trueScore}</div>` : ''}
+                    </div>
+                `;
+                grid.innerHTML += raterHtml;
+            });
+
+            updateHistogram();
+            updateStats();
+            updateInsight();
+        }
+
+        function updateHistogram() {
+            const histogram = document.getElementById('histogram');
+            const counts = new Array(10).fill(0);
+
+            // Count first rater
+            counts[firstRaterScore - 1]++;
+
+            // Count others
+            raters.forEach((rater, i) => {
+                const score = isConsensusMode
+                    ? getAnchoredScore(rater.trueScore, firstRaterScore, i)
+                    : rater.trueScore;
+                const clamped = Math.max(1, Math.min(10, Math.round(score)));
+                counts[clamped - 1]++;
+            });
+
+            const maxCount = Math.max(...counts, 1);
+
+            histogram.innerHTML = counts.map((count, i) => `
+                <div class="histogram-bar flex-1 ${isConsensusMode ? 'bg-amber-400' : 'bg-blue-400'} rounded-t"
+                     style="height: ${(count / maxCount) * 100}%"></div>
+            `).join('');
+
+            // Update anchor line
+            const anchorLine = document.getElementById('anchorLine');
+            anchorLine.style.left = `${((firstRaterScore - 0.5) / 10) * 100}%`;
+            anchorLine.style.display = isConsensusMode ? 'block' : 'none';
+        }
+
+        function updateStats() {
+            // Consensus scores
+            const consensusScores = [firstRaterScore];
+            raters.forEach((rater, i) => {
+                consensusScores.push(getAnchoredScore(rater.trueScore, firstRaterScore, i));
+            });
+
+            // Independent scores
+            const independentScores = [firstRaterScore];
+            raters.forEach(rater => {
+                independentScores.push(rater.trueScore);
+            });
+
+            const conMean = consensusScores.reduce((a, b) => a + b, 0) / consensusScores.length;
+            const indMean = independentScores.reduce((a, b) => a + b, 0) / independentScores.length;
+
+            const conStd = Math.sqrt(consensusScores.reduce((sum, s) => sum + Math.pow(s - conMean, 2), 0) / consensusScores.length);
+            const indStd = Math.sqrt(independentScores.reduce((sum, s) => sum + Math.pow(s - indMean, 2), 0) / independentScores.length);
+
+            document.getElementById('consensusMean').textContent = conMean.toFixed(1);
+            document.getElementById('consensusStd').textContent = conStd.toFixed(1);
+            document.getElementById('independentMean').textContent = indMean.toFixed(1);
+            document.getElementById('independentStd').textContent = indStd.toFixed(1);
+        }
+
+        function updateInsight() {
+            const insightBox = document.getElementById('insightBox');
+            const insightText = document.getElementById('insightText');
+
+            // Calculate shift
+            const trueMean = raters.reduce((sum, r) => sum + r.trueScore, 0) / raters.length;
+            const shift = firstRaterScore - trueMean;
+
+            if (isConsensusMode) {
+                insightBox.className = 'p-6 rounded-xl border-2 border-amber-200 bg-amber-50';
+                if (Math.abs(shift) < 0.5) {
+                    insightText.textContent = `The anchor happens to be close to the team's true average. But notice how the spread has compressed—diversity of opinion is lost even when the center is "right."`;
+                } else if (shift > 0) {
+                    insightText.textContent = `The first rater scored ${shift.toFixed(1)} points higher than the team's true average. Watch how everyone drifts upward. The group "consensus" is now ${Math.abs(shift).toFixed(1)} points inflated.`;
+                } else {
+                    insightText.textContent = `The first rater scored ${Math.abs(shift).toFixed(1)} points lower than the team's true average. Watch how everyone drifts downward. Good ideas get buried by a pessimistic anchor.`;
+                }
+            } else {
+                insightBox.className = 'p-6 rounded-xl border-2 border-blue-200 bg-blue-50';
+                insightText.textContent = `Without anchoring, the team's true opinions emerge. Notice the wider spread (higher σ)—this variance isn't noise, it's genuine disagreement that consensus culture suppresses.`;
+            }
+        }
+
+        function startDrag(e) {
+            isDragging = true;
+            e.preventDefault();
+            document.addEventListener('mousemove', onDrag);
+            document.addEventListener('mouseup', stopDrag);
+            document.addEventListener('touchmove', onDrag);
+            document.addEventListener('touchend', stopDrag);
+        }
+
+        function onDrag(e) {
+            if (!isDragging) return;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const el = document.getElementById('firstRaterScore');
+            const rect = el.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const delta = Math.round((clientX - centerX) / 20);
+
+            firstRaterScore = Math.max(1, Math.min(10, firstRaterScore + delta));
+            renderRaters();
+        }
+
+        function stopDrag() {
+            isDragging = false;
+            document.removeEventListener('mousemove', onDrag);
+            document.removeEventListener('mouseup', stopDrag);
+            document.removeEventListener('touchmove', onDrag);
+            document.removeEventListener('touchend', stopDrag);
+        }
+
+        function toggleMode() {
+            isConsensusMode = !isConsensusMode;
+            document.getElementById('modeToggle').classList.toggle('independent', !isConsensusMode);
+            renderRaters();
+        }
+
+        function rerunSimulation() {
+            // Slightly randomize true scores to show different runs
+            raters.forEach(r => {
+                r.trueScore = Math.max(1, Math.min(10, r.trueScore + Math.round((Math.random() - 0.5) * 2)));
+            });
+            renderRaters();
+        }
+
+        // Initial render
+        renderRaters();
+    </script>
+</body>
+</html>

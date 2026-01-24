@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complexity Tax Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Source Serif 4', serif;
+            font-size: 1.2rem;
+            line-height: 1.8;
+        }
+
+        .mono { font-family: 'Space Grotesk', sans-serif; }
+
+        /* Draggable number styling */
+        .draggable {
+            color: #2563eb;
+            background: linear-gradient(to bottom, #dbeafe 0%, #dbeafe 100%);
+            background-size: 100% 40%;
+            background-repeat: no-repeat;
+            background-position: 0 90%;
+            cursor: ew-resize;
+            padding: 0 4px;
+            margin: 0 2px;
+            border-radius: 3px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            user-select: none;
+            transition: background-size 0.15s ease;
+        }
+
+        .draggable:hover {
+            background-size: 100% 100%;
+        }
+
+        .draggable:active {
+            background: #2563eb;
+            color: white;
+        }
+
+        /* Dropdown styling */
+        .inline-select {
+            appearance: none;
+            background: linear-gradient(to bottom, #fef3c7 0%, #fef3c7 100%);
+            background-size: 100% 40%;
+            background-repeat: no-repeat;
+            background-position: 0 90%;
+            border: none;
+            color: #d97706;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            font-size: inherit;
+            padding: 0 4px;
+            margin: 0 2px;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+
+        .inline-select:hover {
+            background-size: 100% 100%;
+        }
+
+        /* Result callouts */
+        .result-value {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .result-good { background: #dcfce7; color: #166534; }
+        .result-warn { background: #fef9c3; color: #854d0e; }
+        .result-bad { background: #fee2e2; color: #991b1b; }
+        .result-extreme { background: #991b1b; color: white; }
+
+        /* Time drain visualization */
+        .time-bar {
+            height: 24px;
+            background: #e5e7eb;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .time-bar-fill {
+            height: 100%;
+            border-radius: 12px;
+            transition: width 0.4s ease, background 0.4s ease;
+        }
+
+        .time-bar-label {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6b7280;
+        }
+
+        /* Comparison block */
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .comparison-arrow {
+            font-size: 2rem;
+            color: #10b981;
+        }
+
+        /* Animate numbers changing */
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .pop {
+            animation: pop 0.2s ease;
+        }
+
+        /* Section breaks */
+        .section-break {
+            border: none;
+            height: 2px;
+            background: linear-gradient(to right, transparent, #d1d5db, transparent);
+            margin: 3rem 0;
+        }
+    </style>
+</head>
+<body class="bg-stone-50 text-stone-800">
+    <div class="max-w-2xl mx-auto px-6 py-16">
+        <!-- Header -->
+        <header class="mb-12">
+            <h1 class="mono text-3xl font-bold text-stone-900 mb-2">Complexity Tax Calculator</h1>
+            <p class="text-stone-500 text-base mono">An explorable explanation of over-engineering costs</p>
+        </header>
+
+        <!-- The explorable content -->
+        <article class="space-y-6">
+            <p>
+                Let's say you're building a
+                <select id="projectType" class="inline-select" onchange="recalculate()">
+                    <option value="side">side project</option>
+                    <option value="startup">early startup</option>
+                    <option value="team">small team product</option>
+                    <option value="enterprise">enterprise system</option>
+                </select>
+                with a team of
+                <span class="draggable" data-min="1" data-max="50" data-value="2" data-suffix=" people" id="teamSize">2 people</span>.
+            </p>
+
+            <p>
+                You've decided to run
+                <span class="draggable" data-min="1" data-max="20" data-value="3" data-suffix=" services" id="numServices">3 services</span>
+                on
+                <select id="infraChoice" class="inline-select" onchange="recalculate()">
+                    <option value="k8s">Kubernetes</option>
+                    <option value="ecs">AWS ECS</option>
+                    <option value="paas">a PaaS (Vercel/Railway)</option>
+                    <option value="vm">simple VMs</option>
+                </select>,
+                with
+                <span class="draggable" data-min="1" data-max="6" data-value="4" data-suffix=" environments" id="numEnvs">4 environments</span>
+                (dev, staging, QA, prod, etc).
+            </p>
+
+            <p>
+                Your local development uses
+                <select id="localDev" class="inline-select" onchange="recalculate()">
+                    <option value="docker">Docker Compose</option>
+                    <option value="native">native tooling</option>
+                    <option value="devcontainer">devcontainers</option>
+                    <option value="cloud">cloud dev environments</option>
+                </select>,
+                and you've built
+                <span class="draggable" data-min="0" data-max="10" data-value="3" data-suffix=" abstraction layers" id="numAbstractions">3 abstraction layers</span>
+                (repositories, services, DTOs, etc).
+            </p>
+
+            <hr class="section-break">
+
+            <!-- Real-time calculation -->
+            <div class="bg-white rounded-xl p-6 shadow-sm border border-stone-200">
+                <h2 class="mono text-lg font-semibold text-stone-900 mb-4">Your complexity tax</h2>
+
+                <p class="mb-4">
+                    Based on your choices, you're spending approximately
+                    <span id="weeklyHours" class="result-value result-warn">8.5 hours/week</span>
+                    on complexity overhead.
+                </p>
+
+                <div class="time-bar mb-2">
+                    <div id="timeBarFill" class="time-bar-fill bg-amber-400" style="width: 42%"></div>
+                    <span class="time-bar-label">of a 40-hour week</span>
+                </div>
+
+                <p class="text-sm text-stone-500 mono mt-4">
+                    That's <span id="yearlyHours" class="font-semibold">442 hours</span> per year,
+                    or <span id="yearlyDays" class="font-semibold">55 workdays</span> not spent on your actual product.
+                </p>
+            </div>
+
+            <hr class="section-break">
+
+            <!-- Breakdown -->
+            <h2 class="mono text-lg font-semibold text-stone-900">Where the time goes</h2>
+
+            <div class="space-y-4">
+                <div class="flex justify-between items-center">
+                    <span>Infrastructure maintenance</span>
+                    <span id="infraCost" class="mono font-semibold text-stone-600">+2.5 hrs</span>
+                </div>
+                <div class="h-2 bg-stone-200 rounded-full overflow-hidden">
+                    <div id="infraBar" class="h-full bg-blue-400 rounded-full transition-all duration-300" style="width: 30%"></div>
+                </div>
+
+                <div class="flex justify-between items-center">
+                    <span>Environment coordination</span>
+                    <span id="envCost" class="mono font-semibold text-stone-600">+1.5 hrs</span>
+                </div>
+                <div class="h-2 bg-stone-200 rounded-full overflow-hidden">
+                    <div id="envBar" class="h-full bg-emerald-400 rounded-full transition-all duration-300" style="width: 20%"></div>
+                </div>
+
+                <div class="flex justify-between items-center">
+                    <span>Local dev friction</span>
+                    <span id="localCost" class="mono font-semibold text-stone-600">+2.0 hrs</span>
+                </div>
+                <div class="h-2 bg-stone-200 rounded-full overflow-hidden">
+                    <div id="localBar" class="h-full bg-amber-400 rounded-full transition-all duration-300" style="width: 25%"></div>
+                </div>
+
+                <div class="flex justify-between items-center">
+                    <span>Abstraction navigation</span>
+                    <span id="abstractionCost" class="mono font-semibold text-stone-600">+1.5 hrs</span>
+                </div>
+                <div class="h-2 bg-stone-200 rounded-full overflow-hidden">
+                    <div id="abstractionBar" class="h-full bg-purple-400 rounded-full transition-all duration-300" style="width: 18%"></div>
+                </div>
+
+                <div class="flex justify-between items-center">
+                    <span>Context-switching tax (services × envs)</span>
+                    <span id="contextCost" class="mono font-semibold text-stone-600">+1.0 hrs</span>
+                </div>
+                <div class="h-2 bg-stone-200 rounded-full overflow-hidden">
+                    <div id="contextBar" class="h-full bg-rose-400 rounded-full transition-all duration-300" style="width: 12%"></div>
+                </div>
+            </div>
+
+            <hr class="section-break">
+
+            <!-- The simpler alternative -->
+            <h2 class="mono text-lg font-semibold text-stone-900">The simpler alternative</h2>
+
+            <p>
+                If you ran <span class="mono font-semibold text-emerald-600">1 service</span> on
+                <span class="mono font-semibold text-emerald-600">a PaaS</span> with
+                <span class="mono font-semibold text-emerald-600">2 environments</span> (dev + prod),
+                using <span class="mono font-semibold text-emerald-600">native tooling</span> and
+                <span class="mono font-semibold text-emerald-600">0 abstraction layers</span>:
+            </p>
+
+            <div class="comparison my-8">
+                <div class="text-center p-4 bg-rose-50 rounded-xl border border-rose-200">
+                    <div class="mono text-2xl font-bold text-rose-600" id="currentTotal">8.5</div>
+                    <div class="text-sm text-rose-500">hrs/week now</div>
+                </div>
+                <div class="comparison-arrow">→</div>
+                <div class="text-center p-4 bg-emerald-50 rounded-xl border border-emerald-200">
+                    <div class="mono text-2xl font-bold text-emerald-600" id="simpleTotal">1.0</div>
+                    <div class="text-sm text-emerald-500">hrs/week simpler</div>
+                </div>
+            </div>
+
+            <p>
+                You'd recover
+                <span id="recoveredHours" class="result-value result-good">390 hours/year</span>
+                — that's
+                <span id="recoveredWeeks" class="mono font-semibold">~10 weeks</span>
+                of full-time work back to building product.
+            </p>
+
+            <hr class="section-break">
+
+            <!-- The nuance -->
+            <h2 class="mono text-lg font-semibold text-stone-900">When complexity is worth it</h2>
+
+            <p id="nuanceText">
+                <!-- Dynamically updated based on project type -->
+            </p>
+
+            <div id="verdictBox" class="mt-6 p-6 rounded-xl border-2">
+                <p id="verdictText" class="font-semibold"></p>
+            </div>
+        </article>
+
+        <!-- Footer -->
+        <footer class="mt-16 pt-8 border-t border-stone-200 text-center">
+            <a href="/" class="mono text-sm text-stone-500 hover:text-stone-700">← Back to Projects</a>
+            <p class="mt-4 text-xs text-stone-400">
+                Inspired by <a href="https://adventurecapital.substack.com" class="underline hover:text-stone-600">Adventure Capital</a>
+                · Explorable format inspired by <a href="https://worrydream.com/ExplorableExplanations/" class="underline hover:text-stone-600">Bret Victor</a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // ===== Draggable number implementation =====
+        document.querySelectorAll('.draggable').forEach(el => {
+            let startX, startValue;
+            const min = parseInt(el.dataset.min);
+            const max = parseInt(el.dataset.max);
+            const suffix = el.dataset.suffix || '';
+            let value = parseInt(el.dataset.value);
+
+            function updateDisplay() {
+                el.textContent = value + suffix;
+                el.dataset.value = value;
+            }
+
+            el.addEventListener('mousedown', e => {
+                startX = e.clientX;
+                startValue = value;
+                document.addEventListener('mousemove', onDrag);
+                document.addEventListener('mouseup', onRelease);
+                e.preventDefault();
+            });
+
+            el.addEventListener('touchstart', e => {
+                startX = e.touches[0].clientX;
+                startValue = value;
+                document.addEventListener('touchmove', onTouchDrag);
+                document.addEventListener('touchend', onRelease);
+                e.preventDefault();
+            });
+
+            function onDrag(e) {
+                const delta = Math.round((e.clientX - startX) / 15);
+                value = Math.max(min, Math.min(max, startValue + delta));
+                updateDisplay();
+                recalculate();
+            }
+
+            function onTouchDrag(e) {
+                const delta = Math.round((e.touches[0].clientX - startX) / 15);
+                value = Math.max(min, Math.min(max, startValue + delta));
+                updateDisplay();
+                recalculate();
+            }
+
+            function onRelease() {
+                document.removeEventListener('mousemove', onDrag);
+                document.removeEventListener('mouseup', onRelease);
+                document.removeEventListener('touchmove', onTouchDrag);
+                document.removeEventListener('touchend', onRelease);
+            }
+
+            updateDisplay();
+        });
+
+        // ===== Cost calculation =====
+        const costs = {
+            infra: {
+                k8s: { base: 3, perService: 0.5 },
+                ecs: { base: 2, perService: 0.3 },
+                paas: { base: 0.5, perService: 0.1 },
+                vm: { base: 1.5, perService: 0.2 }
+            },
+            localDev: {
+                docker: 2,
+                native: 0.5,
+                devcontainer: 1.5,
+                cloud: 1
+            },
+            envMultiplier: 0.4, // per extra environment beyond 2
+            abstractionCost: 0.5, // per layer
+            contextSwitchBase: 0.2 // per service×env combo
+        };
+
+        const projectMultipliers = {
+            side: 1.0,      // Full tax on side projects
+            startup: 0.7,   // Some justified
+            team: 0.5,      // More justified
+            enterprise: 0.3 // Most justified
+        };
+
+        function getValue(id) {
+            const el = document.getElementById(id);
+            if (el.tagName === 'SELECT') return el.value;
+            return parseInt(el.dataset.value);
+        }
+
+        function recalculate() {
+            const projectType = getValue('projectType');
+            const teamSize = getValue('teamSize');
+            const numServices = getValue('numServices');
+            const infraChoice = getValue('infraChoice');
+            const numEnvs = getValue('numEnvs');
+            const localDev = getValue('localDev');
+            const numAbstractions = getValue('numAbstractions');
+
+            const multiplier = projectMultipliers[projectType];
+
+            // Calculate individual costs
+            const infraCost = (costs.infra[infraChoice].base + costs.infra[infraChoice].perService * numServices) * multiplier;
+            const envCost = Math.max(0, (numEnvs - 2) * costs.envMultiplier * numServices) * multiplier;
+            const localCost = costs.localDev[localDev] * multiplier;
+            const abstractionCost = numAbstractions * costs.abstractionCost * multiplier;
+            const contextCost = (numServices * numEnvs * costs.contextSwitchBase) * multiplier;
+
+            const totalWeekly = infraCost + envCost + localCost + abstractionCost + contextCost;
+            const totalYearly = totalWeekly * 52;
+            const totalDays = Math.round(totalYearly / 8);
+
+            // Simple alternative calculation
+            const simpleCost = (costs.infra.paas.base + costs.infra.paas.perService * 1) * multiplier +
+                              costs.localDev.native * multiplier;
+
+            // Update displays
+            updateResult('weeklyHours', totalWeekly.toFixed(1) + ' hours/week', totalWeekly);
+            document.getElementById('yearlyHours').textContent = Math.round(totalYearly) + ' hours';
+            document.getElementById('yearlyDays').textContent = totalDays + ' workdays';
+
+            // Update time bar
+            const barPercent = Math.min(100, (totalWeekly / 40) * 100);
+            const timeBar = document.getElementById('timeBarFill');
+            timeBar.style.width = barPercent + '%';
+            if (totalWeekly < 4) {
+                timeBar.className = 'time-bar-fill bg-emerald-400';
+            } else if (totalWeekly < 8) {
+                timeBar.className = 'time-bar-fill bg-amber-400';
+            } else if (totalWeekly < 15) {
+                timeBar.className = 'time-bar-fill bg-orange-500';
+            } else {
+                timeBar.className = 'time-bar-fill bg-rose-500';
+            }
+
+            // Update breakdown bars
+            const maxCost = Math.max(infraCost, envCost, localCost, abstractionCost, contextCost, 0.1);
+            updateBar('infra', infraCost, maxCost);
+            updateBar('env', envCost, maxCost);
+            updateBar('local', localCost, maxCost);
+            updateBar('abstraction', abstractionCost, maxCost);
+            updateBar('context', contextCost, maxCost);
+
+            // Update comparison
+            document.getElementById('currentTotal').textContent = totalWeekly.toFixed(1);
+            document.getElementById('simpleTotal').textContent = simpleCost.toFixed(1);
+
+            const recovered = (totalWeekly - simpleCost) * 52;
+            document.getElementById('recoveredHours').textContent = Math.round(recovered) + ' hours/year';
+            document.getElementById('recoveredWeeks').textContent = '~' + Math.round(recovered / 40) + ' weeks';
+
+            // Update nuance text
+            updateNuance(projectType, totalWeekly, teamSize, numServices);
+        }
+
+        function updateResult(id, text, value) {
+            const el = document.getElementById(id);
+            el.textContent = text;
+            el.classList.remove('result-good', 'result-warn', 'result-bad', 'result-extreme');
+            if (value < 4) el.classList.add('result-good');
+            else if (value < 8) el.classList.add('result-warn');
+            else if (value < 15) el.classList.add('result-bad');
+            else el.classList.add('result-extreme');
+
+            el.classList.add('pop');
+            setTimeout(() => el.classList.remove('pop'), 200);
+        }
+
+        function updateBar(prefix, cost, maxCost) {
+            document.getElementById(prefix + 'Cost').textContent = '+' + cost.toFixed(1) + ' hrs';
+            document.getElementById(prefix + 'Bar').style.width = (cost / maxCost * 100) + '%';
+        }
+
+        function updateNuance(projectType, totalWeekly, teamSize, numServices) {
+            const nuanceEl = document.getElementById('nuanceText');
+            const verdictEl = document.getElementById('verdictText');
+            const verdictBox = document.getElementById('verdictBox');
+
+            let nuance, verdict, verdictClass;
+
+            if (projectType === 'side') {
+                nuance = "For a side project, almost none of this complexity is justified. You're not going to hire anyone. You're not going to have traffic spikes. You're learning and shipping, not building infrastructure.";
+                if (totalWeekly > 3) {
+                    verdict = "You're paying enterprise tax on a hobby. Simplify ruthlessly.";
+                    verdictClass = 'border-rose-300 bg-rose-50 text-rose-800';
+                } else {
+                    verdict = "You're keeping it appropriately simple. Ship more.";
+                    verdictClass = 'border-emerald-300 bg-emerald-50 text-emerald-800';
+                }
+            } else if (projectType === 'startup') {
+                nuance = "Early startups need to move fast and change direction. Every abstraction layer is a bet that you know what the future looks like. You probably don't. Optimize for learning speed, not scalability.";
+                if (totalWeekly > 5) {
+                    verdict = "You're building for scale you don't have yet. Find product-market fit first.";
+                    verdictClass = 'border-amber-300 bg-amber-50 text-amber-800';
+                } else {
+                    verdict = "Reasonable for an early startup. Watch for creep as you grow.";
+                    verdictClass = 'border-emerald-300 bg-emerald-50 text-emerald-800';
+                }
+            } else if (projectType === 'team') {
+                nuance = `With ${teamSize} people, some coordination overhead is unavoidable. But ${numServices} services means ${numServices} things that can break independently and ${numServices} deployment pipelines to maintain. Is that necessary yet?`;
+                if (totalWeekly > 8) {
+                    verdict = "You're spending more time on infrastructure than product. Consolidate.";
+                    verdictClass = 'border-amber-300 bg-amber-50 text-amber-800';
+                } else {
+                    verdict = "Complexity is proportional to team size. Keep monitoring.";
+                    verdictClass = 'border-blue-300 bg-blue-50 text-blue-800';
+                }
+            } else {
+                nuance = `At enterprise scale, some of this complexity becomes genuinely necessary. Multiple services enable independent team deployment. Multiple environments prevent production incidents. But even here, question each layer.`;
+                if (totalWeekly > 12) {
+                    verdict = "Even for enterprise, this is high. Are all these layers earning their keep?";
+                    verdictClass = 'border-amber-300 bg-amber-50 text-amber-800';
+                } else {
+                    verdict = "Within expected range for enterprise. Complexity is somewhat justified.";
+                    verdictClass = 'border-emerald-300 bg-emerald-50 text-emerald-800';
+                }
+            }
+
+            nuanceEl.textContent = nuance;
+            verdictEl.textContent = verdict;
+            verdictBox.className = 'mt-6 p-6 rounded-xl border-2 ' + verdictClass;
+        }
+
+        // Initial calculation
+        recalculate();
+    </script>
+</body>
+</html>

@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keynes Quote Killer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Source Sans 3', sans-serif; }
+        .serif { font-family: 'Playfair Display', serif; }
+
+        .card {
+            perspective: 1000px;
+        }
+
+        .card-inner {
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+
+        .card.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+        }
+
+        .card-back {
+            transform: rotateY(180deg);
+        }
+
+        .quote-marks {
+            font-size: 4rem;
+            line-height: 1;
+            opacity: 0.15;
+        }
+    </style>
+</head>
+<body class="bg-stone-100 min-h-screen">
+    <div class="max-w-2xl mx-auto px-4 py-12">
+        <!-- Header -->
+        <header class="text-center mb-10">
+            <h1 class="serif text-3xl font-bold text-stone-800 mb-2">Keynes Quote Killer</h1>
+            <p class="text-stone-600">Misused economics wisdom, corrected</p>
+        </header>
+
+        <!-- Card -->
+        <div id="card" class="card cursor-pointer mb-8" onclick="flipCard()">
+            <div class="card-inner relative" style="min-height: 400px;">
+                <!-- Front -->
+                <div class="card-face absolute inset-0 bg-white rounded-2xl shadow-lg p-8 flex flex-col">
+                    <div class="quote-marks serif text-stone-300 select-none">"</div>
+                    <blockquote id="quote" class="serif text-2xl text-stone-800 leading-relaxed flex-1 flex items-center justify-center text-center px-4">
+                        Loading...
+                    </blockquote>
+                    <div class="text-right">
+                        <p id="attribution" class="text-stone-500 text-sm">— Attribution</p>
+                    </div>
+                    <div class="mt-6 text-center">
+                        <span class="text-xs text-stone-400 uppercase tracking-wide">Click to reveal the truth</span>
+                    </div>
+                </div>
+
+                <!-- Back -->
+                <div class="card-face card-back absolute inset-0 bg-stone-800 rounded-2xl shadow-lg p-8 overflow-y-auto">
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="text-xs font-semibold text-amber-400 uppercase tracking-wide mb-2">How it's misused</h3>
+                            <p id="misuse" class="text-stone-300 leading-relaxed"></p>
+                        </div>
+
+                        <div>
+                            <h3 class="text-xs font-semibold text-emerald-400 uppercase tracking-wide mb-2">Actual context</h3>
+                            <p id="context" class="text-stone-300 leading-relaxed"></p>
+                        </div>
+
+                        <div>
+                            <h3 class="text-xs font-semibold text-sky-400 uppercase tracking-wide mb-2">What it really means</h3>
+                            <p id="meaning" class="text-white leading-relaxed"></p>
+                        </div>
+
+                        <div id="source-container" class="pt-4 border-t border-stone-700">
+                            <p id="source" class="text-stone-500 text-xs"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="flex justify-center gap-4 mb-8">
+            <button onclick="nextQuote()" class="px-6 py-3 bg-stone-800 text-white rounded-lg hover:bg-stone-700 transition font-medium">
+                Next Quote →
+            </button>
+        </div>
+
+        <!-- Progress -->
+        <div class="text-center text-stone-500 text-sm mb-8">
+            <span id="progress">1</span> / <span id="total">0</span> quotes
+        </div>
+
+        <!-- Footer -->
+        <footer class="text-center text-stone-500 text-sm">
+            <a href="/" class="hover:text-stone-700">← Back to Projects</a>
+            <p class="mt-4 text-xs">Inspired by <a href="https://adventurecapital.substack.com" class="underline hover:text-stone-700">Adventure Capital</a></p>
+        </footer>
+    </div>
+
+    <script>
+        const quotes = [
+            {
+                quote: "In the long run we are all dead.",
+                attribution: "John Maynard Keynes, 1923",
+                misuse: "Used to justify short-term thinking, dismiss long-term consequences, or wave away concerns about debt/deficits. Often invoked at dinner parties to sound sophisticated while advocating for present gratification.",
+                context: "Keynes wrote this in 'A Tract on Monetary Reform' criticizing economists who said inflation would sort itself out 'in the long run.' He was attacking passivity, not endorsing it.",
+                meaning: "Keynes was saying: don't hide behind long-run equilibrium as an excuse for inaction NOW. It's a call for active policy intervention, not a license for fiscal recklessness. He wanted economists to solve today's problems today.",
+                source: "A Tract on Monetary Reform (1923), Chapter 3"
+            },
+            {
+                quote: "The market can stay irrational longer than you can stay solvent.",
+                attribution: "Often attributed to Keynes",
+                misuse: "Cited to justify why smart people lose money, or to explain away any market movement that doesn't match predictions. Used as an excuse for being wrong.",
+                context: "There's no evidence Keynes ever said this. The earliest known attribution is from the 1990s. Keynes was actually a successful investor who grew King's College Cambridge's endowment substantially.",
+                meaning: "While the sentiment has merit (markets don't always reflect fundamentals short-term), attributing it to Keynes gives it false authority. The quote is folk wisdom dressed in academic clothing.",
+                source: "No verified source. Likely apocryphal."
+            },
+            {
+                quote: "The invisible hand of the market...",
+                attribution: "Adam Smith, 1776",
+                misuse: "Invoked constantly to argue markets self-regulate perfectly and government intervention is always bad. Treated as Smith's central thesis and the foundation of free-market economics.",
+                context: "Smith used the phrase exactly THREE times across all his works. In Wealth of Nations, it appears once, in a passage about domestic vs foreign investment—not as a general theory of markets.",
+                meaning: "Smith was describing a specific phenomenon: merchants preferring domestic investment for safety reasons, unintentionally benefiting the nation. He wasn't claiming markets magically optimize everything. Smith also wrote extensively about the need for public goods and regulation.",
+                source: "Wealth of Nations (1776), Book IV, Chapter II"
+            },
+            {
+                quote: "Inflation is always and everywhere a monetary phenomenon.",
+                attribution: "Milton Friedman, 1963",
+                misuse: "Used to argue that inflation is ONLY caused by money supply, and therefore central banks are solely responsible. Dismisses supply shocks, demand shifts, and structural factors.",
+                context: "Friedman was making a specific empirical claim about sustained inflation over long periods, not one-time price increases. He was responding to cost-push inflation theories.",
+                meaning: "Friedman meant that sustained, long-term inflation requires monetary accommodation. A supply shock causes a one-time price adjustment, not ongoing inflation, unless the central bank keeps printing. Context matters: 'sustained' and 'everywhere' are doing heavy lifting.",
+                source: "Inflation: Causes and Consequences (1963)"
+            },
+            {
+                quote: "Government is not the solution to our problem; government is the problem.",
+                attribution: "Ronald Reagan, 1981",
+                misuse: "Quoted to argue government should do nothing, ever. Used to oppose any public program, regulation, or investment regardless of context.",
+                context: "This was Reagan's inaugural address during stagflation and the aftermath of the 1970s energy crisis. He was critiquing specific government overreach, not arguing for anarchism.",
+                meaning: "Even Reagan increased government spending, grew the federal workforce, and supported Social Security. The quote is rhetorical framing, not policy prescription. Reagan governed far more pragmatically than the quote suggests.",
+                source: "First Inaugural Address, January 20, 1981"
+            },
+            {
+                quote: "Creative destruction",
+                attribution: "Joseph Schumpeter, 1942",
+                misuse: "Used to celebrate disruption for its own sake. Invoked to dismiss concerns about job losses, inequality, or social costs of rapid economic change. 'Move fast and break things' cosplaying as economic theory.",
+                context: "Schumpeter was DESCRIBING capitalism's inherent instability, not CELEBRATING it. He actually predicted capitalism would eventually destroy itself through this process.",
+                meaning: "Schumpeter saw creative destruction as capitalism's engine AND its potential doom. He thought it would lead to a form of socialism as large corporations bureaucratized innovation. It's descriptive, not prescriptive—and certainly not an endorsement of disruption-for-disruption's-sake.",
+                source: "Capitalism, Socialism and Democracy (1942), Chapter VII"
+            },
+            {
+                quote: "There's no such thing as a free lunch.",
+                attribution: "Milton Friedman (popularized)",
+                misuse: "Used to argue against any public spending, welfare, or subsidy. Implies all government programs are wasteful because 'someone has to pay.'",
+                context: "The phrase predates Friedman (it's from 1930s-40s bars offering 'free lunch' with drink purchase). Friedman popularized it to explain opportunity costs and trade-offs, not to oppose all public goods.",
+                meaning: "It's about opportunity costs: resources used for X can't be used for Y. This doesn't mean public goods are bad—it means we should consider trade-offs. Public education has costs AND benefits. The phrase is about clear thinking, not automatic opposition to spending.",
+                source: "Popularized in 'There's No Such Thing as a Free Lunch' (1975)"
+            },
+            {
+                quote: "The business of America is business.",
+                attribution: "Calvin Coolidge, 1925",
+                misuse: "Quoted to argue profit should be the only American value, or that commerce trumps all other concerns. Used to dismiss civic, cultural, or social priorities.",
+                context: "Coolidge actually said: 'The CHIEF business of the American people is business.' And he continued: 'Of course the accumulation of wealth cannot be justified as the chief end of existence.'",
+                meaning: "The full speech emphasizes that while commerce is important, idealism and spiritual values matter more. Coolidge was arguing AGAINST pure materialism. The misquote inverts his point.",
+                source: "Address to the American Society of Newspaper Editors, January 17, 1925"
+            },
+            {
+                quote: "Greed, for lack of a better word, is good.",
+                attribution: "Gordon Gekko, Wall Street (1987)",
+                misuse: "Unironically cited to defend self-interest in markets. Sometimes people forget this is a VILLAIN's line in a movie critiquing Wall Street excess.",
+                context: "Oliver Stone wrote this as satire. Gekko is the antagonist who ends up in prison. The movie is a critique of 1980s financial culture, not an endorsement.",
+                meaning: "Using a fictional villain's speech to justify real-world behavior is peak missing-the-point. It's like quoting Darth Vader on management philosophy. The quote exists to be criticized.",
+                source: "Wall Street (1987), screenplay by Stanley Weiser and Oliver Stone"
+            },
+            {
+                quote: "A rising tide lifts all boats.",
+                attribution: "John F. Kennedy, 1963",
+                misuse: "Used to argue that policies benefiting the wealthy will automatically benefit everyone. Trickle-down economics in nautical metaphor.",
+                context: "JFK used this phrase to advocate for regional economic development and public infrastructure investment—government action to help depressed areas, not tax cuts for the rich.",
+                meaning: "Kennedy was arguing FOR active government investment to spread prosperity. The metaphor has been hijacked to mean its opposite: that enriching the wealthy passively benefits the poor. Kennedy wanted to lift the tide; the misuse assumes it lifts itself.",
+                source: "Remarks in Heber Springs, Arkansas, October 3, 1963"
+            },
+            {
+                quote: "The nine most terrifying words in the English language are: I'm from the Government, and I'm here to help.",
+                attribution: "Ronald Reagan, 1986",
+                misuse: "Used to argue all government assistance is harmful or unwanted. Invoked to oppose disaster relief, healthcare, social programs, etc.",
+                context: "Reagan said this at a press conference as a joke, in the context of farm policy debates. It was meant as humor about federal bureaucracy, not a serious policy position.",
+                meaning: "Taking a quip and treating it as philosophy leads to absurdity. By this logic, firefighters, food safety inspectors, and the military are all 'terrifying.' Reagan himself expanded government in many areas. It's a laugh line, not a governing principle.",
+                source: "Press Conference, August 12, 1986"
+            },
+            {
+                quote: "It is difficult to get a man to understand something when his salary depends on his not understanding it.",
+                attribution: "Upton Sinclair, 1935",
+                misuse: "While often used correctly, it's sometimes weaponized to dismiss any expert who works in a field. 'Of course the climate scientist believes in climate change—they're paid to!' This inverts the quote into anti-intellectualism.",
+                context: "Sinclair wrote this after his socialist campaign for California governor, describing why establishment figures opposed reform that would affect their interests.",
+                meaning: "Sinclair was critiquing motivated reasoning by those with financial stakes in the status quo—not dismissing all expertise. The quote explains why incumbents resist change, not why we should distrust all professionals. It's about conflicts of interest, not a license to ignore evidence.",
+                source: "I, Candidate for Governor: And How I Got Licked (1935)"
+            }
+        ];
+
+        let currentIndex = 0;
+        let isFlipped = false;
+        let shuffledQuotes = [...quotes];
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function displayQuote(index) {
+            const q = shuffledQuotes[index];
+            document.getElementById('quote').textContent = q.quote;
+            document.getElementById('attribution').textContent = `— ${q.attribution}`;
+            document.getElementById('misuse').textContent = q.misuse;
+            document.getElementById('context').textContent = q.context;
+            document.getElementById('meaning').textContent = q.meaning;
+            document.getElementById('source').textContent = `Source: ${q.source}`;
+            document.getElementById('progress').textContent = index + 1;
+            document.getElementById('total').textContent = shuffledQuotes.length;
+        }
+
+        function flipCard() {
+            const card = document.getElementById('card');
+            isFlipped = !isFlipped;
+            card.classList.toggle('flipped', isFlipped);
+        }
+
+        function nextQuote() {
+            const card = document.getElementById('card');
+
+            // Flip back if flipped
+            if (isFlipped) {
+                isFlipped = false;
+                card.classList.remove('flipped');
+            }
+
+            // Move to next quote
+            currentIndex = (currentIndex + 1) % shuffledQuotes.length;
+
+            // If we've cycled through all, reshuffle
+            if (currentIndex === 0) {
+                shuffledQuotes = shuffle([...quotes]);
+            }
+
+            // Small delay to let flip animation complete
+            setTimeout(() => displayQuote(currentIndex), isFlipped ? 300 : 0);
+        }
+
+        // Initialize
+        shuffledQuotes = shuffle([...quotes]);
+        displayQuote(0);
+    </script>
+</body>
+</html>
