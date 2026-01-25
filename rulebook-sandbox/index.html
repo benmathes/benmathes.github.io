@@ -107,16 +107,70 @@
                 <p class="text-gray-600 text-sm mb-4">Let bots play iterated games. Those who cooperate wisely get more "karma" and reproduce.</p>
 
                 <!-- Controls -->
-                <div class="grid grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="text-sm font-medium text-gray-700 mb-1 block">Generations</label>
-                        <input type="range" id="generations" min="1" max="50" value="10" class="w-full">
-                        <div class="text-xs text-gray-500 text-center"><span id="gen-display">10</span> generations</div>
+                <div class="space-y-3 mb-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 mb-1 block">Generations</label>
+                            <input type="range" id="generations" min="5" max="100" value="30" class="w-full">
+                            <div class="text-xs text-gray-500 text-center"><span id="gen-display">30</span></div>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 mb-1 block">Rounds per Match</label>
+                            <input type="range" id="rounds-per-match" min="3" max="20" value="10" class="w-full">
+                            <div class="text-xs text-gray-500 text-center"><span id="rounds-display">10</span></div>
+                        </div>
                     </div>
-                    <div>
-                        <label class="text-sm font-medium text-gray-700 mb-1 block">Population</label>
-                        <input type="range" id="population" min="10" max="100" value="50" class="w-full">
-                        <div class="text-xs text-gray-500 text-center"><span id="pop-display">50</span> bots</div>
+
+                    <!-- Starting Population -->
+                    <div class="bg-gray-50 rounded-lg p-3">
+                        <label class="text-sm font-medium text-gray-700 mb-2 block">Starting Population Mix</label>
+                        <div class="space-y-2">
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded bg-red-400"></span>
+                                <span class="text-xs w-20">Defectors</span>
+                                <input type="range" id="start-defect" min="0" max="100" value="33" class="flex-1">
+                                <span id="start-defect-display" class="text-xs w-8 text-right">33%</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded bg-green-400"></span>
+                                <span class="text-xs w-20">Tit-for-Tat</span>
+                                <input type="range" id="start-tft" min="0" max="100" value="34" class="flex-1">
+                                <span id="start-tft-display" class="text-xs w-8 text-right">34%</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded bg-blue-400"></span>
+                                <span class="text-xs w-20">Cooperators</span>
+                                <input type="range" id="start-coop" min="0" max="100" value="33" class="flex-1">
+                                <span id="start-coop-display" class="text-xs w-8 text-right">33%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payoffs -->
+                    <div class="bg-amber-50 rounded-lg p-3">
+                        <label class="text-sm font-medium text-gray-700 mb-2 block">Payoff Matrix</label>
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                            <div class="flex items-center gap-2">
+                                <span class="text-green-600">C+C:</span>
+                                <input type="range" id="payoff-cc" min="1" max="5" value="3" class="flex-1">
+                                <span id="payoff-cc-display" class="w-4">3</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-red-600">D+D:</span>
+                                <input type="range" id="payoff-dd" min="0" max="3" value="1" class="flex-1">
+                                <span id="payoff-dd-display" class="w-4">1</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-yellow-600">D vs C:</span>
+                                <input type="range" id="payoff-dc" min="3" max="10" value="5" class="flex-1">
+                                <span id="payoff-dc-display" class="w-4">5</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-gray-600">C vs D:</span>
+                                <input type="range" id="payoff-cd" min="0" max="2" value="0" class="flex-1">
+                                <span id="payoff-cd-display" class="w-4">0</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -204,7 +258,7 @@
                 <div>
                     <p class="text-gray-600 text-sm mb-4">Two bots meet. Each can Cooperate (C) or Defect (D). The payoffs:</p>
 
-                    <table class="w-full text-sm border-collapse">
+                    <table id="payoff-table" class="w-full text-sm border-collapse">
                         <thead>
                             <tr>
                                 <th class="border p-2 bg-gray-100"></th>
@@ -215,13 +269,13 @@
                         <tbody>
                             <tr>
                                 <td class="border p-2 bg-gray-100 font-medium">You: C</td>
-                                <td class="border p-2 bg-green-100">Both get +3 😊</td>
-                                <td class="border p-2 bg-red-100">You: 0, They: +5 😢</td>
+                                <td class="border p-2 bg-green-100">Both get +<span id="table-cc">3</span> 😊</td>
+                                <td class="border p-2 bg-red-100">You: <span id="table-cd">0</span>, They: +<span id="table-dc-alt">5</span> 😢</td>
                             </tr>
                             <tr>
                                 <td class="border p-2 bg-gray-100 font-medium">You: D</td>
-                                <td class="border p-2 bg-yellow-100">You: +5, They: 0 😈</td>
-                                <td class="border p-2 bg-orange-100">Both get +1 😐</td>
+                                <td class="border p-2 bg-yellow-100">You: +<span id="table-dc">5</span>, They: <span id="table-cd-alt">0</span> 😈</td>
+                                <td class="border p-2 bg-orange-100">Both get +<span id="table-dd">1</span> 😐</td>
                             </tr>
                         </tbody>
                     </table>
@@ -321,6 +375,14 @@
         let bots = [];
         let history = [];
 
+        // Payoff matrix (will be updated from sliders)
+        let payoffs = {
+            CC: 3,  // Both cooperate
+            DD: 1,  // Both defect
+            DC: 5,  // You defect, they cooperate (temptation)
+            CD: 0   // You cooperate, they defect (sucker)
+        };
+
         // Rulebook simulation
         function runRulebook() {
             const dilemma = document.getElementById('dilemma-select').value;
@@ -379,81 +441,159 @@
             setTimeout(nextStep, 500);
         }
 
+        // Get payoffs from sliders
+        function updatePayoffs() {
+            payoffs.CC = parseInt(document.getElementById('payoff-cc').value);
+            payoffs.DD = parseInt(document.getElementById('payoff-dd').value);
+            payoffs.DC = parseInt(document.getElementById('payoff-dc').value);
+            payoffs.CD = parseInt(document.getElementById('payoff-cd').value);
+
+            // Update displays
+            document.getElementById('payoff-cc-display').textContent = payoffs.CC;
+            document.getElementById('payoff-dd-display').textContent = payoffs.DD;
+            document.getElementById('payoff-dc-display').textContent = payoffs.DC;
+            document.getElementById('payoff-cd-display').textContent = payoffs.CD;
+
+            // Update table
+            document.getElementById('table-cc').textContent = payoffs.CC;
+            document.getElementById('table-dd').textContent = payoffs.DD;
+            document.getElementById('table-dc').textContent = payoffs.DC;
+            document.getElementById('table-dc-alt').textContent = payoffs.DC;
+            document.getElementById('table-cd').textContent = payoffs.CD;
+            document.getElementById('table-cd-alt').textContent = payoffs.CD;
+        }
+
+        // Get starting population percentages
+        function getStartingPopulation() {
+            let defect = parseInt(document.getElementById('start-defect').value);
+            let tft = parseInt(document.getElementById('start-tft').value);
+            let coop = parseInt(document.getElementById('start-coop').value);
+
+            // Normalize to 100%
+            const total = defect + tft + coop;
+            if (total === 0) {
+                defect = tft = coop = 33;
+            }
+
+            return {
+                defect: defect / (total || 1),
+                'tit-for-tat': tft / (total || 1),
+                cooperate: coop / (total || 1)
+            };
+        }
+
         // Sandbox simulation
         function initBots(count) {
             bots = [];
-            // Start with mixed population
+            const ratios = getStartingPopulation();
+
             for (let i = 0; i < count; i++) {
                 const rand = Math.random();
                 let strategy;
-                if (rand < 0.33) strategy = 'defect';
-                else if (rand < 0.66) strategy = 'cooperate';
-                else strategy = 'tit-for-tat';
+                if (rand < ratios.defect) strategy = 'defect';
+                else if (rand < ratios.defect + ratios['tit-for-tat']) strategy = 'tit-for-tat';
+                else strategy = 'cooperate';
 
                 bots.push({
                     id: i,
                     strategy: strategy,
                     karma: 0,
-                    lastMove: 'C'
+                    history: {} // Track history with each opponent
                 });
             }
         }
 
-        function playRound(bot1, bot2) {
-            let move1, move2;
+        // Get a bot's move against a specific opponent
+        function getMove(bot, opponentId, opponentLastMove) {
+            if (bot.strategy === 'defect') return 'D';
+            if (bot.strategy === 'cooperate') return 'C';
 
-            // Bot 1's move
-            if (bot1.strategy === 'defect') move1 = 'D';
-            else if (bot1.strategy === 'cooperate') move1 = 'C';
-            else move1 = bot2.lastMove; // tit-for-tat
-
-            // Bot 2's move
-            if (bot2.strategy === 'defect') move2 = 'D';
-            else if (bot2.strategy === 'cooperate') move2 = 'C';
-            else move2 = bot1.lastMove; // tit-for-tat
-
-            // Payoffs
-            if (move1 === 'C' && move2 === 'C') {
-                bot1.karma += 3;
-                bot2.karma += 3;
-            } else if (move1 === 'C' && move2 === 'D') {
-                bot1.karma += 0;
-                bot2.karma += 5;
-            } else if (move1 === 'D' && move2 === 'C') {
-                bot1.karma += 5;
-                bot2.karma += 0;
-            } else {
-                bot1.karma += 1;
-                bot2.karma += 1;
+            // Tit-for-tat: cooperate first, then mirror opponent's last move
+            if (!bot.history[opponentId] || bot.history[opponentId].length === 0) {
+                return 'C'; // Start cooperative
             }
+            return opponentLastMove; // Mirror their last move
+        }
 
-            bot1.lastMove = move1;
-            bot2.lastMove = move2;
+        // Play multiple rounds between two bots
+        function playMatch(bot1, bot2, rounds) {
+            // Initialize history if needed
+            if (!bot1.history[bot2.id]) bot1.history[bot2.id] = [];
+            if (!bot2.history[bot1.id]) bot2.history[bot1.id] = [];
+
+            let last1 = bot1.history[bot2.id].length > 0 ? bot1.history[bot2.id].slice(-1)[0] : 'C';
+            let last2 = bot2.history[bot1.id].length > 0 ? bot2.history[bot1.id].slice(-1)[0] : 'C';
+
+            for (let r = 0; r < rounds; r++) {
+                const move1 = getMove(bot1, bot2.id, last2);
+                const move2 = getMove(bot2, bot1.id, last1);
+
+                // Apply payoffs
+                if (move1 === 'C' && move2 === 'C') {
+                    bot1.karma += payoffs.CC;
+                    bot2.karma += payoffs.CC;
+                } else if (move1 === 'C' && move2 === 'D') {
+                    bot1.karma += payoffs.CD;
+                    bot2.karma += payoffs.DC;
+                } else if (move1 === 'D' && move2 === 'C') {
+                    bot1.karma += payoffs.DC;
+                    bot2.karma += payoffs.CD;
+                } else {
+                    bot1.karma += payoffs.DD;
+                    bot2.karma += payoffs.DD;
+                }
+
+                // Record history
+                bot1.history[bot2.id].push(move1);
+                bot2.history[bot1.id].push(move2);
+
+                last1 = move1;
+                last2 = move2;
+            }
         }
 
         function runGeneration() {
-            // Each bot plays against several others
+            const roundsPerMatch = parseInt(document.getElementById('rounds-per-match').value);
+
+            // Reset karma but keep history (allows learning across generations)
+            bots.forEach(b => b.karma = 0);
+
+            // Each bot plays against multiple random opponents
             for (let i = 0; i < bots.length; i++) {
-                for (let j = 0; j < 5; j++) {
-                    const opponent = bots[Math.floor(Math.random() * bots.length)];
-                    if (opponent.id !== bots[i].id) {
-                        playRound(bots[i], opponent);
-                    }
+                // Play against ~30% of population
+                const numOpponents = Math.max(3, Math.floor(bots.length * 0.3));
+                const opponents = new Set();
+
+                while (opponents.size < numOpponents) {
+                    const idx = Math.floor(Math.random() * bots.length);
+                    if (idx !== i) opponents.add(idx);
                 }
+
+                opponents.forEach(j => {
+                    playMatch(bots[i], bots[j], roundsPerMatch);
+                });
             }
 
-            // Selection: top 50% reproduce
-            bots.sort((a, b) => b.karma - a.karma);
-            const survivors = bots.slice(0, Math.floor(bots.length / 2));
-
-            // Reproduce with small mutation chance
+            // Selection: fitness-proportionate reproduction
+            const totalKarma = bots.reduce((sum, b) => sum + Math.max(0, b.karma), 0);
             const newBots = [];
+
             while (newBots.length < bots.length) {
-                const parent = survivors[Math.floor(Math.random() * survivors.length)];
+                // Roulette wheel selection
+                let pick = Math.random() * totalKarma;
+                let parent = bots[0];
+                for (const bot of bots) {
+                    pick -= Math.max(0, bot.karma);
+                    if (pick <= 0) {
+                        parent = bot;
+                        break;
+                    }
+                }
+
                 let strategy = parent.strategy;
 
-                // Small mutation chance
-                if (Math.random() < 0.05) {
+                // Small mutation chance (2%)
+                if (Math.random() < 0.02) {
                     const strategies = ['defect', 'cooperate', 'tit-for-tat'];
                     strategy = strategies[Math.floor(Math.random() * 3)];
                 }
@@ -462,7 +602,7 @@
                     id: newBots.length,
                     strategy: strategy,
                     karma: 0,
-                    lastMove: 'C'
+                    history: {}
                 });
             }
 
@@ -501,19 +641,19 @@
             const total = bots.length;
             const counts = countStrategies();
 
-            history.push({ ...counts });
+            history.push({ ...counts, total });
 
-            // Show last 20 generations
-            const recent = history.slice(-20);
+            // Show last 25 generations
+            const recent = history.slice(-25);
 
             recent.forEach((gen, i) => {
                 const bar = document.createElement('div');
                 bar.className = 'flex flex-col h-full';
-                bar.style.width = '5%';
+                bar.style.width = (100 / 25) + '%';
 
-                const defectPct = (gen.defect / total) * 100;
-                const coopPct = (gen.cooperate / total) * 100;
-                const titPct = (gen['tit-for-tat'] / total) * 100;
+                const defectPct = (gen.defect / gen.total) * 100;
+                const coopPct = (gen.cooperate / gen.total) * 100;
+                const titPct = (gen['tit-for-tat'] / gen.total) * 100;
 
                 bar.innerHTML = `
                     <div class="bg-red-400" style="height: ${defectPct}%"></div>
@@ -528,8 +668,9 @@
             if (sandboxRunning) return;
             sandboxRunning = true;
 
+            updatePayoffs();
             const generations = parseInt(document.getElementById('generations').value);
-            const population = parseInt(document.getElementById('population').value);
+            const population = 60; // Fixed population for cleaner grid
 
             currentGeneration = 0;
             history = [];
@@ -546,37 +687,56 @@
                 runGeneration();
                 updateDisplay();
                 updateChart();
-                await new Promise(r => setTimeout(r, 100));
+                await new Promise(r => setTimeout(r, 60));
             }
 
             // Show result
             const counts = countStrategies();
-            const winner = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+            const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+            const winner = sorted[0];
+            const total = bots.length;
+            const pct = Math.round((winner[1] / total) * 100);
 
             resultDiv.classList.remove('hidden');
 
             if (winner[0] === 'tit-for-tat') {
-                resultText.innerHTML = `<strong>Tit-for-Tat wins!</strong> After ${generations} generations, cooperative-but-firm strategies dominate. No explicit rules needed—wisdom emerged from consequences.`;
+                resultDiv.className = 'mt-4 p-4 rounded-lg bg-green-50 border-l-4 border-green-400';
+                resultText.innerHTML = `<strong>Tit-for-Tat wins!</strong> (${pct}%) After ${generations} generations, cooperative-but-firm strategies dominate. They cooperate with cooperators, punish defectors, and forgive.`;
             } else if (winner[0] === 'defect') {
-                resultText.innerHTML = `<strong>Defectors dominating...</strong> But run more generations! Defector-heavy populations have low total karma. Given time, Tit-for-Tat recovers.`;
+                resultDiv.className = 'mt-4 p-4 rounded-lg bg-red-50 border-l-4 border-red-400';
+                resultText.innerHTML = `<strong>Defectors dominating</strong> (${pct}%). Try: more rounds per match (lets TfT punish), higher cooperation reward, or more starting TfT bots.`;
             } else {
-                resultText.innerHTML = `<strong>Pure cooperators leading.</strong> They're vulnerable to defector invasion. Run more generations to see evolution in action.`;
+                resultDiv.className = 'mt-4 p-4 rounded-lg bg-blue-50 border-l-4 border-blue-400';
+                resultText.innerHTML = `<strong>Pure cooperators leading</strong> (${pct}%). They're vulnerable—add some defectors to see TfT's advantage emerge.`;
             }
 
             sandboxRunning = false;
         }
 
-        // Display updates
+        // Display updates for all sliders
         document.getElementById('generations').addEventListener('input', e => {
             document.getElementById('gen-display').textContent = e.target.value;
         });
 
-        document.getElementById('population').addEventListener('input', e => {
-            document.getElementById('pop-display').textContent = e.target.value;
+        document.getElementById('rounds-per-match').addEventListener('input', e => {
+            document.getElementById('rounds-display').textContent = e.target.value;
+        });
+
+        // Population sliders
+        ['start-defect', 'start-tft', 'start-coop'].forEach(id => {
+            document.getElementById(id).addEventListener('input', e => {
+                document.getElementById(id + '-display').textContent = e.target.value + '%';
+            });
+        });
+
+        // Payoff sliders
+        ['payoff-cc', 'payoff-dd', 'payoff-dc', 'payoff-cd'].forEach(id => {
+            document.getElementById(id).addEventListener('input', updatePayoffs);
         });
 
         // Initialize
-        initBots(50);
+        updatePayoffs();
+        initBots(60);
         updateDisplay();
     </script>
 </body>
