@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trilemma Explorer | Pick Any Two</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Georgia', serif; }
+        .triangle-container {
+            position: relative;
+            width: 100%;
+            max-width: 450px;
+            margin: 0 auto;
+        }
+        .triangle-container::before {
+            content: '';
+            display: block;
+            padding-bottom: 86.6%;
+        }
+        .triangle-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        .vertex-label {
+            font-size: 12px;
+            font-weight: bold;
+            fill: currentColor;
+        }
+        .draggable-dot {
+            cursor: grab;
+            transition: r 0.2s ease;
+        }
+        .draggable-dot:hover {
+            r: 14;
+        }
+        .draggable-dot:active {
+            cursor: grabbing;
+        }
+        .combo-card {
+            transition: all 0.3s ease;
+            opacity: 0.6;
+        }
+        .combo-card.active {
+            opacity: 1;
+            transform: scale(1.02);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+        }
+        .trilemma-tab {
+            transition: all 0.2s ease;
+        }
+        .trilemma-tab.active {
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .sacrifice-indicator {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 to-slate-200 min-h-screen p-4 md:p-8">
+    <div class="max-w-5xl mx-auto">
+        <h1 class="text-3xl md:text-4xl font-bold text-slate-800 mb-2">The Trilemma Explorer</h1>
+        <p class="text-slate-600 mb-6 text-lg">Classic trade-offs where you can only pick two. Drag the dot to explore what you sacrifice.</p>
+
+        <!-- Trilemma Selector -->
+        <div class="flex flex-wrap gap-2 mb-6" id="trilemma-tabs">
+            <!-- Tabs populated by JS -->
+        </div>
+
+        <div class="grid lg:grid-cols-2 gap-6">
+            <!-- Triangle Visualization -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h2 id="trilemma-title" class="text-xl font-semibold text-slate-800">Good, Fast, Cheap</h2>
+                        <p id="trilemma-subtitle" class="text-sm text-slate-500">Project Management</p>
+                    </div>
+                    <div id="sacrifice-badge" class="px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-700 sacrifice-indicator">
+                        Sacrificing: <span id="sacrifice-name">Quality</span>
+                    </div>
+                </div>
+
+                <div class="triangle-container">
+                    <svg class="triangle-svg" viewBox="0 0 400 350" id="triangle">
+                        <defs>
+                            <linearGradient id="grad-a" x1="0%" y1="100%" x2="50%" y2="0%">
+                                <stop offset="0%" id="grad-a-stop" style="stop-color:#ef4444;stop-opacity:0.3" />
+                                <stop offset="100%" style="stop-opacity:0" />
+                            </linearGradient>
+                            <linearGradient id="grad-b" x1="100%" y1="100%" x2="50%" y2="0%">
+                                <stop offset="0%" id="grad-b-stop" style="stop-color:#eab308;stop-opacity:0.3" />
+                                <stop offset="100%" style="stop-opacity:0" />
+                            </linearGradient>
+                            <linearGradient id="grad-c" x1="50%" y1="0%" x2="50%" y2="100%">
+                                <stop offset="0%" id="grad-c-stop" style="stop-color:#3b82f6;stop-opacity:0.3" />
+                                <stop offset="100%" style="stop-opacity:0" />
+                            </linearGradient>
+                        </defs>
+
+                        <!-- Triangle background -->
+                        <polygon points="200,30 50,320 350,320" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2"/>
+
+                        <!-- Zone gradients -->
+                        <polygon points="200,30 125,175 275,175" fill="url(#grad-c)"/>
+                        <polygon points="50,320 125,175 200,320" fill="url(#grad-a)"/>
+                        <polygon points="350,320 275,175 200,320" fill="url(#grad-b)"/>
+
+                        <!-- Edge labels for combinations -->
+                        <!-- Left edge: midpoint of (50,320) to (200,30) = (125, 175) -->
+                        <text id="edge-ab" x="125" y="175" class="text-xs fill-purple-600 font-medium" text-anchor="middle" transform="rotate(-62.5, 125, 175)"></text>
+                        <!-- Right edge: midpoint of (350,320) to (200,30) = (275, 175) -->
+                        <text id="edge-bc" x="275" y="175" class="text-xs fill-teal-600 font-medium" text-anchor="middle" transform="rotate(62.5, 275, 175)"></text>
+                        <!-- Bottom edge -->
+                        <text id="edge-ac" x="200" y="335" class="text-xs fill-orange-600 font-medium" text-anchor="middle"></text>
+
+                        <!-- Vertex labels -->
+                        <text id="vertex-c" x="200" y="18" text-anchor="middle" class="vertex-label"></text>
+                        <text id="vertex-a" x="30" y="335" text-anchor="middle" class="vertex-label"></text>
+                        <text id="vertex-b" x="370" y="335" text-anchor="middle" class="vertex-label"></text>
+
+                        <!-- Draggable position dot -->
+                        <circle id="position-dot" cx="200" cy="200" r="12" class="draggable-dot" fill="#6366f1" stroke="white" stroke-width="3"/>
+                    </svg>
+                </div>
+
+                <!-- Weight bars -->
+                <div class="mt-4 space-y-2">
+                    <div class="flex items-center gap-3">
+                        <span id="bar-a-icon" class="w-6 text-center"></span>
+                        <div class="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                            <div id="bar-a" class="h-full rounded-full transition-all" style="width: 33%"></div>
+                        </div>
+                        <span id="bar-a-pct" class="text-sm font-medium w-12">33%</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span id="bar-b-icon" class="w-6 text-center"></span>
+                        <div class="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                            <div id="bar-b" class="h-full rounded-full transition-all" style="width: 33%"></div>
+                        </div>
+                        <span id="bar-b-pct" class="text-sm font-medium w-12">33%</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span id="bar-c-icon" class="w-6 text-center"></span>
+                        <div class="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                            <div id="bar-c" class="h-full rounded-full transition-all" style="width: 33%"></div>
+                        </div>
+                        <span id="bar-c-pct" class="text-sm font-medium w-12">33%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current Combination -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h2 class="text-xl font-semibold text-slate-800 mb-4">Your Trade-off</h2>
+
+                <div id="combination-display" class="space-y-4">
+                    <div class="p-4 rounded-lg" id="combo-header">
+                        <h3 id="combo-name" class="text-2xl font-bold">Balanced</h3>
+                        <p id="combo-tagline" class="text-sm italic mt-1">A compromise on everything</p>
+                    </div>
+
+                    <div>
+                        <h4 class="font-semibold text-slate-700 mb-2">What You Get</h4>
+                        <p id="combo-gets" class="text-sm text-slate-600"></p>
+                    </div>
+
+                    <div>
+                        <h4 class="font-semibold text-slate-700 mb-2">What You Sacrifice</h4>
+                        <p id="combo-loses" class="text-sm text-slate-600"></p>
+                    </div>
+
+                    <div>
+                        <h4 class="font-semibold text-slate-700 mb-2">Real-World Examples</h4>
+                        <ul id="combo-examples" class="text-sm text-slate-600 space-y-1">
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- All Combinations -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mt-6">
+            <h2 class="text-xl font-semibold text-slate-800 mb-4">The Three Trade-offs</h2>
+            <p class="text-sm text-slate-500 mb-6" id="trilemma-explanation"></p>
+
+            <div class="grid md:grid-cols-3 gap-4" id="combo-cards">
+                <!-- Cards populated by JS -->
+            </div>
+        </div>
+
+        <!-- About the trilemma -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mt-6">
+            <h2 class="text-xl font-semibold text-slate-800 mb-4">About This Trilemma</h2>
+            <div id="trilemma-about" class="prose prose-slate text-sm">
+            </div>
+            <p id="trilemma-source" class="text-xs text-slate-400 mt-4"></p>
+        </div>
+    </div>
+
+    <script>
+        const trilemmas = {
+            'good-fast-cheap': {
+                title: 'Good, Fast, Cheap',
+                subtitle: 'Project Management',
+                explanation: 'The iron triangle of project management. Every project balances scope (good), time (fast), and budget (cheap). Optimizing for two necessarily compromises the third.',
+                about: `<p>This trilemma appears in software development, construction, manufacturing, and virtually every field involving production. Arthur C. Clarke noted this constraint when observing that achieving high quality quickly and cheaply simultaneously was fundamentally impossible.</p><p>The phrase "pick two" became a management maxim because it captures a truth about resource constraints: there's no free lunch in production.</p>`,
+                source: 'Popularized in software engineering; origins in manufacturing and project management theory.',
+                vertices: {
+                    a: { name: 'Fast', icon: '⚡', color: '#ef4444', description: 'Quick delivery' },
+                    b: { name: 'Cheap', icon: '💰', color: '#eab308', description: 'Low cost' },
+                    c: { name: 'Good', icon: '✨', color: '#3b82f6', description: 'High quality' }
+                },
+                combinations: {
+                    ab: {
+                        name: 'Quick & Cheap',
+                        tagline: 'But low quality',
+                        gets: 'Fast turnaround at low cost. You ship quickly without breaking the bank.',
+                        loses: 'Quality suffers. Expect bugs, technical debt, poor UX, and maintenance headaches.',
+                        examples: ['MVP prototypes', 'Hackathon projects', 'Throwaway scripts', 'Budget contractors']
+                    },
+                    bc: {
+                        name: 'Good & Cheap',
+                        tagline: 'But slow',
+                        gets: 'High quality work at low cost. The product is solid and affordable.',
+                        loses: 'Time. It takes forever. Side projects, volunteer work, or junior developers learning.',
+                        examples: ['Open source projects', 'Hobby projects', 'Grad student labor', 'Learning exercises']
+                    },
+                    ac: {
+                        name: 'Good & Fast',
+                        tagline: 'But expensive',
+                        gets: 'High quality delivered quickly. Premium results on tight timelines.',
+                        loses: 'Money. You pay top dollar for senior talent, overtime, or expedited resources.',
+                        examples: ['Top-tier agencies', 'Senior consultants', 'Rush orders', 'Crisis response']
+                    },
+                    balanced: {
+                        name: 'The Compromise Zone',
+                        tagline: 'Mediocre at everything',
+                        gets: 'A bit of each quality, but nothing exceptional.',
+                        loses: 'Excellence in any dimension. Jack of all trades, master of none.',
+                        examples: ['Most internal projects', 'Typical corporate software', 'Balanced but unremarkable work']
+                    }
+                }
+            },
+            'lethal-trifecta': {
+                title: 'The Lethal Trifecta',
+                subtitle: 'AI Agent Security',
+                explanation: 'Simon Willison\'s framework for AI agent risk. When an AI agent has all three capabilities, prompt injection attacks become catastrophic. Safe agents must lack at least one.',
+                about: `<p>This trilemma emerges from the fundamental nature of LLMs: they follow instructions in content without reliably distinguishing where those instructions came from. Everything becomes a sequence of tokens.</p><p>When all three capabilities exist together, an attacker can embed malicious instructions in any content the agent processes, access private data, and exfiltrate it through communication channels. The combination is "lethal" because partial defenses (blocking "95% of attacks") are a failing grade in security.</p>`,
+                source: 'Simon Willison, "The Lethal Trifecta" (2025)',
+                vertices: {
+                    a: { name: 'Private Data', icon: '🔐', color: '#ef4444', description: 'Access to sensitive info' },
+                    b: { name: 'Communication', icon: '📤', color: '#eab308', description: 'Can send data out' },
+                    c: { name: 'Untrusted Input', icon: '⚠️', color: '#3b82f6', description: 'Processes external content' }
+                },
+                combinations: {
+                    ab: {
+                        name: 'Internal Agent',
+                        tagline: 'No external content exposure',
+                        gets: 'An agent that can access your data and communicate, but only processes trusted inputs you provide directly.',
+                        loses: 'Usefulness. Cannot read emails, browse web, or process documents from external sources.',
+                        examples: ['Personal assistant on local files only', 'Database query agent', 'Code assistant on your repo']
+                    },
+                    bc: {
+                        name: 'Public-Facing Bot',
+                        tagline: 'No private data access',
+                        gets: 'An agent that can process untrusted content and communicate results, but has no access to private data.',
+                        loses: 'Personalization. Cannot help with your emails, documents, or private information.',
+                        examples: ['Public chatbots', 'Customer service agents', 'General web search assistants']
+                    },
+                    ac: {
+                        name: 'Read-Only Assistant',
+                        tagline: 'No external communication',
+                        gets: 'An agent that can read your private data and process external content, but cannot send data anywhere.',
+                        loses: 'Action capability. Cannot send emails, make API calls, or share findings.',
+                        examples: ['Local research assistant', 'Document analyzer', 'Offline summarization tool']
+                    },
+                    balanced: {
+                        name: 'THE DANGER ZONE',
+                        tagline: 'All three = catastrophic risk',
+                        gets: 'Maximum capability: reads your data, processes any content, communicates freely.',
+                        loses: 'Security. Prompt injection attacks can now steal and exfiltrate your private data.',
+                        examples: ['Full-featured email agents', 'Autonomous web agents with data access', 'MCP servers mixing tools']
+                    }
+                }
+            },
+            'cap-theorem': {
+                title: 'CAP Theorem',
+                subtitle: 'Distributed Systems',
+                explanation: 'In any distributed data store, you can only guarantee two of: Consistency (all nodes see the same data), Availability (every request gets a response), and Partition tolerance (system works despite network failures).',
+                about: `<p>Formalized by Eric Brewer in 2000 and proven by Gilbert and Lynch in 2002. The CAP theorem fundamentally shapes distributed database design.</p><p>In practice, partition tolerance is non-negotiable for distributed systems (networks fail), so the real choice is between consistency and availability during partitions. This led to the rise of "eventual consistency" as a practical compromise.</p>`,
+                source: 'Eric Brewer (2000), proven by Seth Gilbert and Nancy Lynch (2002)',
+                vertices: {
+                    a: { name: 'Consistency', icon: '🔒', color: '#ef4444', description: 'All nodes see same data' },
+                    b: { name: 'Availability', icon: '✅', color: '#eab308', description: 'Always responds' },
+                    c: { name: 'Partition Tolerance', icon: '🌐', color: '#3b82f6', description: 'Survives network splits' }
+                },
+                combinations: {
+                    ab: {
+                        name: 'CA Systems',
+                        tagline: 'No partition tolerance',
+                        gets: 'Strong consistency and high availability. Every read returns the latest write, and the system always responds.',
+                        loses: 'Partition tolerance. If the network splits, the system fails. Only works on single nodes or reliable networks.',
+                        examples: ['Single-node PostgreSQL', 'Traditional RDBMS', 'Systems that sacrifice during partitions']
+                    },
+                    bc: {
+                        name: 'AP Systems',
+                        tagline: 'Eventually consistent',
+                        gets: 'High availability and partition tolerance. System keeps running even when network fails.',
+                        loses: 'Immediate consistency. Nodes may return stale data. Conflicts resolved later.',
+                        examples: ['Cassandra', 'DynamoDB', 'CouchDB', 'DNS']
+                    },
+                    ac: {
+                        name: 'CP Systems',
+                        tagline: 'May reject requests',
+                        gets: 'Strong consistency and partition tolerance. Data is always correct when available.',
+                        loses: 'Availability during partitions. System may refuse requests to preserve consistency.',
+                        examples: ['MongoDB (default)', 'HBase', 'Zookeeper', 'Redis Cluster']
+                    },
+                    balanced: {
+                        name: 'Theoretical Impossibility',
+                        tagline: 'Cannot exist',
+                        gets: 'Nothing practical - this is mathematically proven impossible in distributed systems.',
+                        loses: 'The CAP theorem proves you cannot have all three guarantees simultaneously.',
+                        examples: ['Does not exist', 'Marketing claims aside, no system achieves this']
+                    }
+                }
+            },
+            'impossible-trinity': {
+                title: 'Impossible Trinity',
+                subtitle: 'Macroeconomics',
+                explanation: 'The Mundell-Fleming trilemma: a country cannot simultaneously maintain a fixed exchange rate, free capital movement, and independent monetary policy. Choose any two.',
+                about: `<p>Developed by economists Robert Mundell and Marcus Fleming in the early 1960s. This framework explains why countries face difficult choices in international finance.</p><p>The trilemma has profound real-world implications: the Eurozone chose fixed rates and capital mobility but gave up monetary independence. China historically chose fixed rates and monetary independence but restricted capital flows.</p>`,
+                source: 'Robert Mundell and Marcus Fleming (1962-1963)',
+                vertices: {
+                    a: { name: 'Fixed Exchange Rate', icon: '📌', color: '#ef4444', description: 'Currency pegged to another' },
+                    b: { name: 'Free Capital', icon: '💸', color: '#eab308', description: 'Money flows freely' },
+                    c: { name: 'Monetary Independence', icon: '🏛️', color: '#3b82f6', description: 'Control own interest rates' }
+                },
+                combinations: {
+                    ab: {
+                        name: 'Currency Board',
+                        tagline: 'No independent monetary policy',
+                        gets: 'Stable exchange rates and free capital movement. Good for trade and investment.',
+                        loses: 'Monetary independence. Cannot adjust interest rates for domestic conditions.',
+                        examples: ['Hong Kong', 'Eurozone members', 'Countries using USD/EUR']
+                    },
+                    bc: {
+                        name: 'Floating Exchange',
+                        tagline: 'Currency fluctuates',
+                        gets: 'Monetary independence and free capital. Can set interest rates and attract investment.',
+                        loses: 'Exchange rate stability. Currency value fluctuates with markets.',
+                        examples: ['United States', 'Japan', 'United Kingdom', 'Australia']
+                    },
+                    ac: {
+                        name: 'Capital Controls',
+                        tagline: 'Restricted money flows',
+                        gets: 'Fixed exchange rate and monetary independence. Stable currency with policy flexibility.',
+                        loses: 'Free capital movement. Must restrict foreign investment and currency exchange.',
+                        examples: ['China (historically)', 'Bretton Woods era', 'Malaysia (1998 crisis)']
+                    },
+                    balanced: {
+                        name: 'Unstable Equilibrium',
+                        tagline: 'Crisis waiting to happen',
+                        gets: 'Temporarily, countries attempt all three...',
+                        loses: 'Stability. Speculators will attack. See: 1997 Asian crisis, 1992 ERM crisis.',
+                        examples: ['Pre-crisis Thailand (1997)', 'UK before Black Wednesday (1992)']
+                    }
+                }
+            },
+            'zizek': {
+                title: 'Zizek\'s Trilemma',
+                subtitle: 'Life Under Authoritarianism',
+                explanation: 'Under authoritarian regimes, you can combine any two of: personal honesty, sincere support of the regime, and intelligence. All three together is impossible.',
+                about: `<p>Often attributed to philosopher Slavoj Zizek, this trilemma describes the impossible position of intellectuals under authoritarian rule.</p><p>The insight is darkly logical: an intelligent, honest person cannot sincerely support a system built on lies. To sincerely support it requires either dishonesty (knowing it's false) or lack of intelligence (believing the propaganda). This applies beyond communism to any system requiring belief in obvious falsehoods.</p>`,
+                source: 'Attributed to Slavoj Zizek, describing life under Communist regimes',
+                vertices: {
+                    a: { name: 'Honest', icon: '💎', color: '#ef4444', description: 'Speaks truthfully' },
+                    b: { name: 'Loyal', icon: '🎖️', color: '#eab308', description: 'Supports the regime' },
+                    c: { name: 'Intelligent', icon: '🧠', color: '#3b82f6', description: 'Sees through propaganda' }
+                },
+                combinations: {
+                    ab: {
+                        name: 'The True Believer',
+                        tagline: 'Honest and loyal, but naive',
+                        gets: 'Genuine conviction and integrity within the system. Inner peace through belief.',
+                        loses: 'Critical thinking. Cannot see the contradictions and failures of the system.',
+                        examples: ['Idealistic party youth', 'Sheltered believers', 'Those who never questioned']
+                    },
+                    bc: {
+                        name: 'The Cynic',
+                        tagline: 'Smart and loyal, but dishonest',
+                        gets: 'Career success and survival. Knows the game and plays it well.',
+                        loses: 'Integrity. Lives a double life, saying what\'s expected while knowing it\'s false.',
+                        examples: ['Careerist officials', 'Opportunistic intellectuals', 'Those who "go along to get along"']
+                    },
+                    ac: {
+                        name: 'The Dissident',
+                        tagline: 'Honest and smart, but disloyal',
+                        gets: 'Intellectual integrity. Sees truth and speaks it.',
+                        loses: 'Safety and belonging. Marginalized, persecuted, or exiled.',
+                        examples: ['Solzhenitsyn', 'Havel', 'Sakharov', 'Intellectual emigres']
+                    },
+                    balanced: {
+                        name: 'The Impossible Position',
+                        tagline: 'Cannot exist',
+                        gets: 'Nothing sustainable. The position is logically impossible.',
+                        loses: 'One of the three must give way. No one can be honest, intelligent, AND a true believer in a system of lies.',
+                        examples: ['Brief moments before disillusionment', 'The path to becoming a dissident']
+                    }
+                }
+            },
+            'exit-voice-loyalty': {
+                title: 'Exit, Voice, Loyalty',
+                subtitle: 'Organizational Response',
+                explanation: 'When an organization declines, members can leave (exit), speak up (voice), or stay quietly (loyalty). But you can only truly commit to two responses at once.',
+                about: `<p>Albert Hirschman's 1970 classic "Exit, Voice, and Loyalty" describes how people respond to decline in firms, organizations, and states. The framework reveals why some organizations improve under pressure while others collapse.</p><p>The trilemma emerges because these responses interact: loyalty reduces exit, which can strengthen or weaken voice; easy exit reduces voice; and voice without exit threat may lack credibility. Your combination shapes whether you're a reformer, a negotiator, or a quiet departee.</p>`,
+                source: 'Albert O. Hirschman, "Exit, Voice, and Loyalty" (1970)',
+                vertices: {
+                    a: { name: 'Exit', icon: '🚪', color: '#ef4444', description: 'Leave the organization' },
+                    b: { name: 'Loyalty', icon: '🤝', color: '#eab308', description: 'Stay committed' },
+                    c: { name: 'Voice', icon: '📢', color: '#3b82f6', description: 'Speak up for change' }
+                },
+                combinations: {
+                    ab: {
+                        name: 'The Quiet Departure',
+                        tagline: 'Leaves without complaint',
+                        gets: 'Clean break while preserving relationships. No burned bridges, no drama.',
+                        loses: 'Impact. The organization never learns why you left. Problems persist for those who remain.',
+                        examples: ['Employees who leave for "better opportunities"', 'Customers who silently switch brands', 'Members who let memberships lapse']
+                    },
+                    bc: {
+                        name: 'The Loyal Reformer',
+                        tagline: 'Committed to change from within',
+                        gets: 'Credibility as a true believer. Your criticism comes from love, not opportunism.',
+                        loses: 'Leverage. Without exit threat, you can be ignored. "Where else will they go?"',
+                        examples: ['Union organizers', 'Tenured professors pushing reform', 'Loyal opposition in politics', 'Long-term employees advocating change']
+                    },
+                    ac: {
+                        name: 'The Negotiator',
+                        tagline: 'Fix this or I walk',
+                        gets: 'Maximum leverage. Voice backed by credible exit threat demands attention.',
+                        loses: 'Trust and belonging. Seen as mercenary, always one foot out the door.',
+                        examples: ['Employees with competing offers', 'Customers threatening to switch', 'Politicians threatening party defection']
+                    },
+                    balanced: {
+                        name: 'The Conflicted Middle',
+                        tagline: 'Paralyzed by options',
+                        gets: 'Flexibility, but no clear strategy. You keep all doors open.',
+                        loses: 'Effectiveness. Loyalty undermines exit credibility. Exit threat undermines voice authenticity. You seem uncommitted to everything.',
+                        examples: ['The perpetually job-searching employee', 'Customers who complain but never leave', 'The ambivalent organization member']
+                    }
+                }
+            }
+        };
+
+        // Triangle geometry
+        const vertices = {
+            c: { x: 200, y: 30 },   // top
+            a: { x: 50, y: 320 },   // bottom-left
+            b: { x: 350, y: 320 }   // bottom-right
+        };
+
+        let currentTrilemma = 'good-fast-cheap';
+        let isDragging = false;
+        let currentPos = { x: 200, y: 200 };
+
+        const dot = document.getElementById('position-dot');
+        const svg = document.getElementById('triangle');
+
+        function pageToSVG(pageX, pageY) {
+            const svgRect = svg.getBoundingClientRect();
+            const viewBox = svg.viewBox.baseVal;
+            return {
+                x: ((pageX - svgRect.left) / svgRect.width) * viewBox.width,
+                y: ((pageY - svgRect.top) / svgRect.height) * viewBox.height
+            };
+        }
+
+        function isInsideTriangle(px, py) {
+            const { c: A, a: B, b: C } = vertices;
+            const v0x = C.x - A.x, v0y = C.y - A.y;
+            const v1x = B.x - A.x, v1y = B.y - A.y;
+            const v2x = px - A.x, v2y = py - A.y;
+            const dot00 = v0x * v0x + v0y * v0y;
+            const dot01 = v0x * v1x + v0y * v1y;
+            const dot02 = v0x * v2x + v0y * v2y;
+            const dot11 = v1x * v1x + v1y * v1y;
+            const dot12 = v1x * v2x + v1y * v2y;
+            const invDenom = 1 / (dot00 * dot11 - dot01 * dot01);
+            const u = (dot11 * dot02 - dot01 * dot12) * invDenom;
+            const v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+            return (u >= 0) && (v >= 0) && (u + v <= 1);
+        }
+
+        function getBarycentricWeights(px, py) {
+            const { c: A, a: B, b: C } = vertices;
+            const denom = (B.y - C.y) * (A.x - C.x) + (C.x - B.x) * (A.y - C.y);
+            const wC = ((B.y - C.y) * (px - C.x) + (C.x - B.x) * (py - C.y)) / denom;
+            const wA = ((C.y - A.y) * (px - C.x) + (A.x - C.x) * (py - C.y)) / denom;
+            const wB = 1 - wC - wA;
+            return {
+                a: Math.max(0, Math.min(1, wA)),
+                b: Math.max(0, Math.min(1, wB)),
+                c: Math.max(0, Math.min(1, wC))
+            };
+        }
+
+        function updatePosition(x, y) {
+            if (!isInsideTriangle(x, y)) {
+                const centroid = {
+                    x: (vertices.c.x + vertices.a.x + vertices.b.x) / 3,
+                    y: (vertices.c.y + vertices.a.y + vertices.b.y) / 3
+                };
+                let inside = centroid;
+                let outside = { x, y };
+                for (let i = 0; i < 10; i++) {
+                    const mid = { x: (inside.x + outside.x) / 2, y: (inside.y + outside.y) / 2 };
+                    if (isInsideTriangle(mid.x, mid.y)) inside = mid;
+                    else outside = mid;
+                }
+                x = inside.x;
+                y = inside.y;
+            }
+            currentPos = { x, y };
+            dot.setAttribute('cx', x);
+            dot.setAttribute('cy', y);
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            const tri = trilemmas[currentTrilemma];
+            const weights = getBarycentricWeights(currentPos.x, currentPos.y);
+
+            // Update bars
+            document.getElementById('bar-a').style.width = `${weights.a * 100}%`;
+            document.getElementById('bar-b').style.width = `${weights.b * 100}%`;
+            document.getElementById('bar-c').style.width = `${weights.c * 100}%`;
+            document.getElementById('bar-a-pct').textContent = `${Math.round(weights.a * 100)}%`;
+            document.getElementById('bar-b-pct').textContent = `${Math.round(weights.b * 100)}%`;
+            document.getElementById('bar-c-pct').textContent = `${Math.round(weights.c * 100)}%`;
+
+            // Determine combination
+            const sorted = Object.entries(weights).sort((a, b) => b[1] - a[1]);
+            const [first, second, third] = sorted;
+
+            let combo, sacrificed;
+            if (first[1] > 0.4 && second[1] > 0.4 && third[1] < 0.25) {
+                // Clear two-way combination
+                combo = [first[0], second[0]].sort().join('');
+                sacrificed = third[0];
+            } else if (third[1] > 0.25) {
+                // Balanced / danger zone
+                combo = 'balanced';
+                sacrificed = null;
+            } else {
+                combo = [first[0], second[0]].sort().join('');
+                sacrificed = third[0];
+            }
+
+            const comboData = tri.combinations[combo];
+
+            // Update sacrifice badge
+            const sacrificeBadge = document.getElementById('sacrifice-badge');
+            if (sacrificed) {
+                sacrificeBadge.style.display = 'block';
+                document.getElementById('sacrifice-name').textContent = tri.vertices[sacrificed].name;
+            } else {
+                sacrificeBadge.style.display = combo === 'balanced' ? 'block' : 'none';
+                if (combo === 'balanced') {
+                    document.getElementById('sacrifice-name').textContent = currentTrilemma === 'lethal-trifecta' ? 'SECURITY!' : 'Focus';
+                }
+            }
+
+            // Update combination display
+            const headerBg = combo === 'balanced' && currentTrilemma === 'lethal-trifecta'
+                ? 'bg-red-100'
+                : 'bg-indigo-50';
+            const headerText = combo === 'balanced' && currentTrilemma === 'lethal-trifecta'
+                ? 'text-red-800'
+                : 'text-indigo-800';
+            document.getElementById('combo-header').className = `p-4 rounded-lg ${headerBg}`;
+            document.getElementById('combo-name').className = `text-2xl font-bold ${headerText}`;
+            document.getElementById('combo-name').textContent = comboData.name;
+            document.getElementById('combo-tagline').textContent = comboData.tagline;
+            document.getElementById('combo-gets').textContent = comboData.gets;
+            document.getElementById('combo-loses').textContent = comboData.loses;
+            document.getElementById('combo-examples').innerHTML = comboData.examples.map(e => `<li>• ${e}</li>`).join('');
+
+            // Update combo cards highlighting
+            document.querySelectorAll('.combo-card').forEach(card => {
+                card.classList.remove('active');
+                if (card.dataset.combo === combo) {
+                    card.classList.add('active');
+                }
+            });
+        }
+
+        function loadTrilemma(key) {
+            currentTrilemma = key;
+            const tri = trilemmas[key];
+
+            // Update header
+            document.getElementById('trilemma-title').textContent = tri.title;
+            document.getElementById('trilemma-subtitle').textContent = tri.subtitle;
+            document.getElementById('trilemma-explanation').textContent = tri.explanation;
+            document.getElementById('trilemma-about').innerHTML = tri.about;
+            document.getElementById('trilemma-source').textContent = `Source: ${tri.source}`;
+
+            // Update vertex labels
+            document.getElementById('vertex-a').textContent = `${tri.vertices.a.icon} ${tri.vertices.a.name.toUpperCase()}`;
+            document.getElementById('vertex-a').style.fill = tri.vertices.a.color;
+            document.getElementById('vertex-b').textContent = `${tri.vertices.b.icon} ${tri.vertices.b.name.toUpperCase()}`;
+            document.getElementById('vertex-b').style.fill = tri.vertices.b.color;
+            document.getElementById('vertex-c').textContent = `${tri.vertices.c.icon} ${tri.vertices.c.name.toUpperCase()}`;
+            document.getElementById('vertex-c').style.fill = tri.vertices.c.color;
+
+            // Update edge labels
+            document.getElementById('edge-ab').textContent = `${tri.vertices.a.name} + ${tri.vertices.b.name}`;
+            document.getElementById('edge-bc').textContent = `${tri.vertices.b.name} + ${tri.vertices.c.name}`;
+            document.getElementById('edge-ac').textContent = `${tri.vertices.a.name} + ${tri.vertices.c.name}`;
+
+            // Update gradients
+            document.getElementById('grad-a-stop').style.stopColor = tri.vertices.a.color;
+            document.getElementById('grad-b-stop').style.stopColor = tri.vertices.b.color;
+            document.getElementById('grad-c-stop').style.stopColor = tri.vertices.c.color;
+
+            // Update bars
+            document.getElementById('bar-a-icon').textContent = tri.vertices.a.icon;
+            document.getElementById('bar-b-icon').textContent = tri.vertices.b.icon;
+            document.getElementById('bar-c-icon').textContent = tri.vertices.c.icon;
+            document.getElementById('bar-a').style.backgroundColor = tri.vertices.a.color;
+            document.getElementById('bar-b').style.backgroundColor = tri.vertices.b.color;
+            document.getElementById('bar-c').style.backgroundColor = tri.vertices.c.color;
+            document.getElementById('bar-a-pct').style.color = tri.vertices.a.color;
+            document.getElementById('bar-b-pct').style.color = tri.vertices.b.color;
+            document.getElementById('bar-c-pct').style.color = tri.vertices.c.color;
+
+            // Update combo cards
+            const cardsHtml = Object.entries(tri.combinations)
+                .filter(([k]) => k !== 'balanced')
+                .map(([key, combo]) => {
+                    const [v1, v2] = key.split('');
+                    const sacrifices = ['a', 'b', 'c'].find(v => v !== v1 && v !== v2);
+                    return `
+                        <div class="combo-card p-4 rounded-lg border-2 border-slate-200 bg-slate-50 cursor-pointer" data-combo="${key}">
+                            <h3 class="font-bold text-slate-800">${combo.name}</h3>
+                            <p class="text-xs text-slate-500 mb-2">${tri.vertices[v1].icon} ${tri.vertices[v1].name} + ${tri.vertices[v2].icon} ${tri.vertices[v2].name}</p>
+                            <p class="text-sm text-slate-600 mb-2">${combo.tagline}</p>
+                            <p class="text-xs text-red-600">Sacrifices: ${tri.vertices[sacrifices].icon} ${tri.vertices[sacrifices].name}</p>
+                        </div>
+                    `;
+                }).join('');
+            document.getElementById('combo-cards').innerHTML = cardsHtml;
+
+            // Add click handlers to cards
+            document.querySelectorAll('.combo-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const combo = card.dataset.combo;
+                    const [v1, v2] = combo.split('');
+                    // Move dot to edge midpoint
+                    const pos = {
+                        x: (vertices[v1].x + vertices[v2].x) / 2,
+                        y: (vertices[v1].y + vertices[v2].y) / 2
+                    };
+                    updatePosition(pos.x, pos.y);
+                    updateURL();
+                });
+            });
+
+            // Update tabs
+            document.querySelectorAll('.trilemma-tab').forEach(tab => {
+                tab.classList.remove('active');
+                if (tab.dataset.trilemma === key) {
+                    tab.classList.add('active');
+                }
+            });
+
+            updateDisplay();
+        }
+
+        // URL State Management
+        function updateURL() {
+            const hash = `#t=${currentTrilemma}&x=${Math.round(currentPos.x)}&y=${Math.round(currentPos.y)}`;
+            history.replaceState(null, '', hash);
+        }
+
+        function loadFromURL() {
+            const hash = window.location.hash.slice(1);
+            if (!hash) return null;
+
+            const params = {};
+            hash.split('&').forEach(part => {
+                const [key, val] = part.split('=');
+                params[key] = val;
+            });
+
+            return {
+                trilemma: params.t && trilemmas[params.t] ? params.t : null,
+                x: params.x ? parseInt(params.x, 10) : null,
+                y: params.y ? parseInt(params.y, 10) : null
+            };
+        }
+
+        // Initialize tabs
+        const tabsHtml = Object.entries(trilemmas).map(([key, tri]) => `
+            <button class="trilemma-tab px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-white/50" data-trilemma="${key}">
+                ${tri.title}
+            </button>
+        `).join('');
+        document.getElementById('trilemma-tabs').innerHTML = tabsHtml;
+
+        document.querySelectorAll('.trilemma-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                loadTrilemma(tab.dataset.trilemma);
+                updateURL();
+            });
+        });
+
+        // Drag handlers
+        function startDrag(e) {
+            isDragging = true;
+            e.preventDefault();
+        }
+
+        function moveDrag(e) {
+            if (!isDragging) return;
+            const point = e.touches ? e.touches[0] : e;
+            const svgPos = pageToSVG(point.clientX, point.clientY);
+            updatePosition(svgPos.x, svgPos.y);
+        }
+
+        function endDrag() {
+            isDragging = false;
+            updateURL(); // Update URL when drag ends
+        }
+
+        dot.addEventListener('mousedown', startDrag);
+        dot.addEventListener('touchstart', startDrag);
+        document.addEventListener('mousemove', moveDrag);
+        document.addEventListener('touchmove', moveDrag);
+        document.addEventListener('mouseup', endDrag);
+        document.addEventListener('touchend', endDrag);
+
+        svg.addEventListener('click', (e) => {
+            const svgPos = pageToSVG(e.clientX, e.clientY);
+            if (isInsideTriangle(svgPos.x, svgPos.y)) {
+                updatePosition(svgPos.x, svgPos.y);
+                updateURL();
+            }
+        });
+
+        // Handle browser back/forward
+        window.addEventListener('hashchange', () => {
+            const state = loadFromURL();
+            if (state) {
+                if (state.trilemma && state.trilemma !== currentTrilemma) {
+                    loadTrilemma(state.trilemma);
+                }
+                if (state.x !== null && state.y !== null) {
+                    updatePosition(state.x, state.y);
+                }
+            }
+        });
+
+        // Initialize from URL or defaults
+        const initialState = loadFromURL();
+        if (initialState && initialState.trilemma) {
+            loadTrilemma(initialState.trilemma);
+            if (initialState.x !== null && initialState.y !== null) {
+                updatePosition(initialState.x, initialState.y);
+            } else {
+                updatePosition(200, 200);
+            }
+        } else {
+            loadTrilemma('good-fast-cheap');
+            updatePosition(200, 200);
+        }
+        updateURL();
+    </script>
+</body>
+</html>
