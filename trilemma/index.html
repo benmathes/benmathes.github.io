@@ -89,37 +89,35 @@
                 </div>
 
                 <div class="triangle-container">
+                    <canvas id="triangle-canvas" width="400" height="350" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></canvas>
                     <svg class="triangle-svg" viewBox="0 0 400 350" id="triangle">
-                        <defs>
-                            <linearGradient id="grad-a" x1="0%" y1="100%" x2="50%" y2="0%">
-                                <stop offset="0%" id="grad-a-stop" style="stop-color:#ef4444;stop-opacity:0.3" />
-                                <stop offset="100%" style="stop-opacity:0" />
-                            </linearGradient>
-                            <linearGradient id="grad-b" x1="100%" y1="100%" x2="50%" y2="0%">
-                                <stop offset="0%" id="grad-b-stop" style="stop-color:#eab308;stop-opacity:0.3" />
-                                <stop offset="100%" style="stop-opacity:0" />
-                            </linearGradient>
-                            <linearGradient id="grad-c" x1="50%" y1="0%" x2="50%" y2="100%">
-                                <stop offset="0%" id="grad-c-stop" style="stop-color:#3b82f6;stop-opacity:0.3" />
-                                <stop offset="100%" style="stop-opacity:0" />
-                            </linearGradient>
-                        </defs>
+                        <!-- Triangle border - gradient is rendered on canvas below -->
+                        <polygon points="200,30 50,320 350,320" fill="transparent" stroke="#e2e8f0" stroke-width="2"/>
 
-                        <!-- Triangle background -->
-                        <polygon points="200,30 50,320 350,320" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2"/>
+                        <!-- Region boundary lines (where min weight = 0.25, forming inner "balanced" triangle) -->
+                        <!-- Line parallel to bottom edge (a-b): λc = 0.25 -->
+                        <line x1="87.5" y1="247.5" x2="312.5" y2="247.5" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4,4" opacity="0.5"/>
+                        <!-- Line parallel to right edge (b-c): λa = 0.25 -->
+                        <line x1="162.5" y1="102.5" x2="275" y2="320" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4,4" opacity="0.5"/>
+                        <!-- Line parallel to left edge (a-c): λb = 0.25 -->
+                        <line x1="237.5" y1="102.5" x2="125" y2="320" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4,4" opacity="0.5"/>
 
-                        <!-- Zone gradients -->
-                        <polygon points="200,30 125,175 275,175" fill="url(#grad-c)"/>
-                        <polygon points="50,320 125,175 200,320" fill="url(#grad-a)"/>
-                        <polygon points="350,320 275,175 200,320" fill="url(#grad-b)"/>
-
-                        <!-- Edge labels for combinations -->
+                        <!-- Edge labels for combinations (two lines each) -->
                         <!-- Left edge: midpoint of (50,320) to (200,30) = (125, 175) -->
-                        <text id="edge-ab" x="125" y="175" class="text-xs fill-purple-600 font-medium" text-anchor="middle" transform="rotate(-62.5, 125, 175)"></text>
+                        <text id="edge-ab" x="125" y="175" class="text-xs fill-purple-600 font-medium" text-anchor="middle" transform="rotate(-62.5, 125, 175)">
+                            <tspan id="edge-ab-1" x="125" dy="-0.4em"></tspan>
+                            <tspan id="edge-ab-2" x="125" dy="1.1em"></tspan>
+                        </text>
                         <!-- Right edge: midpoint of (350,320) to (200,30) = (275, 175) -->
-                        <text id="edge-bc" x="275" y="175" class="text-xs fill-teal-600 font-medium" text-anchor="middle" transform="rotate(62.5, 275, 175)"></text>
+                        <text id="edge-bc" x="275" y="175" class="text-xs fill-teal-600 font-medium" text-anchor="middle" transform="rotate(62.5, 275, 175)">
+                            <tspan id="edge-bc-1" x="275" dy="-0.4em"></tspan>
+                            <tspan id="edge-bc-2" x="275" dy="1.1em"></tspan>
+                        </text>
                         <!-- Bottom edge -->
-                        <text id="edge-ac" x="200" y="335" class="text-xs fill-orange-600 font-medium" text-anchor="middle"></text>
+                        <text id="edge-ac" x="200" y="305" class="text-xs fill-orange-600 font-medium" text-anchor="middle">
+                            <tspan id="edge-ac-1" x="200" dy="-0.4em"></tspan>
+                            <tspan id="edge-ac-2" x="200" dy="1.1em"></tspan>
+                        </text>
 
                         <!-- Vertex labels -->
                         <text id="vertex-c" x="200" y="18" text-anchor="middle" class="vertex-label"></text>
@@ -513,6 +511,64 @@
             };
         }
 
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+
+        function renderTriangleGradient(colorA, colorB, colorC) {
+            const canvas = document.getElementById('triangle-canvas');
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+
+            const rgbA = hexToRgb(colorA);
+            const rgbB = hexToRgb(colorB);
+            const rgbC = hexToRgb(colorC);
+
+            // Background color (#f8fafc)
+            const bgColor = { r: 248, g: 250, b: 252 };
+
+            const imageData = ctx.createImageData(width, height);
+            const data = imageData.data;
+
+            const gradientStrength = 0.4; // How much the gradient colors show through
+
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    const idx = (y * width + x) * 4;
+
+                    if (isInsideTriangle(x, y)) {
+                        const weights = getBarycentricWeights(x, y);
+
+                        // Blend vertex colors based on barycentric weights
+                        const gradR = rgbA.r * weights.a + rgbB.r * weights.b + rgbC.r * weights.c;
+                        const gradG = rgbA.g * weights.a + rgbB.g * weights.b + rgbC.g * weights.c;
+                        const gradB = rgbA.b * weights.a + rgbB.b * weights.b + rgbC.b * weights.c;
+
+                        // Blend gradient with background
+                        const r = Math.round(bgColor.r * (1 - gradientStrength) + gradR * gradientStrength);
+                        const g = Math.round(bgColor.g * (1 - gradientStrength) + gradG * gradientStrength);
+                        const b = Math.round(bgColor.b * (1 - gradientStrength) + gradB * gradientStrength);
+
+                        data[idx] = r;
+                        data[idx + 1] = g;
+                        data[idx + 2] = b;
+                        data[idx + 3] = 255; // Fully opaque
+                    } else {
+                        // Transparent outside triangle
+                        data[idx + 3] = 0;
+                    }
+                }
+            }
+
+            ctx.putImageData(imageData, 0, 0);
+        }
+
         function updatePosition(x, y) {
             if (!isInsideTriangle(x, y)) {
                 const centroid = {
@@ -622,15 +678,16 @@
             document.getElementById('vertex-c').textContent = `${tri.vertices.c.icon} ${tri.vertices.c.name.toUpperCase()}`;
             document.getElementById('vertex-c').style.fill = tri.vertices.c.color;
 
-            // Update edge labels
-            document.getElementById('edge-ab').textContent = `${tri.vertices.a.name} + ${tri.vertices.b.name}`;
-            document.getElementById('edge-bc').textContent = `${tri.vertices.b.name} + ${tri.vertices.c.name}`;
-            document.getElementById('edge-ac').textContent = `${tri.vertices.a.name} + ${tri.vertices.c.name}`;
+            // Update edge labels (two lines each to prevent overlap)
+            document.getElementById('edge-ab-1').textContent = tri.vertices.a.name;
+            document.getElementById('edge-ab-2').textContent = `+ ${tri.vertices.b.name}`;
+            document.getElementById('edge-bc-1').textContent = tri.vertices.b.name;
+            document.getElementById('edge-bc-2').textContent = `+ ${tri.vertices.c.name}`;
+            document.getElementById('edge-ac-1').textContent = tri.vertices.a.name;
+            document.getElementById('edge-ac-2').textContent = `+ ${tri.vertices.c.name}`;
 
-            // Update gradients
-            document.getElementById('grad-a-stop').style.stopColor = tri.vertices.a.color;
-            document.getElementById('grad-b-stop').style.stopColor = tri.vertices.b.color;
-            document.getElementById('grad-c-stop').style.stopColor = tri.vertices.c.color;
+            // Render barycentric gradient on canvas
+            renderTriangleGradient(tri.vertices.a.color, tri.vertices.b.color, tri.vertices.c.color);
 
             // Update bars
             document.getElementById('bar-a-icon').textContent = tri.vertices.a.icon;
