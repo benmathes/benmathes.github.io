@@ -27,7 +27,12 @@
       "Bash(git -C /Users/benmathes/coding/benmathes.github.io push -u origin main)",
       "Bash(gh repo edit:*)",
       "Bash(git -C /Users/benmathes/coding/benmathes.github.io push origin --delete master)",
-      "Bash(git -C /Users/benmathes/coding/benmathes.github.io push origin --delete site_styling_redesign)"
+      "Bash(git -C /Users/benmathes/coding/benmathes.github.io push origin --delete site_styling_redesign)",
+      "WebFetch(domain:adventurecapital.substack.com)",
+      "Bash(open:*)",
+      "WebSearch",
+      "WebFetch(domain:simonwillison.net)",
+      "Bash(git branch:*)"
     ]
   }
 }
