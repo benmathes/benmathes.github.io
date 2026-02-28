@@ -419,6 +419,48 @@
                     }
                 }
             },
+            'malice-incompetence-bureaucracy': {
+                title: 'Malice, Incompetence, or Bureaucracy',
+                subtitle: "Hanlon's Razor Extended",
+                explanation: "When something goes wrong, the cause is usually some mix of malice, incompetence, and bureaucracy. Hanlon's Razor says never attribute to malice what can be explained by stupidity—but sometimes it's both. And sometimes, it's the system.",
+                about: `<p>Hanlon's Razor—"never attribute to malice that which is adequately explained by stupidity"—is a useful heuristic, but it's incomplete. A third force, bureaucracy, explains outcomes that are neither intentionally harmful nor simply incompetent: they're the product of systems, processes, and inertia that grind on regardless of anyone's intentions.</p><p>The extended trilemma maps the real causes of institutional failure. Pure malice is rarer than we think. Pure incompetence is more forgivable. Pure bureaucracy is the most insidious: it produces harm without a villain and failure without blame, making it nearly impossible to fix.</p>`,
+                source: "Extended from Hanlon's Razor, popularized by Robert J. Hanlon (1980), tracing to Goethe and Napoleon",
+                vertices: {
+                    a: { name: 'Malice', icon: '🦹', color: '#ef4444', description: 'Active bad intent and self-interest' },
+                    b: { name: 'Incompetence', icon: '🤦', color: '#eab308', description: 'Lack of skill, knowledge, or judgment' },
+                    c: { name: 'Bureaucracy', icon: '📋', color: '#3b82f6', description: 'Process, inertia, and systemic constraint' }
+                },
+                combinations: {
+                    ab: {
+                        name: 'The Corrupt Bungler',
+                        tagline: 'Bad intentions, worse execution',
+                        gets: 'Chaos. Outcomes so bad they surprise even the bad actor. The incompetence actually limits the damage the malice could cause.',
+                        loses: 'Effectiveness. The malice never achieves its goals; the incompetence undermines the evil. Everybody loses, including the villain.',
+                        examples: ['Corrupt contractors who do shoddy work', 'Petty authoritarians who cannot enforce their own rules', 'Fraudsters who botch their own schemes', 'Officials who take bribes but still cannot deliver']
+                    },
+                    bc: {
+                        name: 'The Kafkaesque Nightmare',
+                        tagline: 'Nobody meant for this to happen',
+                        gets: 'Plausible deniability—no single person is responsible. Job security through complexity. The system persists because nobody can identify who to fire.',
+                        loses: 'Results. User trust. Your will to live. Any hope of timely resolution. The road to hell is paved with good intentions and approval workflows.',
+                        examples: ['Government IT projects', 'Hospital billing departments', 'Academic committee decisions', 'Building permit processes', 'Enterprise software procurement']
+                    },
+                    ac: {
+                        name: 'Systemic Evil',
+                        tagline: 'Competent bad actors embedded in systems',
+                        gets: 'Cover—"I\'m just following the rules." Durability—the harm persists because it is institutionalized. Accountability diffuses across the system.',
+                        loses: 'Nothing. This is the most dangerous combination. The rules become weapons, and the process becomes the punishment.',
+                        examples: ['Deliberate regulatory capture', 'Weaponized compliance requirements', 'Redlining and discriminatory lending policies', 'Selectively enforced rules targeting disfavored groups']
+                    },
+                    balanced: {
+                        name: 'The Perfect Storm',
+                        tagline: 'Total institutional collapse',
+                        gets: 'Excellent excuses. Infinite buck-passing. An impenetrable fog of complexity where nothing is anyone\'s fault and nothing ever changes.',
+                        loses: 'Any hope of accountability, reform, or useful output. The organization survives for decades while producing nothing of value.',
+                        examples: ['Failed states', 'Worst corporate scandals', 'Organizations that outlive their purpose', 'Multi-decade infrastructure projects']
+                    }
+                }
+            },
             'exit-voice-loyalty': {
                 title: 'Exit, Voice, Loyalty',
                 subtitle: 'Organizational Response',
