@@ -184,7 +184,7 @@
     </style>
 </head>
 <body class="bg-stone-50 text-stone-800">
-    <div class="max-w-2xl mx-auto px-6 py-16">
+    <div class="max-w-5xl mx-auto px-6 py-16">
         <!-- Header -->
         <header class="mb-10">
             <h1 class="mono text-3xl font-bold text-stone-900 mb-2">The Sticky Starter</h1>
@@ -205,6 +205,9 @@
 
             <hr class="section-break">
 
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start;">
+            <div style="position:sticky;top:24px;"><!-- LEFT: controls -->
+
             <!-- Mode Toggle -->
             <div class="flex justify-center mb-8">
                 <div id="modeToggle" class="mode-toggle" onclick="toggleMode()">
@@ -213,6 +216,9 @@
                     <span class="mode-toggle-label right">Independent</span>
                 </div>
             </div>
+
+            </div><!-- /left -->
+            <div><!-- RIGHT: viz + results -->
 
             <!-- The Rating Simulation -->
             <div class="bg-white rounded-xl border border-stone-200 p-6 mb-8">
@@ -283,6 +289,9 @@
             <div id="insightBox" class="p-6 rounded-xl border-2 border-amber-200 bg-amber-50">
                 <p id="insightText" class="text-amber-900"></p>
             </div>
+
+            </div><!-- /right -->
+            </div><!-- /grid -->
 
             <hr class="section-break">
 

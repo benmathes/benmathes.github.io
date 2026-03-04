@@ -32,7 +32,10 @@
       "Bash(open:*)",
       "WebSearch",
       "WebFetch(domain:simonwillison.net)",
-      "Bash(git branch:*)"
+      "Bash(git branch:*)",
+      "Bash(node:*)",
+      "Bash(lsof:*)",
+      "Bash(do wc:*)"
     ]
   }
 }

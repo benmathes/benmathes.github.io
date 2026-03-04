@@ -44,6 +44,9 @@
         <h1 class="text-4xl font-bold text-slate-800 mb-2">The Semantic Drift Tracker</h1>
         <p class="text-slate-600 mb-8 text-lg">Watch how technical AI terms lose precision as they travel through citations</p>
 
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start;">
+        <div style="position:sticky;top:24px;"><!-- LEFT: controls -->
+
         <!-- Term Selector -->
         <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
             <h2 class="text-xl font-semibold text-gray-800 mb-4">Choose a Technical Term</h2>
@@ -56,6 +59,9 @@
                 <button onclick="selectTerm('introspection')" class="term-bubble px-4 py-2 rounded-full bg-indigo-100 text-indigo-700 hover:bg-indigo-200 font-medium" data-term="introspection">Introspection</button>
             </div>
         </div>
+
+        </div><!-- /left -->
+        <div><!-- RIGHT: viz + results -->
 
         <!-- Drift Visualization -->
         <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
@@ -129,6 +135,9 @@
                 </div>
             </div>
         </div>
+
+        </div><!-- /right -->
+        </div><!-- /grid -->
 
         <!-- The Pattern -->
         <div class="bg-white rounded-xl shadow-lg p-6 mb-6">

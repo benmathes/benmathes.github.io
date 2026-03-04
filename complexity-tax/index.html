@@ -139,7 +139,7 @@
     </style>
 </head>
 <body class="bg-stone-50 text-stone-800">
-    <div class="max-w-2xl mx-auto px-6 py-16">
+    <div class="max-w-5xl mx-auto px-6 py-16">
         <!-- Header -->
         <header class="mb-12">
             <h1 class="mono text-3xl font-bold text-stone-900 mb-2">Complexity Tax Calculator</h1>
@@ -148,6 +148,10 @@
 
         <!-- The explorable content -->
         <article class="space-y-6">
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start;">
+            <div style="position:sticky;top:24px;"><!-- LEFT: controls -->
+
             <p>
                 Let's say you're building a
                 <select id="projectType" class="inline-select" onchange="recalculate()">
@@ -188,7 +192,8 @@
                 (repositories, services, DTOs, etc).
             </p>
 
-            <hr class="section-break">
+            </div><!-- /left -->
+            <div><!-- RIGHT: viz + results -->
 
             <!-- Real-time calculation -->
             <div class="bg-white rounded-xl p-6 shadow-sm border border-stone-200">
@@ -290,6 +295,9 @@
                 <span id="recoveredWeeks" class="mono font-semibold">~10 weeks</span>
                 of full-time work back to building product.
             </p>
+
+            </div><!-- /right -->
+            </div><!-- /grid -->
 
             <hr class="section-break">
 
