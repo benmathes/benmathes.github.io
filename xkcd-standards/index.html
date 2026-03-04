@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Standards Proliferation Machine | xkcd #927</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Source Serif 4', serif;
+            font-size: 1.1rem;
+            line-height: 1.75;
+            background: #fafafa;
+            color: #1a1a1a;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            body { background: #111; color: #f0f0f0; }
+            .card-grid { background: #1a1a1a !important; }
+            .domain-tab:not(.active-tab) { background: #222 !important; color: #999 !important; border-color: #333 !important; }
+            .graph-bg { background: #1a1a1a !important; }
+            .graph-label { fill: #9ca3af !important; }
+            .edge-default { stroke: #4b5563 !important; }
+        }
+
+        .mono { font-family: 'Space Grotesk', sans-serif; }
+
+        .standard-card {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 700;
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 2px solid;
+            position: relative;
+            display: inline-flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 2px;
+            min-width: 80px;
+            transform: rotate(var(--rot));
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            cursor: default;
+            color: #1a1a1a;
+        }
+
+        .standard-card:hover {
+            transform: rotate(0deg) scale(1.05);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            z-index: 10;
+        }
+
+        .year-badge {
+            font-size: 0.65rem;
+            font-weight: 400;
+            opacity: 0.7;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: rotate(var(--rot)) scale(0.5) translateY(-20px); }
+            to   { opacity: 1; transform: rotate(var(--rot)) scale(1); }
+        }
+
+        @keyframes dropIn {
+            0%   { opacity: 0; transform: rotate(var(--rot)) scale(0.3) translateY(-60px); }
+            60%  { opacity: 1; transform: rotate(var(--rot)) scale(1.1); }
+            80%  { transform: rotate(calc(var(--rot) * 1.5)) scale(0.95); }
+            100% { opacity: 1; transform: rotate(var(--rot)) scale(1); }
+        }
+
+        .card-enter     { animation: slideIn 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+        .new-card-enter { animation: dropIn  0.6s  cubic-bezier(0.34,1.56,0.64,1) forwards; }
+
+        .new-standard-badge {
+            font-size: 0.6rem;
+            background: #fbbf24;
+            color: #78350f;
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+
+        .counter-display {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3.5rem;
+            font-weight: 700;
+            line-height: 1;
+            color: #dc2626;
+        }
+
+        @keyframes bump {
+            0%   { transform: scale(1); }
+            50%  { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+        .counter-bump { animation: bump 0.3s ease; }
+
+        .domain-tab {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 500;
+            padding: 6px 14px;
+            border-radius: 6px;
+            border: 1.5px solid #d1d5db;
+            background: white;
+            color: #374151;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .domain-tab:hover:not(.active-tab) { border-color: #9ca3af; background: #f9fafb; }
+
+        .active-tab { background: #1a1a1a; color: white; border-color: #1a1a1a; }
+
+        @media (prefers-color-scheme: dark) {
+            .active-tab { background: #f0f0f0; color: #111; border-color: #f0f0f0; }
+        }
+
+        .ship-btn {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            background: #dc2626;
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            letter-spacing: 0.02em;
+        }
+
+        .ship-btn:hover {
+            background: #b91c1c;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(220,38,38,0.35);
+        }
+        .ship-btn:active { transform: translateY(0); }
+
+        .commentary-box {
+            font-style: italic;
+            font-size: 1.05rem;
+            color: #374151;
+            min-height: 2.5rem;
+            transition: opacity 0.3s ease;
+        }
+
+        @media (prefers-color-scheme: dark) { .commentary-box { color: #9ca3af; } }
+
+        .citation-box {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.8rem;
+            color: #6b7280;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 16px;
+            margin-top: 32px;
+        }
+
+        @media (prefers-color-scheme: dark) { .citation-box { border-color: #333; } }
+
+        .card-grid {
+            background: #f3f4f6;
+            border-radius: 12px;
+            padding: 20px;
+            min-height: 140px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: flex-start;
+            align-content: flex-start;
+        }
+
+        .problem-text {
+            font-size: 1rem;
+            color: #374151;
+            line-height: 1.6;
+        }
+        @media (prefers-color-scheme: dark) { .problem-text { color: #9ca3af; } }
+
+        /* ── Graph ── */
+        .graph-bg {
+            background: #f3f4f6;
+            border-radius: 12px;
+            padding: 16px 8px 8px;
+        }
+
+        .graph-node { cursor: pointer; }
+        .graph-node circle { transition: r 0.15s ease; }
+        .graph-node:hover circle { r: 17; }
+
+        @keyframes drawEdge {
+            from { stroke-dashoffset: var(--elen); opacity: 0; }
+            to   { stroke-dashoffset: 0; opacity: 1; }
+        }
+
+        @keyframes nodeAppear {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+
+        .mode-btn {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 5px;
+            border: 1.5px solid #d1d5db;
+            background: white;
+            color: #6b7280;
+            cursor: pointer;
+            transition: all 0.12s ease;
+        }
+        .mode-btn:hover:not(.mode-btn-active) { border-color: #9ca3af; color: #374151; }
+        .mode-btn-active { background: #7c3aed; color: white; border-color: #7c3aed; }
+
+        @media (prefers-color-scheme: dark) {
+            .mode-btn { background: #222; border-color: #444; color: #9ca3af; }
+            .mode-btn-active { background: #7c3aed; color: white; border-color: #7c3aed; }
+        }
+
+        .bridge-stat {
+            font-family: 'Space Grotesk', sans-serif;
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .bridge-num {
+            font-size: 2.5rem;
+            font-weight: 700;
+            line-height: 1;
+            color: #7c3aed;
+        }
+
+        @keyframes bridgeBump {
+            0%   { transform: scale(1); }
+            50%  { transform: scale(1.25); }
+            100% { transform: scale(1); }
+        }
+        .bridge-bump { animation: bridgeBump 0.3s ease; }
+
+        .delta-badge {
+            font-size: 0.85rem;
+            font-weight: 700;
+            background: #fef3c7;
+            color: #92400e;
+            padding: 2px 8px;
+            border-radius: 4px;
+            border: 1px solid #fbbf24;
+        }
+    </style>
+</head>
+<body>
+    <div class="max-w-5xl mx-auto px-4 py-12">
+
+        <!-- Header -->
+        <h1 class="text-3xl md:text-4xl font-bold mb-2 mono">The Standards Proliferation Machine</h1>
+        <p class="problem-text mb-6">
+            There are <span id="domain-count" class="font-bold text-red-600 mono"></span> competing standards
+            in this domain. This is clearly unacceptable.
+        </p>
+
+        <!-- Domain Tabs -->
+        <div class="flex flex-wrap gap-2 mb-4" id="domain-tabs"></div>
+
+        <!-- Two-column layout -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
+
+            <!-- LEFT: pile + button + counter + commentary -->
+            <div>
+                <div class="card-grid mb-4" id="card-grid"></div>
+
+                <div class="mb-4">
+                    <button class="ship-btn" id="ship-btn">+ Add New "Universal" Standard</button>
+                </div>
+
+                <div class="flex items-baseline gap-3 mb-3">
+                    <div class="counter-display" id="counter"></div>
+                    <div class="mono text-base font-medium text-gray-500">competing standards</div>
+                </div>
+
+                <div class="commentary-box" id="commentary"></div>
+            </div>
+
+            <!-- RIGHT: graph -->
+            <div class="graph-bg" style="position:sticky;top:24px;">
+                <!-- Mode toggle -->
+                <div class="flex gap-1 px-2 pt-2 pb-1 mb-1">
+                    <button id="mode-matrix" class="mode-btn mode-btn-active">All-pairs</button>
+                    <button id="mode-hub"    class="mode-btn">Hub &amp; spoke</button>
+                </div>
+
+                <div class="bridge-stat mb-1 px-2 pt-1">
+                    <div class="bridge-num" id="bridge-count"></div>
+                    <div class="mono text-sm font-medium text-gray-500">
+                        <span id="bridge-label">compatibility bridges required</span>
+                        <span id="bridge-delta" class="delta-badge" style="display:none"></span>
+                    </div>
+                </div>
+                <p class="mono text-xs text-gray-400 px-2 mb-2" id="graph-hint">
+                    N×(N−1)/2 pairs. Hover a node.
+                </p>
+                <svg id="compat-graph" viewBox="0 0 340 320" width="100%"
+                     style="display:block;overflow:visible;">
+                    <defs>
+                        <filter id="gold-glow" x="-50%" y="-50%" width="200%" height="200%">
+                            <feGaussianBlur stdDeviation="3" result="blur"/>
+                            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                        </filter>
+                    </defs>
+                </svg>
+            </div>
+
+        </div>
+
+        <!-- Citation -->
+        <div class="citation-box">
+            Inspired by <a href="https://xkcd.com/927/" target="_blank" rel="noopener"
+               class="underline hover:text-gray-900">xkcd #927 "Standards"</a>
+            by Randall Munroe —
+            <a href="https://creativecommons.org/licenses/by-nc/2.5/" target="_blank" rel="noopener"
+               class="underline hover:text-gray-900">CC BY-NC 2.5</a>
+        </div>
+    </div>
+
+    <script>
+    const DOMAINS = {
+        'Data Formats': [
+            { name: 'JSON',        year: 2001, color: '#fef08a', border: '#ca8a04' },
+            { name: 'XML',         year: 1998, color: '#bfdbfe', border: '#2563eb' },
+            { name: 'YAML',        year: 2001, color: '#bbf7d0', border: '#16a34a' },
+            { name: 'CSV',         year: 1972, color: '#fde8d8', border: '#ea580c' },
+            { name: 'TOML',        year: 2013, color: '#e9d5ff', border: '#7c3aed' },
+            { name: 'Protobuf',    year: 2008, color: '#fecaca', border: '#dc2626' },
+            { name: 'MessagePack', year: 2010, color: '#d1fae5', border: '#059669' },
+            { name: 'BSON',        year: 2009, color: '#fef3c7', border: '#d97706' },
+            { name: 'Avro',        year: 2009, color: '#dbeafe', border: '#3b82f6' },
+            { name: 'Parquet',     year: 2013, color: '#fce7f3', border: '#db2777' },
+        ],
+        'Auth': [
+            { name: 'Cookies',        year: 1994, color: '#fef9c3', border: '#ca8a04' },
+            { name: 'Basic Auth',     year: 1999, color: '#dbeafe', border: '#3b82f6' },
+            { name: 'OAuth 1.0',      year: 2007, color: '#dcfce7', border: '#16a34a' },
+            { name: 'SAML 2.0',       year: 2005, color: '#fce7f3', border: '#db2777' },
+            { name: 'OAuth 2.0',      year: 2012, color: '#ede9fe', border: '#7c3aed' },
+            { name: 'JWT',            year: 2015, color: '#fef3c7', border: '#d97706' },
+            { name: 'OpenID Connect', year: 2014, color: '#cffafe', border: '#0891b2' },
+            { name: 'WebAuthn',       year: 2019, color: '#fecaca', border: '#dc2626' },
+        ],
+        'Date/Time': [
+            { name: 'Unix timestamps', year: 1970, color: '#f3f4f6', border: '#6b7280' },
+            { name: 'RFC 2822',        year: 2001, color: '#bfdbfe', border: '#2563eb' },
+            { name: 'ISO 8601',        year: 1988, color: '#bbf7d0', border: '#16a34a' },
+            { name: 'RFC 3339',        year: 2002, color: '#d1fae5', border: '#059669' },
+            { name: 'HTTP-date',       year: 1997, color: '#fce7f3', border: '#db2777' },
+            { name: '.NET ticks',      year: 2002, color: '#ede9fe', border: '#7c3aed' },
+            { name: 'Excel serial',    year: 1985, color: '#fef3c7', border: '#d97706' },
+        ],
+        'JS Modules': [
+            { name: 'globals',   year: 1995, color: '#fef9c3', border: '#ca8a04' },
+            { name: 'CommonJS',  year: 2009, color: '#dcfce7', border: '#16a34a' },
+            { name: 'AMD',       year: 2010, color: '#dbeafe', border: '#3b82f6' },
+            { name: 'UMD',       year: 2011, color: '#fce7f3', border: '#db2777' },
+            { name: 'ESM',       year: 2015, color: '#ede9fe', border: '#7c3aed' },
+            { name: 'SystemJS',  year: 2013, color: '#fecaca', border: '#dc2626' },
+        ],
+    };
+
+    const COMMENTARY = [
+        null,
+        "Surely <em>this</em> one will unify them all.",
+        "Hmm. Well, <em>this</em> one is definitely cleaner.",
+        "Third time's the charm, right?",
+        "Four universal standards is practically the same as one.",
+        "Consolidation is a process. This is just… phase five.",
+        "Each new standard is a stepping stone toward eventual unity.",
+        "You know, eventually they'll all converge. Probably.",
+        "At this point you're basically curating a museum.",
+        "The fragmentation is temporary. Consensus is coming. Any day now.",
+        "History will vindicate you. Or at least write a confused Wikipedia article.",
+        "Perhaps the real universal standard was the friends we made along the way.",
+        "Have you considered writing an RFC? Standards need governance.",
+        "This is fine.",
+    ];
+
+    let currentDomain = 'Data Formats';
+    const userAdded = {};
+    Object.keys(DOMAINS).forEach(d => { userAdded[d] = []; });
+
+    function totalCount(domain) {
+        return DOMAINS[domain].length + userAdded[domain].length;
+    }
+
+    function pairs(n) { return n * (n - 1) / 2; }
+
+    function getCommentary(n) {
+        if (n <= 0) return '';
+        return n < COMMENTARY.length ? COMMENTARY[n] : COMMENTARY[COMMENTARY.length - 1];
+    }
+
+    function randomRot() { return (Math.random() * 6 - 3).toFixed(1); }
+
+    // ── Card rendering ────────────────────────────────────────────────
+    function renderCard(std, isNew = false) {
+        const card = document.createElement('div');
+        card.className = `standard-card ${isNew ? 'new-card-enter' : 'card-enter'}`;
+        const rot = randomRot();
+        card.style.setProperty('--rot', `${rot}deg`);
+        card.style.background = std.color || '#f9fafb';
+        card.style.borderColor = std.border || '#9ca3af';
+
+        const nameEl = document.createElement('div');
+        nameEl.textContent = std.name;
+        card.appendChild(nameEl);
+
+        if (std.year) {
+            const yearEl = document.createElement('div');
+            yearEl.className = 'year-badge';
+            yearEl.textContent = std.year;
+            card.appendChild(yearEl);
+        }
+
+        if (std.isUserAdded) {
+            const badge = document.createElement('div');
+            badge.className = 'new-standard-badge';
+            badge.textContent = 'NEW ✨ UNIVERSAL';
+            card.appendChild(badge);
+            card.style.borderWidth = '2.5px';
+            card.style.boxShadow = '0 0 0 2px #fbbf24, 0 4px 12px rgba(251,191,36,0.3)';
+        }
+        return card;
+    }
+
+    function renderGrid() {
+        const grid = document.getElementById('card-grid');
+        grid.innerHTML = '';
+        DOMAINS[currentDomain].forEach(std => grid.appendChild(renderCard(std, false)));
+        userAdded[currentDomain].forEach(std => grid.appendChild(renderCard(std, false)));
+    }
+
+    // ── Graph rendering ───────────────────────────────────────────────
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const VW = 340, VH = 320;
+    const CX = VW / 2, CY = VH / 2;
+    const RING_R = 108;
+    const NODE_R = 11;
+    const HUB_R  = 16;
+
+    let graphMode = 'matrix'; // 'matrix' | 'hub'
+
+    function nodePos(i, n) {
+        const angle = (2 * Math.PI * i / n) - Math.PI / 2;
+        return {
+            x: CX + RING_R * Math.cos(angle),
+            y: CY + RING_R * Math.sin(angle),
+            angle,
+        };
+    }
+
+    function truncate(s, len) {
+        return s.length > len ? s.slice(0, len - 1) + '…' : s;
+    }
+
+    function el(tag, attrs = {}) {
+        const e = document.createElementNS(SVG_NS, tag);
+        for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+        return e;
+    }
+
+    function svgClear() {
+        const svg = document.getElementById('compat-graph');
+        Array.from(svg.children).forEach(c => { if (c.tagName !== 'defs') svg.removeChild(c); });
+        return svg;
+    }
+
+    function drawNode(g_parent, std, x, y, angle, r, isNew, newStdIdx, i, edgeGroupRef) {
+        const g = el('g', { class: 'graph-node', 'data-i': i });
+
+        const circle = el('circle', {
+            cx: x, cy: y, r,
+            fill: std.color || '#f9fafb',
+            stroke: std.isUserAdded ? '#fbbf24' : (std.border || '#9ca3af'),
+            'stroke-width': std.isUserAdded ? '3' : '2',
+        });
+        if (std.isUserAdded) circle.setAttribute('filter', 'url(#gold-glow)');
+        g.appendChild(circle);
+
+        if (angle !== null) {
+            const labelR = RING_R + r + 10;
+            const lx = CX + labelR * Math.cos(angle);
+            const ly = CY + labelR * Math.sin(angle);
+            const anchor = Math.cos(angle) > 0.15 ? 'start' : Math.cos(angle) < -0.15 ? 'end' : 'middle';
+            const baseline = Math.sin(angle) > 0.2 ? 'hanging' : Math.sin(angle) < -0.2 ? 'auto' : 'middle';
+            const text = el('text', {
+                x: lx, y: ly,
+                'text-anchor': anchor,
+                'dominant-baseline': baseline,
+                'font-size': '8',
+                'font-family': 'Space Grotesk, sans-serif',
+                'font-weight': '600',
+                fill: '#374151',
+                class: 'graph-label',
+            });
+            text.textContent = truncate(std.name, 12);
+            g.appendChild(text);
+        }
+
+        // Hover highlight
+        g.addEventListener('mouseenter', () => {
+            edgeGroupRef.querySelectorAll('.edge-line').forEach(ln => {
+                const ei = +ln.getAttribute('data-i'), ej = +ln.getAttribute('data-j');
+                const connected = ei === i || ej === i;
+                ln.setAttribute('stroke', connected ? '#dc2626' : '#9ca3af');
+                ln.setAttribute('stroke-opacity', connected ? '0.9' : '0.06');
+                ln.setAttribute('stroke-width', connected ? '2' : '0.8');
+            });
+            circle.setAttribute('stroke-width', std.isUserAdded ? '4' : '3');
+        });
+        g.addEventListener('mouseleave', () => {
+            edgeGroupRef.querySelectorAll('.edge-line').forEach(ln => {
+                ln.setAttribute('stroke', '#9ca3af');
+                ln.setAttribute('stroke-opacity', '0.35');
+                ln.setAttribute('stroke-width', '0.8');
+            });
+            circle.setAttribute('stroke-width', std.isUserAdded ? '3' : '2');
+        });
+
+        if (i === newStdIdx) {
+            g.style.opacity = '0';
+            g.style.animation = 'nodeAppear 0.3s ease 0.1s forwards';
+        }
+
+        g_parent.appendChild(g);
+    }
+
+    function renderGraph(newStdIdx = -1) {
+        const allStds = [...DOMAINS[currentDomain], ...userAdded[currentDomain]];
+        const n = allStds.length;
+
+        // Update stat display
+        const bridgeEl  = document.getElementById('bridge-count');
+        const deltaEl   = document.getElementById('bridge-delta');
+        const labelEl   = document.getElementById('bridge-label');
+        const hintEl    = document.getElementById('graph-hint');
+
+        bridgeEl.classList.remove('bridge-bump');
+        void bridgeEl.offsetWidth;
+
+        if (graphMode === 'matrix') {
+            const p = pairs(n);
+            bridgeEl.textContent = p;
+            labelEl.textContent = 'compatibility bridges required';
+            hintEl.textContent  = 'N×(N−1)/2 pairs. Hover a node.';
+            if (newStdIdx >= 0) {
+                bridgeEl.classList.add('bridge-bump');
+                deltaEl.textContent    = `+${n - 1} new`;
+                deltaEl.style.display  = 'inline';
+            } else {
+                deltaEl.style.display = 'none';
+            }
+        } else {
+            // Hub mode: N spokes (one per existing standard)
+            bridgeEl.textContent = n;
+            bridgeEl.style.color = '#059669';
+            labelEl.textContent  = 'adoption campaigns needed';
+            hintEl.textContent   = 'Technically O(N). Politically… good luck.';
+            if (newStdIdx >= 0) {
+                bridgeEl.classList.add('bridge-bump');
+                deltaEl.textContent   = '+1 more to convince';
+                deltaEl.style.display = 'inline';
+            } else {
+                deltaEl.style.display = 'none';
+            }
+        }
+        // Restore matrix color when switching
+        if (graphMode === 'matrix') bridgeEl.style.color = '';
+
+        const svg = svgClear();
+        if (n < 1) return;
+
+        const edgeGroup = el('g', { id: 'edges' });
+        svg.appendChild(edgeGroup);
+        const nodeGroup = el('g', { id: 'nodes' });
+        svg.appendChild(nodeGroup);
+
+        if (graphMode === 'matrix') {
+            // ── All-pairs ──────────────────────────────────────────
+            const pos = allStds.map((_, i) => nodePos(i, n));
+
+            for (let i = 0; i < n; i++) {
+                for (let j = i + 1; j < n; j++) {
+                    const isNew = newStdIdx >= 0 && (i === newStdIdx || j === newStdIdx);
+                    const p1 = pos[i], p2 = pos[j];
+                    const length = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+                    const line = el('line', {
+                        x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y,
+                        stroke: isNew ? '#dc2626' : '#9ca3af',
+                        'stroke-width': isNew ? '1.5' : '0.8',
+                        'stroke-opacity': isNew ? '0.85' : '0.35',
+                        'data-i': i, 'data-j': j, class: 'edge-line',
+                    });
+                    if (isNew) {
+                        const delay = (i === newStdIdx ? j : i) * 0.03;
+                        line.style.setProperty('--elen', length);
+                        line.style.strokeDasharray = length;
+                        line.style.strokeDashoffset = length;
+                        line.style.animation = `drawEdge 0.35s ease ${delay}s forwards`;
+                    }
+                    edgeGroup.appendChild(line);
+                }
+            }
+
+            allStds.forEach((std, i) => {
+                const { x, y, angle } = pos[i];
+                drawNode(nodeGroup, std, x, y, angle, NODE_R, i === newStdIdx, newStdIdx, i, edgeGroup);
+            });
+
+        } else {
+            // ── Hub & spoke ────────────────────────────────────────
+            // Hub node = the proposed universal standard (center)
+            const hubStd = {
+                name: 'YOURS',
+                color: '#fffbeb',
+                border: '#fbbf24',
+                isUserAdded: true,
+            };
+
+            const pos = allStds.map((_, i) => nodePos(i, n));
+
+            // Draw spokes from center to each standard
+            allStds.forEach((std, i) => {
+                const { x, y } = pos[i];
+                const length = Math.hypot(x - CX, y - CY);
+                const isNew = newStdIdx >= 0 && i === newStdIdx;
+                const line = el('line', {
+                    x1: CX, y1: CY, x2: x, y2: y,
+                    stroke: isNew ? '#059669' : '#9ca3af',
+                    'stroke-width': isNew ? '1.5' : '0.9',
+                    'stroke-opacity': isNew ? '0.9' : '0.45',
+                    'data-i': n, 'data-j': i, class: 'edge-line',
+                });
+                if (isNew) {
+                    line.style.setProperty('--elen', length);
+                    line.style.strokeDasharray = length;
+                    line.style.strokeDashoffset = length;
+                    line.style.animation = `drawEdge 0.4s ease 0.05s forwards`;
+                }
+                edgeGroup.appendChild(line);
+            });
+
+            // Outer ring: existing standards
+            allStds.forEach((std, i) => {
+                const { x, y, angle } = pos[i];
+                drawNode(nodeGroup, std, x, y, angle, NODE_R, i === newStdIdx, newStdIdx, i, edgeGroup);
+            });
+
+            // Hub node on top (index = n so hover highlights all spokes)
+            const hubG = el('g', { class: 'graph-node', 'data-i': n });
+
+            const hubCircle = el('circle', {
+                cx: CX, cy: CY, r: HUB_R,
+                fill: '#fffbeb',
+                stroke: '#fbbf24',
+                'stroke-width': '3',
+                filter: 'url(#gold-glow)',
+            });
+            hubG.appendChild(hubCircle);
+
+            const hubLabel = el('text', {
+                x: CX, y: CY,
+                'text-anchor': 'middle',
+                'dominant-baseline': 'middle',
+                'font-size': '7.5',
+                'font-family': 'Space Grotesk, sans-serif',
+                'font-weight': '700',
+                fill: '#92400e',
+            });
+            hubLabel.textContent = 'YOURS';
+            hubG.appendChild(hubLabel);
+
+            hubG.addEventListener('mouseenter', () => {
+                edgeGroup.querySelectorAll('.edge-line').forEach(ln => {
+                    ln.setAttribute('stroke', '#059669');
+                    ln.setAttribute('stroke-opacity', '0.9');
+                    ln.setAttribute('stroke-width', '2');
+                });
+                hubCircle.setAttribute('stroke-width', '4');
+            });
+            hubG.addEventListener('mouseleave', () => {
+                edgeGroup.querySelectorAll('.edge-line').forEach(ln => {
+                    ln.setAttribute('stroke', '#9ca3af');
+                    ln.setAttribute('stroke-opacity', '0.45');
+                    ln.setAttribute('stroke-width', '0.9');
+                });
+                hubCircle.setAttribute('stroke-width', '3');
+            });
+
+            nodeGroup.appendChild(hubG);
+        }
+    }
+
+    // ── Counter + tabs ────────────────────────────────────────────────
+    function updateCounter(animate = false) {
+        const n = totalCount(currentDomain);
+        const el = document.getElementById('counter');
+        el.textContent = n;
+        if (animate) {
+            el.classList.remove('counter-bump');
+            void el.offsetWidth;
+            el.classList.add('counter-bump');
+        }
+        document.getElementById('domain-count').textContent = n;
+    }
+
+    function renderTabs() {
+        const tabs = document.getElementById('domain-tabs');
+        tabs.innerHTML = '';
+        Object.keys(DOMAINS).forEach(domain => {
+            const btn = document.createElement('button');
+            btn.className = `domain-tab${domain === currentDomain ? ' active-tab' : ''}`;
+            btn.textContent = `${domain} (${totalCount(domain)})`;
+            btn.addEventListener('click', () => {
+                currentDomain = domain;
+                renderGrid();
+                renderGraph();
+                updateCounter();
+                renderTabs();
+                document.getElementById('commentary').innerHTML =
+                    getCommentary(userAdded[domain].length);
+                document.getElementById('bridge-delta').style.display = 'none';
+            });
+            tabs.appendChild(btn);
+        });
+    }
+
+    // ── Auto-generated names ──────────────────────────────────────────
+    const NAME_POOL = [
+        'UniversalFmt', 'XJML', 'DataSpec', 'OpenStd', 'UniFormat',
+        'MegaSchema', 'FinalSpec', 'TrueML', 'SuperJSON', 'OmniData',
+        'UltraFmt', 'OneSpec', 'FusionML', 'GlobalFmt', 'MetaSpec',
+        'ApexData', 'NeoFormat', 'TurboSpec', 'HyperFmt', 'AbsoluteML',
+        'RFC9999', 'ISO-∞', 'YAML-2', 'JSON+', 'XML-NG',
+        'DataSpec2000', 'UniML', 'OpenCore', 'FlatSpec', 'MasterFmt',
+    ];
+    let nameIdx = 0;
+    function nextName() {
+        // Shuffle on first use so runs feel different
+        if (nameIdx === 0) NAME_POOL.sort(() => Math.random() - 0.5);
+        return NAME_POOL[nameIdx++ % NAME_POOL.length];
+    }
+
+    // ── Ship It ───────────────────────────────────────────────────────
+    function shipStandard() {
+        const newStd = {
+            name: nextName(),
+            year: new Date().getFullYear(),
+            color: '#fffbeb',
+            border: '#fbbf24',
+            isUserAdded: true,
+        };
+
+        userAdded[currentDomain].push(newStd);
+        const newIdx = totalCount(currentDomain) - 1;
+
+        const grid = document.getElementById('card-grid');
+        grid.appendChild(renderCard(newStd, true));
+
+        updateCounter(true);
+        renderTabs();
+        renderGraph(newIdx);
+
+        const commentary = document.getElementById('commentary');
+        commentary.style.opacity = '0';
+        setTimeout(() => {
+            commentary.innerHTML = getCommentary(userAdded[currentDomain].length);
+            commentary.style.opacity = '1';
+        }, 150);
+    }
+
+    // ── Wire up ───────────────────────────────────────────────────────
+    document.getElementById('ship-btn').addEventListener('click', shipStandard);
+
+    function setMode(mode) {
+        graphMode = mode;
+        document.getElementById('mode-matrix').className =
+            'mode-btn' + (mode === 'matrix' ? ' mode-btn-active' : '');
+        document.getElementById('mode-hub').className =
+            'mode-btn' + (mode === 'hub' ? ' mode-btn-active' : '');
+        document.getElementById('bridge-delta').style.display = 'none';
+        renderGraph();
+    }
+    document.getElementById('mode-matrix').addEventListener('click', () => setMode('matrix'));
+    document.getElementById('mode-hub').addEventListener('click',    () => setMode('hub'));
+
+    // Initial render
+    renderGrid();
+    renderGraph();
+    updateCounter();
+    renderTabs();
+    </script>
+</body>
+</html>
