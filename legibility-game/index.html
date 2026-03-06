@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Legibility Game: Governance & Trust</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Source Serif 4', serif; }
+        .mono { font-family: 'Space Grotesk', sans-serif; }
+
+        .slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #e5e7eb;
+            outline: none;
+        }
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #1f2937;
+            cursor: pointer;
+            border: 3px solid white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        .section-break {
+            border: none;
+            height: 2px;
+            background: linear-gradient(to right, transparent, #d1d5db, transparent);
+            margin: 2rem 0;
+        }
+
+        .caesar-card {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .caesar-card.selected {
+            border-color: #1f2937 !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .strategy-card {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .strategy-card.selected {
+            border-color: #1f2937 !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .payoff-cell {
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .bar-fill {
+            transition: width 0.5s ease;
+        }
+
+        @keyframes appear {
+            from { opacity: 0; transform: translateY(6px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .round-appear {
+            animation: appear 0.25s ease-out both;
+        }
+
+        .lattice-node {
+            transition: all 0.2s ease;
+        }
+        .lattice-node:hover {
+            filter: brightness(0.9);
+        }
+    </style>
+</head>
+<body class="bg-stone-50 text-stone-800">
+    <div class="max-w-5xl mx-auto px-6 py-12">
+        <header class="mb-8">
+            <h1 class="mono text-3xl font-bold text-stone-900 mb-2">The Legibility Game</h1>
+            <p class="text-stone-600 mono text-sm">Governance is an iterated prisoner's dilemma of trust</p>
+        </header>
+
+        <article class="space-y-6">
+            <p>
+                "Render unto Caesar what is Caesar's." But what if Caesar takes more than he's owed?
+                The real question isn't <em>whether</em> to show your hand to those who govern you—
+                it's <em>how much</em>, and to <em>which</em> Caesar.
+            </p>
+
+            <p>
+                James C. Scott called this <strong>legibility</strong>: the degree to which a governing authority
+                can see, measure, and therefore control what you do. Things legible to power can be taxed,
+                regulated, protected—or extracted. The same visibility that brings you a doctor's diagnosis
+                can bring a predator's audit.
+            </p>
+
+            <hr class="section-break">
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start;">
+            <div style="position:sticky;top:24px;"><!-- LEFT: controls -->
+
+            <!-- Caesar Selector -->
+            <div class="mb-5">
+                <h2 class="mono text-base font-semibold text-stone-900 mb-3">Who is your Caesar?</h2>
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="caesar-card selected bg-white rounded-xl p-3 border-2 border-stone-300" onclick="selectCaesar('trustworthy')" id="caesar-trustworthy">
+                        <div class="text-2xl mb-1">⚖️</div>
+                        <div class="mono text-xs font-bold text-stone-900">Trustworthy State</div>
+                        <div class="text-xs text-stone-500 mt-1">Builds roads, schools, courts. Fair most of the time.</div>
+                        <div class="mono text-xs text-emerald-600 mt-2 font-semibold">Fair: 85%</div>
+                    </div>
+                    <div class="caesar-card bg-white rounded-xl p-3 border-2 border-stone-200" onclick="selectCaesar('corrupt')" id="caesar-corrupt">
+                        <div class="text-2xl mb-1">💰</div>
+                        <div class="mono text-xs font-bold text-stone-900">Corrupt Official</div>
+                        <div class="text-xs text-stone-500 mt-1">Takes a cut. More visible = more extracted.</div>
+                        <div class="mono text-xs text-red-600 mt-2 font-semibold">Fair: 25%</div>
+                    </div>
+                    <div class="caesar-card bg-white rounded-xl p-3 border-2 border-stone-200" onclick="selectCaesar('doctor')" id="caesar-doctor">
+                        <div class="text-2xl mb-1">🩺</div>
+                        <div class="mono text-xs font-bold text-stone-900">Trusted Doctor</div>
+                        <div class="text-xs text-stone-500 mt-1">Needs your data to help you. Information = treatment.</div>
+                        <div class="mono text-xs text-emerald-600 mt-2 font-semibold">Fair: 95%</div>
+                    </div>
+                    <div class="caesar-card bg-white rounded-xl p-3 border-2 border-stone-200" onclick="selectCaesar('tuskegee')" id="caesar-tuskegee">
+                        <div class="text-2xl mb-1">⚠️</div>
+                        <div class="mono text-xs font-bold text-stone-900">Broken Institution</div>
+                        <div class="text-xs text-stone-500 mt-1">May mean well but has harmed before. Trust isn't given.</div>
+                        <div class="mono text-xs text-amber-600 mt-2 font-semibold">Fair: 45%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Your Strategy -->
+            <div class="mb-5">
+                <h2 class="mono text-base font-semibold text-stone-900 mb-3">Your strategy</h2>
+                <div class="space-y-2">
+                    <div class="strategy-card selected bg-white rounded-lg p-3 border-2 border-stone-300 flex items-center gap-3" onclick="selectStrategy('titfortat')" id="strat-titfortat">
+                        <span class="text-xl">🤝</span>
+                        <div>
+                            <div class="mono text-xs font-bold text-stone-900">Tit-for-Tat</div>
+                            <div class="text-xs text-stone-500">Start open. Mirror what Caesar does.</div>
+                        </div>
+                    </div>
+                    <div class="strategy-card bg-white rounded-lg p-3 border-2 border-stone-200 flex items-center gap-3" onclick="selectStrategy('alwaysshow')" id="strat-alwaysshow">
+                        <span class="text-xl">📖</span>
+                        <div>
+                            <div class="mono text-xs font-bold text-stone-900">Always Show</div>
+                            <div class="text-xs text-stone-500">Full legibility. Trust the system.</div>
+                        </div>
+                    </div>
+                    <div class="strategy-card bg-white rounded-lg p-3 border-2 border-stone-200 flex items-center gap-3" onclick="selectStrategy('alwayshide')" id="strat-alwayshide">
+                        <span class="text-xl">🫥</span>
+                        <div>
+                            <div class="mono text-xs font-bold text-stone-900">Always Hide</div>
+                            <div class="text-xs text-stone-500">Opacity as protection. Stay invisible.</div>
+                        </div>
+                    </div>
+                    <div class="strategy-card bg-white rounded-lg p-3 border-2 border-stone-200 flex items-center gap-3" onclick="selectStrategy('strategic')" id="strat-strategic">
+                        <span class="text-xl">🧠</span>
+                        <div>
+                            <div class="mono text-xs font-bold text-stone-900">Strategic Reveal</div>
+                            <div class="text-xs text-stone-500">Show only when Caesar has been fair &gt;50% of the time.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rounds Slider -->
+            <div class="bg-white rounded-xl border border-stone-200 p-4 mb-4">
+                <div class="flex justify-between mb-2">
+                    <label class="mono text-sm font-semibold text-stone-700">Rounds of interaction</label>
+                    <span id="roundsValue" class="mono text-sm text-stone-500">12</span>
+                </div>
+                <input type="range" id="roundsSlider" class="slider" min="6" max="20" value="12"
+                    oninput="document.getElementById('roundsValue').textContent = this.value">
+            </div>
+
+            <button onclick="runSimulation()" id="runBtn"
+                class="mono w-full bg-stone-900 text-white rounded-xl py-3 text-sm font-semibold hover:bg-stone-700 transition-colors">
+                Run the Game →
+            </button>
+
+            </div><!-- /left -->
+            <div><!-- RIGHT: viz -->
+
+            <!-- Payoff Matrix -->
+            <div class="bg-white rounded-xl border border-stone-200 p-5 mb-4">
+                <h2 class="mono text-sm font-semibold text-stone-700 mb-4">The Payoff Matrix</h2>
+                <div class="grid gap-1" style="grid-template-columns: auto 1fr 1fr;">
+                    <div></div>
+                    <div class="mono text-xs font-bold text-stone-500 text-center pb-2">Caesar: Fair</div>
+                    <div class="mono text-xs font-bold text-stone-500 text-center pb-2">Caesar: Exploits</div>
+
+                    <div class="mono text-xs font-bold text-stone-700 flex items-center justify-end pr-3 text-right leading-tight">You:<br>Show</div>
+                    <div id="cell-show-fair" class="payoff-cell rounded-lg p-3 bg-emerald-50 border border-emerald-200 text-center">
+                        <div class="text-xl mb-1">🌱</div>
+                        <div class="mono text-xs font-bold text-emerald-700">Both flourish</div>
+                        <div class="text-xs text-emerald-600 mt-1">You +3 / Caesar +3</div>
+                    </div>
+                    <div id="cell-show-exploit" class="payoff-cell rounded-lg p-3 bg-red-50 border border-red-200 text-center">
+                        <div class="text-xl mb-1">🪤</div>
+                        <div class="mono text-xs font-bold text-red-700">You're captured</div>
+                        <div class="text-xs text-red-600 mt-1">You −3 / Caesar +5</div>
+                    </div>
+
+                    <div class="mono text-xs font-bold text-stone-700 flex items-center justify-end pr-3 text-right leading-tight">You:<br>Hide</div>
+                    <div id="cell-hide-fair" class="payoff-cell rounded-lg p-3 bg-amber-50 border border-amber-200 text-center">
+                        <div class="text-xl mb-1">🫤</div>
+                        <div class="mono text-xs font-bold text-amber-700">Suboptimal</div>
+                        <div class="text-xs text-amber-600 mt-1">You +1 / Caesar +1</div>
+                    </div>
+                    <div id="cell-hide-exploit" class="payoff-cell rounded-lg p-3 bg-stone-100 border border-stone-300 text-center">
+                        <div class="text-xl mb-1">👻</div>
+                        <div class="mono text-xs font-bold text-stone-600">Mutual defect</div>
+                        <div class="text-xs text-stone-500 mt-1">You 0 / Caesar 0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Simulation Results -->
+            <div class="bg-white rounded-xl border border-stone-200 p-5">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="mono text-sm font-semibold text-stone-700">Rounds</h2>
+                    <div class="flex gap-4">
+                        <span class="mono text-xs text-stone-500">You: <span id="yourScore" class="font-bold text-stone-700">—</span></span>
+                        <span class="mono text-xs text-stone-500">Caesar: <span id="caesarScore" class="font-bold text-stone-700">—</span></span>
+                    </div>
+                </div>
+
+                <div id="roundsDisplay" class="flex flex-wrap gap-2 mb-4 min-h-12">
+                    <p class="text-stone-400 text-sm italic self-center">Press "Run the Game" to play.</p>
+                </div>
+
+                <!-- Legend -->
+                <div class="flex gap-4 mb-3 pb-3 border-b border-stone-100">
+                    <span class="mono text-xs text-stone-400">📖 you showed</span>
+                    <span class="mono text-xs text-stone-400">🫥 you hid</span>
+                    <span class="mono text-xs text-stone-400">number = your payoff</span>
+                </div>
+
+                <!-- Outcome bars -->
+                <div class="space-y-3">
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <span class="mono text-xs text-stone-600">Your cumulative payoff</span>
+                            <span id="yourPayoffLabel" class="mono text-xs text-stone-700 font-bold">—</span>
+                        </div>
+                        <div class="h-2.5 bg-stone-100 rounded-full overflow-hidden">
+                            <div id="yourPayoffBar" class="h-full rounded-full bg-blue-500 bar-fill" style="width:0%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <span class="mono text-xs text-stone-600">Caesar's cumulative payoff</span>
+                            <span id="caesarPayoffLabel" class="mono text-xs text-stone-700 font-bold">—</span>
+                        </div>
+                        <div class="h-2.5 bg-stone-100 rounded-full overflow-hidden">
+                            <div id="caesarPayoffBar" class="h-full rounded-full bg-amber-500 bar-fill" style="width:0%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <span class="mono text-xs text-stone-600">Mutual flourishing rate</span>
+                            <span id="flourishLabel" class="mono text-xs text-stone-700 font-bold">—</span>
+                        </div>
+                        <div class="h-2.5 bg-stone-100 rounded-full overflow-hidden">
+                            <div id="flourishBar" class="h-full rounded-full bg-emerald-500 bar-fill" style="width:0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Insight -->
+                <div id="insightBox" class="mt-4 p-4 rounded-lg bg-stone-50 border border-stone-200 hidden">
+                    <p id="insightText" class="text-sm text-stone-700"></p>
+                </div>
+            </div>
+
+            </div><!-- /right -->
+            </div><!-- /grid -->
+
+            <hr class="section-break">
+
+            <!-- Thesis / Antithesis / Synthesis -->
+            <h2 class="mono text-xl font-bold text-stone-900">Thesis, Antithesis, Synthesis</h2>
+
+            <div class="grid grid-cols-3 gap-4">
+                <div class="p-4 bg-blue-50 rounded-xl border border-blue-200">
+                    <div class="mono font-bold text-blue-900 mb-2 text-sm">Thesis</div>
+                    <p class="text-sm text-blue-800">
+                        The state needs legibility to build roads, schools, courts. Order enables
+                        civilization. Your doctor needs the mole data to treat the mole.
+                    </p>
+                    <div class="mt-3 text-xs text-blue-600 italic">Legibility as the price of collective flourishing.</div>
+                </div>
+                <div class="p-4 bg-red-50 rounded-xl border border-red-200">
+                    <div class="mono font-bold text-red-900 mb-2 text-sm">Antithesis</div>
+                    <p class="text-sm text-red-800">
+                        Visibility is control. The forest mapped is the forest logged. The income
+                        declared is the income taxed—or stolen. Scott's warning: legibility serves the
+                        state first.
+                    </p>
+                    <div class="mt-3 text-xs text-red-600 italic">Illegibility as resilience and resistance.</div>
+                </div>
+                <div class="p-4 bg-emerald-50 rounded-xl border border-emerald-200">
+                    <div class="mono font-bold text-emerald-900 mb-2 text-sm">Synthesis</div>
+                    <p class="text-sm text-emerald-800">
+                        Make legible unto Caesar only that which you wish to render. Calibrate by trust.
+                        Iterate. The frontier moves. It's not a binary—it's a dance.
+                    </p>
+                    <div class="mt-3 text-xs text-emerald-600 italic">The efficient frontier of trust.</div>
+                </div>
+            </div>
+
+            <hr class="section-break">
+
+            <!-- You Are Also a Caesar -->
+            <h2 class="mono text-xl font-bold text-stone-900">You Are Also a Caesar</h2>
+
+            <p>
+                Christopher Alexander said "a city is not a tree"—not a simple hierarchy, but a
+                <em>semilattice</em>, a web of overlapping authority. You aren't just "the governed."
+                You govern too. Every relationship has its own trust game, its own legibility question.
+            </p>
+
+            <!-- Relationship web -->
+            <div class="bg-white rounded-xl border border-stone-200 p-6">
+                <h3 class="mono text-sm font-semibold text-stone-700 mb-5 text-center">
+                    Click any relationship to explore its trust dynamic
+                </h3>
+
+                <div class="flex justify-center mb-6">
+                    <svg width="440" height="310" viewBox="0 0 440 310" style="max-width:100%;">
+                        <!-- Lines: dashed = they govern you, solid = you govern, dash-dot = equal/shifting -->
+
+                        <!-- Federal Govt line -->
+                        <line x1="220" y1="127" x2="120" y2="52" stroke="#9ca3af" stroke-width="1.5" stroke-dasharray="5,3"/>
+                        <!-- HOA/City line -->
+                        <line x1="220" y1="122" x2="220" y2="52" stroke="#9ca3af" stroke-width="1.5" stroke-dasharray="5,3"/>
+                        <!-- Boss line -->
+                        <line x1="220" y1="127" x2="320" y2="52" stroke="#9ca3af" stroke-width="1.5" stroke-dasharray="5,3"/>
+
+                        <!-- Team line -->
+                        <line x1="210" y1="180" x2="120" y2="258" stroke="#9ca3af" stroke-width="1.5"/>
+                        <!-- Kids line -->
+                        <line x1="220" y1="180" x2="220" y2="258" stroke="#9ca3af" stroke-width="1.5"/>
+                        <!-- Community line -->
+                        <line x1="230" y1="180" x2="320" y2="258" stroke="#9ca3af" stroke-width="1.5"/>
+
+                        <!-- Spouse line -->
+                        <line x1="190" y1="152" x2="62" y2="152" stroke="#9ca3af" stroke-width="1.5" stroke-dasharray="8,4"/>
+                        <!-- Doctor line -->
+                        <line x1="250" y1="152" x2="378" y2="152" stroke="#9ca3af" stroke-width="1.5" stroke-dasharray="5,3"/>
+
+                        <!-- Top nodes: they govern you (blue) -->
+                        <circle cx="120" cy="42" r="26" fill="#dbeafe" stroke="#93c5fd" stroke-width="2" class="lattice-node cursor-pointer" onclick="showRelationship('federal')" id="node-federal"/>
+                        <text x="120" y="38" text-anchor="middle" fill="#1e3a8a" font-size="9" font-family="Space Grotesk" font-weight="bold">Federal</text>
+                        <text x="120" y="50" text-anchor="middle" fill="#1e3a8a" font-size="9" font-family="Space Grotesk">Govt</text>
+
+                        <circle cx="220" cy="42" r="26" fill="#dbeafe" stroke="#93c5fd" stroke-width="2" class="lattice-node cursor-pointer" onclick="showRelationship('hoa')" id="node-hoa"/>
+                        <text x="220" y="38" text-anchor="middle" fill="#1e3a8a" font-size="9" font-family="Space Grotesk" font-weight="bold">HOA /</text>
+                        <text x="220" y="50" text-anchor="middle" fill="#1e3a8a" font-size="9" font-family="Space Grotesk">City</text>
+
+                        <circle cx="320" cy="42" r="26" fill="#dbeafe" stroke="#93c5fd" stroke-width="2" class="lattice-node cursor-pointer" onclick="showRelationship('boss')" id="node-boss"/>
+                        <text x="320" y="46" text-anchor="middle" fill="#1e3a8a" font-size="9" font-family="Space Grotesk" font-weight="bold">Boss</text>
+
+                        <!-- Center: You -->
+                        <circle cx="220" cy="152" r="30" fill="#1f2937" id="center-node"/>
+                        <text x="220" y="156" text-anchor="middle" fill="white" font-size="11" font-family="Space Grotesk" font-weight="bold">YOU</text>
+
+                        <!-- Side nodes -->
+                        <!-- Spouse (equal/shifting) -->
+                        <circle cx="46" cy="152" r="26" fill="#fef3c7" stroke="#fcd34d" stroke-width="2" class="lattice-node cursor-pointer" onclick="showRelationship('spouse')" id="node-spouse"/>
+                        <text x="46" y="148" text-anchor="middle" fill="#78350f" font-size="9" font-family="Space Grotesk" font-weight="bold">Spouse</text>
+                        <text x="46" y="160" text-anchor="middle" fill="#78350f" font-size="8" font-family="Space Grotesk">(equal*)</text>
+
+                        <!-- Doctor (expert, they govern) -->
+                        <circle cx="394" cy="152" r="26" fill="#dbeafe" stroke="#93c5fd" stroke-width="2" class="lattice-node cursor-pointer" onclick="showRelationship('doctor')" id="node-doctor"/>
+                        <text x="394" y="148" text-anchor="middle" fill="#1e3a8a" font-size="9" font-family="Space Grotesk" font-weight="bold">Doctor</text>
+                        <text x="394" y="160" text-anchor="middle" fill="#1e3a8a" font-size="8" font-family="Space Grotesk">(expert)</text>
+
+                        <!-- Bottom nodes: you govern (green) -->
+                        <circle cx="120" cy="268" r="26" fill="#dcfce7" stroke="#86efac" stroke-width="2" class="lattice-node cursor-pointer" onclick="showRelationship('team')" id="node-team"/>
+                        <text x="120" y="264" text-anchor="middle" fill="#14532d" font-size="9" font-family="Space Grotesk" font-weight="bold">Your</text>
+                        <text x="120" y="276" text-anchor="middle" fill="#14532d" font-size="9" font-family="Space Grotesk">Team</text>
+
+                        <circle cx="220" cy="268" r="26" fill="#dcfce7" stroke="#86efac" stroke-width="2" class="lattice-node cursor-pointer" onclick="showRelationship('kids')" id="node-kids"/>
+                        <text x="220" y="272" text-anchor="middle" fill="#14532d" font-size="9" font-family="Space Grotesk" font-weight="bold">Kids</text>
+
+                        <circle cx="320" cy="268" r="26" fill="#dcfce7" stroke="#86efac" stroke-width="2" class="lattice-node cursor-pointer" onclick="showRelationship('community')" id="node-community"/>
+                        <text x="320" y="264" text-anchor="middle" fill="#14532d" font-size="9" font-family="Space Grotesk" font-weight="bold">Com-</text>
+                        <text x="320" y="276" text-anchor="middle" fill="#14532d" font-size="9" font-family="Space Grotesk">munity</text>
+
+                        <!-- Legend -->
+                        <rect x="6" y="6" width="138" height="60" fill="white" rx="5" stroke="#e5e7eb" stroke-width="1"/>
+                        <line x1="16" y1="22" x2="38" y2="22" stroke="#9ca3af" stroke-width="1.5" stroke-dasharray="5,3"/>
+                        <text x="46" y="26" fill="#6b7280" font-size="8" font-family="Space Grotesk">They govern you</text>
+                        <line x1="16" y1="38" x2="38" y2="38" stroke="#9ca3af" stroke-width="1.5"/>
+                        <text x="46" y="42" fill="#6b7280" font-size="8" font-family="Space Grotesk">You govern them</text>
+                        <line x1="16" y1="54" x2="38" y2="54" stroke="#9ca3af" stroke-width="1.5" stroke-dasharray="8,4"/>
+                        <text x="46" y="58" fill="#6b7280" font-size="8" font-family="Space Grotesk">Shifting / equal</text>
+                    </svg>
+                </div>
+
+                <!-- Relationship detail panel -->
+                <div id="relationshipPanel" class="p-4 rounded-lg bg-stone-50 border border-stone-200">
+                    <p class="text-sm text-stone-400 italic text-center">Click a node above to explore that relationship's trust game.</p>
+                </div>
+            </div>
+
+            <hr class="section-break">
+
+            <blockquote class="border-l-4 border-stone-300 pl-6 py-2">
+                <p class="text-stone-600 italic text-lg">"Make legible unto Caesar only that which you wish to render unto Caesar."</p>
+                <footer class="mono text-sm text-stone-400 mt-2">— a slight edit to Matthew 22:21</footer>
+            </blockquote>
+
+            <p class="text-stone-600">
+                The goal isn't to hide everything or reveal everything. It's to know which Caesar
+                deserves your data today—and to keep earning the trust that makes the next reveal worth it.
+                <em>We live in a society</em> means we're all playing this iterated game, simultaneously
+                governed and governing, in a lattice too complex for any single Caesar to fully see.
+            </p>
+        </article>
+
+        <footer class="mt-12 pt-8 border-t border-stone-200 text-center">
+            <a href="/" class="mono text-sm text-stone-500 hover:text-stone-700">← Back to Projects</a>
+            <p class="mt-4 text-xs text-stone-400">
+                Explorable format inspired by <a href="https://worrydream.com/ExplorableExplanations/" class="underline hover:text-stone-600">Bret Victor</a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        let selectedCaesar = 'trustworthy';
+        let selectedStrategy = 'titfortat';
+        let simRunning = false;
+
+        const caesarTypes = {
+            trustworthy: { fairProb: 0.85, name: 'Trustworthy State' },
+            corrupt:     { fairProb: 0.25, name: 'Corrupt Official' },
+            doctor:      { fairProb: 0.95, name: 'Trusted Doctor' },
+            tuskegee:    { fairProb: 0.45, name: 'Broken Institution' }
+        };
+
+        function selectCaesar(type) {
+            selectedCaesar = type;
+            document.querySelectorAll('.caesar-card').forEach(el => {
+                el.classList.remove('selected');
+                el.style.borderColor = '';
+            });
+            document.getElementById('caesar-' + type).classList.add('selected');
+        }
+
+        function selectStrategy(strat) {
+            selectedStrategy = strat;
+            document.querySelectorAll('.strategy-card').forEach(el => {
+                el.classList.remove('selected');
+                el.style.borderColor = '';
+            });
+            document.getElementById('strat-' + strat).classList.add('selected');
+        }
+
+        function decideShow(round, history) {
+            if (selectedStrategy === 'alwaysshow') return true;
+            if (selectedStrategy === 'alwayshide') return false;
+            if (selectedStrategy === 'titfortat') {
+                if (round === 0) return true;
+                return history[round - 1].caesarFair;
+            }
+            if (selectedStrategy === 'strategic') {
+                if (round === 0) return true;
+                const fairCount = history.filter(r => r.caesarFair).length;
+                return (fairCount / history.length) > 0.5;
+            }
+            return true;
+        }
+
+        function highlightCell(active) {
+            const all = ['cell-show-fair', 'cell-show-exploit', 'cell-hide-fair', 'cell-hide-exploit'];
+            all.forEach(id => {
+                const el = document.getElementById(id);
+                if (id === active) {
+                    el.style.transform = 'scale(1.06)';
+                    el.style.boxShadow = '0 4px 14px rgba(0,0,0,0.18)';
+                } else {
+                    el.style.transform = 'scale(0.97)';
+                    el.style.boxShadow = '';
+                }
+            });
+        }
+
+        function clearCellHighlights() {
+            ['cell-show-fair', 'cell-show-exploit', 'cell-hide-fair', 'cell-hide-exploit'].forEach(id => {
+                const el = document.getElementById(id);
+                el.style.transform = '';
+                el.style.boxShadow = '';
+            });
+        }
+
+        async function runSimulation() {
+            if (simRunning) return;
+            simRunning = true;
+
+            const btn = document.getElementById('runBtn');
+            btn.textContent = 'Running…';
+            btn.disabled = true;
+
+            const rounds = parseInt(document.getElementById('roundsSlider').value);
+            const caesar = caesarTypes[selectedCaesar];
+            const display = document.getElementById('roundsDisplay');
+
+            display.innerHTML = '';
+            ['yourScore','caesarScore','yourPayoffLabel','caesarPayoffLabel','flourishLabel'].forEach(id => {
+                document.getElementById(id).textContent = '—';
+            });
+            document.getElementById('yourPayoffBar').style.width = '0%';
+            document.getElementById('caesarPayoffBar').style.width = '0%';
+            document.getElementById('flourishBar').style.width = '0%';
+            document.getElementById('insightBox').classList.add('hidden');
+
+            let yourTotal = 0;
+            let caesarTotal = 0;
+            let flourishCount = 0;
+            const history = [];
+
+            for (let i = 0; i < rounds; i++) {
+                const show = decideShow(i, history);
+                const caesarFair = Math.random() < caesar.fairProb;
+
+                let yourPayoff, caesarPayoff, icon, bgClass, cellId;
+
+                if (show && caesarFair) {
+                    yourPayoff = 3; caesarPayoff = 3;
+                    icon = '🌱'; bgClass = 'bg-emerald-100 border-emerald-300'; cellId = 'cell-show-fair';
+                    flourishCount++;
+                } else if (show && !caesarFair) {
+                    yourPayoff = -3; caesarPayoff = 5;
+                    icon = '🪤'; bgClass = 'bg-red-100 border-red-300'; cellId = 'cell-show-exploit';
+                } else if (!show && caesarFair) {
+                    yourPayoff = 1; caesarPayoff = 1;
+                    icon = '🫤'; bgClass = 'bg-amber-100 border-amber-300'; cellId = 'cell-hide-fair';
+                } else {
+                    yourPayoff = 0; caesarPayoff = 0;
+                    icon = '👻'; bgClass = 'bg-stone-100 border-stone-300'; cellId = 'cell-hide-exploit';
+                }
+
+                yourTotal += yourPayoff;
+                caesarTotal += caesarPayoff;
+                history.push({ show, caesarFair, yourPayoff, caesarPayoff });
+
+                highlightCell(cellId);
+
+                const dot = document.createElement('div');
+                dot.className = 'round-appear flex flex-col items-center text-center';
+                dot.style.animationDelay = (i * 0.05) + 's';
+                const payoffColor = yourPayoff > 0 ? 'text-emerald-600' : yourPayoff < 0 ? 'text-red-600' : 'text-stone-400';
+                dot.innerHTML = `
+                    <div class="w-10 h-10 rounded-full border-2 ${bgClass} flex items-center justify-center text-lg mb-0.5">${icon}</div>
+                    <div class="text-xs">${show ? '📖' : '🫥'}</div>
+                    <div class="mono text-xs font-bold ${payoffColor}">${yourPayoff >= 0 ? '+' : ''}${yourPayoff}</div>
+                `;
+                dot.title = `Round ${i + 1}: You ${show ? 'showed' : 'hid'}, Caesar ${caesarFair ? 'was fair' : 'exploited'}.`;
+                display.appendChild(dot);
+
+                document.getElementById('yourScore').textContent = yourTotal;
+                document.getElementById('caesarScore').textContent = caesarTotal;
+
+                await new Promise(r => setTimeout(r, 180));
+            }
+
+            clearCellHighlights();
+
+            // Final bars
+            const maxYour = rounds * 3;
+            const maxCaesar = rounds * 5;
+            const yourPct = Math.max(0, Math.min(100, (yourTotal / maxYour) * 100));
+            const caesarPct = Math.max(0, Math.min(100, (caesarTotal / maxCaesar) * 100));
+            const flourishPct = (flourishCount / rounds) * 100;
+
+            document.getElementById('yourPayoffBar').style.width = yourPct + '%';
+            document.getElementById('yourPayoffLabel').textContent = yourTotal;
+            document.getElementById('caesarPayoffBar').style.width = caesarPct + '%';
+            document.getElementById('caesarPayoffLabel').textContent = caesarTotal;
+            document.getElementById('flourishBar').style.width = flourishPct + '%';
+            document.getElementById('flourishLabel').textContent = Math.round(flourishPct) + '%';
+
+            // Insight
+            const flourishRate = flourishCount / rounds;
+            let insight;
+            if (flourishRate > 0.65) {
+                insight = `High trust, high cooperation. ${caesar.name} was mostly fair, and your strategy captured most of the available value. This is the social contract working—the doctor you showed your mole to actually fixed it.`;
+            } else if (yourTotal < 0) {
+                insight = `You were exposed. With ${caesar.name} (${Math.round(caesar.fairProb * 100)}% fair), your openness was exploited more than it was rewarded. Scott would say: keep your secrets. Tit-for-tat would have pulled back after the first betrayal.`;
+            } else if (flourishRate < 0.25 && yourTotal >= 0) {
+                insight = `You stayed safe but left enormous value on the table. Mutual defection is stable but inefficient. If trust could be built with ${caesar.name}, both sides would gain far more.`;
+            } else if (yourTotal > 0 && flourishRate >= 0.25) {
+                insight = `Mixed results in an uncertain relationship. ${caesar.name} is unpredictable. Adaptive strategies (tit-for-tat, strategic reveal) work best here—you can't afford always-show or always-hide.`;
+            } else {
+                insight = `Grinding equilibrium. Neither great cooperation nor catastrophic exploitation. The relationship needs either a trust-building moment or a clear-eyed exit.`;
+            }
+
+            document.getElementById('insightText').textContent = insight;
+            document.getElementById('insightBox').classList.remove('hidden');
+
+            btn.textContent = 'Run Again →';
+            btn.disabled = false;
+            simRunning = false;
+        }
+
+        // Relationship data
+        const relationships = {
+            federal: {
+                title: 'Federal Government',
+                role: 'They govern you',
+                emoji: '🏛️',
+                color: 'blue',
+                trust: 'You pay taxes, file returns, obey laws. In exchange: courts, roads, safety nets. Trust varies enormously by era, country, and your position in it. When it works, this is the doctor relationship. When it doesn\'t, it can look like Tuskegee.',
+                legibility: 'High legibility is expected. Your income, assets, and business are visible. You render unto Caesar; Caesar (ideally) renders services back.',
+                example: '"Your tax return is your annual legibility declaration."'
+            },
+            hoa: {
+                title: 'HOA / City / Local Government',
+                role: 'They govern you (and you can govern back)',
+                emoji: '🏙️',
+                color: 'blue',
+                trust: 'Local governance is closest to your life and easiest to influence. You can show up to city council. You can run for HOA board. The trust game is intimate and personal.',
+                legibility: 'Moderate. Your property is visible. Your behavior in shared spaces is visible. But your household is largely your own domain.',
+                example: '"A city is not a tree—local authority overlaps with your employer, HOA, water board, all at once."'
+            },
+            boss: {
+                title: 'Your Boss / Employer',
+                role: 'They govern you (within limits)',
+                emoji: '💼',
+                color: 'blue',
+                trust: 'Work is an iterated game. Early career: demonstrate to earn trust. Later: leverage trust for autonomy. A great manager gives you enough opacity to think and enough visibility to be helped.',
+                legibility: 'High at work, low outside. The best bosses don\'t need to see everything. Trust replaces surveillance. Total visibility breeds anxiety, not performance.',
+                example: '"I show my work product, not my process. I want autonomy over how."'
+            },
+            team: {
+                title: 'Your Team',
+                role: 'You govern them',
+                emoji: '👥',
+                color: 'green',
+                trust: 'You are Caesar now. What kind? Trustworthy Caesars share context and explain decisions. Opaque Caesars withhold and surprise. Your team is playing the legibility game with you.',
+                legibility: 'Give them enough to do great work. Don\'t demand total transparency—it breeds anxiety. Strategic opacity from you as Caesar = bad governance.',
+                example: '"Great managers know what to make visible and what to protect their team from."'
+            },
+            kids: {
+                title: 'Your Kids',
+                role: 'You govern them (for now)',
+                emoji: '🧒',
+                color: 'green',
+                trust: 'The most intimate governance. You\'re building their model of what trust and authority look like. How you handle their early "defections" shapes how they negotiate with Caesar for the rest of their lives.',
+                legibility: 'You need enough visibility to keep them safe. But the goal is to steadily reduce your oversight as their judgment grows. The endgame is their autonomy.',
+                example: '"The goal of parenting is to make yourself obsolete as their Caesar."'
+            },
+            community: {
+                title: 'Community / Neighbors',
+                role: 'You govern each other (peer)',
+                emoji: '🏘️',
+                color: 'green',
+                trust: 'Peer governance is the least formal but most pervasive. Norms, reputation, social capital. The shadow economy of favors. You\'re simultaneously governing and governed.',
+                legibility: 'Voluntary and high-bandwidth. Neighbors see a lot. The trust game here is almost entirely reputation-based—iterated play at its most natural.',
+                example: '"The unmapped shortcut that beats traffic. The cash-heavy side hustle. The favor economy that official systems can\'t see."'
+            },
+            spouse: {
+                title: 'Spouse / Partner',
+                role: 'Shifting authority—equal by default',
+                emoji: '💑',
+                color: 'amber',
+                trust: 'The trust game in equal relationships is the most nuanced. Authority shifts by domain—you might be Caesar on finances while they\'re Caesar in the kitchen. When she\'s coaching you in the pool lane, she governs. When you\'re teaching her to ski, you do.',
+                legibility: 'High voluntary legibility in healthy relationships. You show because you want to, not because you must. Illegibility here usually signals a breakdown of trust.',
+                example: '"Equal* — but the asterisk is a whole conversation about who decides what."'
+            },
+            doctor: {
+                title: 'Your Doctor',
+                role: 'Expert authority (temporary)',
+                emoji: '🩺',
+                color: 'blue',
+                trust: 'The clearest case for high legibility: you show the weird mole because you trust the outcome. If Medicine has earned your trust, this is the best deal in governance. If it hasn\'t—Tuskegee, discriminatory diagnoses, insurance-driven care—rational patients hide.',
+                legibility: 'Show everything relevant. But notice: when institutions break trust at scale, entire communities rationally defect for generations. The institution must earn it.',
+                example: '"Tuskegee is what happens when Caesar breaks the trust game and patients rationally defect for decades."'
+            }
+        };
+
+        function showRelationship(type) {
+            const rel = relationships[type];
+
+            // Reset node highlights
+            document.querySelectorAll('.lattice-node').forEach(n => n.setAttribute('stroke-width', '2'));
+            const node = document.getElementById('node-' + type);
+            if (node) node.setAttribute('stroke-width', '4');
+
+            const colorMap = {
+                blue: { bg: 'bg-blue-50', border: 'border-blue-200', title: 'text-blue-900', body: 'text-blue-800', sub: 'text-blue-600' },
+                green: { bg: 'bg-emerald-50', border: 'border-emerald-200', title: 'text-emerald-900', body: 'text-emerald-800', sub: 'text-emerald-600' },
+                amber: { bg: 'bg-amber-50', border: 'border-amber-200', title: 'text-amber-900', body: 'text-amber-800', sub: 'text-amber-600' }
+            };
+            const c = colorMap[rel.color] || colorMap.blue;
+
+            document.getElementById('relationshipPanel').innerHTML = `
+                <div class="${c.bg} rounded-lg p-4 border ${c.border}">
+                    <div class="flex items-start gap-3">
+                        <span class="text-3xl">${rel.emoji}</span>
+                        <div class="flex-1">
+                            <div class="mono font-bold ${c.title}">${rel.title}</div>
+                            <div class="mono text-xs ${c.sub} mb-3">${rel.role}</div>
+                            <p class="text-sm ${c.body} mb-2"><strong>Trust dynamic:</strong> ${rel.trust}</p>
+                            <p class="text-sm ${c.body} mb-3"><strong>Legibility:</strong> ${rel.legibility}</p>
+                            <blockquote class="text-sm ${c.sub} italic border-l-2 border-current border-opacity-30 pl-3">${rel.example}</blockquote>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
