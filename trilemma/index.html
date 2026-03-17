@@ -725,12 +725,15 @@
             document.getElementById('vertex-c').style.fill = tri.vertices.c.color;
 
             // Update edge labels (two lines each to prevent overlap)
+            // Left edge (edge-ab element) is between vertex a (bottom-left) and vertex c (top)
             document.getElementById('edge-ab-1').textContent = tri.vertices.a.name;
-            document.getElementById('edge-ab-2').textContent = `+ ${tri.vertices.b.name}`;
+            document.getElementById('edge-ab-2').textContent = `+ ${tri.vertices.c.name}`;
+            // Right edge (edge-bc element) is between vertex b (bottom-right) and vertex c (top)
             document.getElementById('edge-bc-1').textContent = tri.vertices.b.name;
             document.getElementById('edge-bc-2').textContent = `+ ${tri.vertices.c.name}`;
+            // Bottom edge (edge-ac element) is between vertex a (bottom-left) and vertex b (bottom-right)
             document.getElementById('edge-ac-1').textContent = tri.vertices.a.name;
-            document.getElementById('edge-ac-2').textContent = `+ ${tri.vertices.c.name}`;
+            document.getElementById('edge-ac-2').textContent = `+ ${tri.vertices.b.name}`;
 
             // Render barycentric gradient on canvas
             renderTriangleGradient(tri.vertices.a.color, tri.vertices.b.color, tri.vertices.c.color);
