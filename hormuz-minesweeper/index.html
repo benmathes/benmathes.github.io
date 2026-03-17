@@ -4,525 +4,839 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Strait of Hormuz Minesweeper</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Source Serif 4', serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Source Serif 4', serif;
+            background: #0a1628;
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
         .mono { font-family: 'Space Grotesk', sans-serif; }
 
-        .cell {
-            width: 32px;
-            height: 32px;
-            border: 1px solid #94a3b8;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
+        .page-wrap {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 24px 16px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        header h1 {
             font-family: 'Space Grotesk', sans-serif;
+            font-size: 22px;
             font-weight: 700;
-            font-size: 14px;
-            user-select: none;
-            -webkit-user-select: none;
-            transition: background 0.05s;
+            color: #f1f5f9;
+            margin-bottom: 4px;
+        }
+        header p {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 13px;
+            color: #94a3b8;
         }
 
-        .cell-hidden {
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);
-            border-color: #60a5fa;
-            box-shadow: inset 1px 1px 0 rgba(255,255,255,0.2), inset -1px -1px 0 rgba(0,0,0,0.15);
-        }
-        .cell-hidden:hover {
-            background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 50%, #2563eb 100%);
-        }
-        .cell-hidden:active {
-            box-shadow: inset 1px 1px 2px rgba(0,0,0,0.3);
-        }
-
-        .cell-revealed {
-            background: #e0f2fe;
-            border-color: #bae6fd;
-            cursor: default;
-        }
-
-        .cell-mine {
-            background: #fecaca;
-            border-color: #fca5a5;
-        }
-
-        .cell-mine-source {
-            background: #ef4444;
-            border-color: #dc2626;
-        }
-
-        .cell-flagged {
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);
-            border-color: #f59e0b;
-            box-shadow: inset 1px 1px 0 rgba(255,255,255,0.2), inset -1px -1px 0 rgba(0,0,0,0.15);
-        }
-
-        .num-1 { color: #2563eb; }
-        .num-2 { color: #16a34a; }
-        .num-3 { color: #dc2626; }
-        .num-4 { color: #7c3aed; }
-        .num-5 { color: #b91c1c; }
-        .num-6 { color: #0891b2; }
-        .num-7 { color: #1f2937; }
-        .num-8 { color: #6b7280; }
-
-        .board {
-            display: inline-grid;
-            border: 3px solid #1e40af;
-            border-radius: 4px;
-            background: #1e40af;
-            gap: 0px;
-        }
-
+        /* Status bar */
         .status-bar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 8px 12px;
-            background: #1e3a5f;
-            border-radius: 6px;
-            margin-bottom: 8px;
+            padding: 6px 12px;
+            background: #1e293b;
+            border-radius: 8px 8px 0 0;
+            border: 2px solid #334155;
+            border-bottom: none;
+            max-width: fit-content;
+            margin: 0 auto;
         }
-
         .lcd {
             font-family: 'Space Grotesk', monospace;
             font-weight: 700;
-            font-size: 22px;
+            font-size: 20px;
             color: #f87171;
             background: #0f172a;
-            padding: 4px 10px;
+            padding: 3px 8px;
             border-radius: 4px;
-            min-width: 56px;
+            min-width: 52px;
             text-align: center;
             letter-spacing: 2px;
             border: 1px inset #334155;
         }
-
         .face-btn {
-            font-size: 24px;
-            width: 42px;
-            height: 42px;
+            font-size: 22px;
+            width: 38px;
+            height: 38px;
             border-radius: 6px;
-            border: 2px outset #cbd5e1;
-            background: #e2e8f0;
+            border: 2px outset #475569;
+            background: #334155;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: transform 0.05s;
+            margin: 0 12px;
         }
         .face-btn:active {
             transform: scale(0.92);
             border-style: inset;
         }
 
-        .difficulty-btn {
-            transition: all 0.15s ease;
+        /* Map container */
+        .map-container {
+            position: relative;
+            display: inline-block;
+            border: 2px solid #334155;
+            border-radius: 0 0 8px 8px;
+            overflow: hidden;
+            background: #1a3a5c;
         }
-        .difficulty-btn.active {
-            background: #1e3a5f;
-            color: white;
-            border-color: #1e3a5f;
+        .map-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
-        .section-break {
-            border: none;
-            height: 2px;
-            background: linear-gradient(to right, transparent, #d1d5db, transparent);
-            margin: 2rem 0;
+        /* SVG map background */
+        .map-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
         }
+
+        /* Grid overlay */
+        .board {
+            position: relative;
+            display: inline-grid;
+            z-index: 1;
+        }
+
+        .cell {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 13px;
+            user-select: none;
+            -webkit-user-select: none;
+            transition: background 0.05s;
+            border: 1px solid transparent;
+        }
+
+        /* Water cells - hidden */
+        .cell-water-hidden {
+            background: rgba(30, 64, 110, 0.55);
+            border-color: rgba(59, 130, 246, 0.25);
+        }
+        .cell-water-hidden:hover {
+            background: rgba(59, 130, 246, 0.45);
+            border-color: rgba(96, 165, 250, 0.5);
+        }
+
+        /* Water cells - revealed */
+        .cell-water-revealed {
+            background: rgba(14, 45, 82, 0.7);
+            border-color: rgba(30, 58, 95, 0.5);
+            cursor: default;
+        }
+
+        /* Land cells */
+        .cell-land {
+            background: rgba(120, 100, 70, 0.65);
+            border-color: rgba(140, 120, 80, 0.3);
+            cursor: default;
+        }
+
+        /* Mine cells */
+        .cell-mine {
+            background: rgba(220, 50, 50, 0.5);
+            border-color: rgba(252, 165, 165, 0.4);
+        }
+        .cell-mine-source {
+            background: rgba(239, 68, 68, 0.8);
+            border-color: rgba(220, 38, 38, 0.6);
+        }
+
+        /* Flagged */
+        .cell-flagged {
+            background: rgba(30, 64, 110, 0.55);
+            border-color: rgba(245, 158, 11, 0.6);
+        }
+
+        .num-1 { color: #60a5fa; }
+        .num-2 { color: #4ade80; }
+        .num-3 { color: #f87171; }
+        .num-4 { color: #a78bfa; }
+        .num-5 { color: #fb923c; }
+        .num-6 { color: #22d3ee; }
+        .num-7 { color: #e2e8f0; }
+        .num-8 { color: #94a3b8; }
+
+        /* Map labels */
+        .map-label {
+            position: absolute;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            pointer-events: none;
+            z-index: 2;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            opacity: 0.7;
+        }
+        .label-land {
+            color: #d4c5a0;
+            font-size: 13px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        .label-water {
+            color: #7cb4d4;
+            font-size: 10px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            letter-spacing: 4px;
+        }
+        .label-island {
+            color: #c8b88a;
+            font-size: 9px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            letter-spacing: 2px;
+        }
+
+        /* Difficulty */
+        .controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        .diff-btn {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 6px;
+            border: 1px solid #475569;
+            background: #1e293b;
+            color: #94a3b8;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .diff-btn:hover {
+            border-color: #60a5fa;
+            color: #e2e8f0;
+        }
+        .diff-btn.active {
+            background: #1e40af;
+            border-color: #3b82f6;
+            color: #fff;
+        }
+
+        /* Info bar */
+        .info-bar {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+        .info-item {
+            text-align: center;
+            padding: 10px 16px;
+            background: #1e293b;
+            border-radius: 8px;
+            border: 1px solid #334155;
+        }
+        .info-item .icon { font-size: 18px; margin-bottom: 2px; }
+        .info-item .stat {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            color: #e2e8f0;
+        }
+        .info-item .desc {
+            font-size: 11px;
+            color: #64748b;
+            margin-top: 2px;
+        }
+
+        .instructions {
+            text-align: center;
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 12px;
+        }
+        .instructions span {
+            color: #94a3b8;
+            font-weight: 600;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid #1e293b;
+        }
+        footer a {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 13px;
+            color: #64748b;
+            text-decoration: none;
+        }
+        footer a:hover { color: #94a3b8; }
 
         @keyframes ripple {
-            from { transform: scale(0.8); opacity: 1; }
+            from { transform: scale(0.85); opacity: 0.8; }
             to { transform: scale(1); opacity: 1; }
         }
         .cell-reveal-anim {
-            animation: ripple 0.1s ease-out;
+            animation: ripple 0.08s ease-out;
         }
     </style>
 </head>
-<body class="bg-stone-50 text-stone-800">
-    <div class="max-w-5xl mx-auto px-6 py-12">
-        <header class="mb-8">
-            <h1 class="mono text-3xl font-bold text-stone-900 mb-2">Strait of Hormuz Minesweeper</h1>
-            <p class="text-stone-600 mono text-sm">Clear the mines from the world's most contested waterway</p>
+<body>
+    <div class="page-wrap">
+        <header>
+            <h1>Strait of Hormuz Minesweeper</h1>
+            <p>Clear the mines from the world's most contested waterway</p>
         </header>
 
-        <article class="space-y-6">
-            <p>
-                Roughly 20% of the world's oil passes through the Strait of Hormuz, a narrow
-                chokepoint between Iran and Oman. It has been mined in wartime, threatened in peacetime,
-                and remains one of the most strategically important passages on Earth.
-            </p>
-            <p>
-                Your job: sweep the strait clear. Left-click to reveal water. Right-click to flag a mine.
-                The numbers tell you how many mines are adjacent. Don't hit one.
-            </p>
+        <p class="instructions">
+            <span>Left-click</span> to reveal &middot;
+            <span>Right-click</span> to flag &middot;
+            <span>Middle-click</span> to chord
+        </p>
 
-            <hr class="section-break">
+        <div class="controls">
+            <button onclick="setDifficulty('easy')" id="diff-easy" class="diff-btn active">Easy (~15%)</button>
+            <button onclick="setDifficulty('medium')" id="diff-medium" class="diff-btn">Medium (~20%)</button>
+            <button onclick="setDifficulty('hard')" id="diff-hard" class="diff-btn">Hard (~25%)</button>
+        </div>
 
-            <!-- Difficulty -->
-            <div class="flex items-center gap-3 flex-wrap">
-                <span class="mono text-sm font-semibold text-stone-700">Difficulty:</span>
-                <button onclick="setDifficulty('beginner')" id="diff-beginner" class="difficulty-btn active mono text-xs font-bold px-4 py-2 rounded-lg border-2 border-stone-300 bg-white">
-                    Beginner (9&times;9, 10 mines)
-                </button>
-                <button onclick="setDifficulty('intermediate')" id="diff-intermediate" class="difficulty-btn mono text-xs font-bold px-4 py-2 rounded-lg border-2 border-stone-300 bg-white">
-                    Intermediate (16&times;16, 40 mines)
-                </button>
-                <button onclick="setDifficulty('expert')" id="diff-expert" class="difficulty-btn mono text-xs font-bold px-4 py-2 rounded-lg border-2 border-stone-300 bg-white">
-                    Expert (30&times;16, 99 mines)
-                </button>
+        <div class="map-wrapper">
+            <div class="status-bar" id="status-bar">
+                <div class="lcd" id="mine-counter">000</div>
+                <button class="face-btn" id="face-btn" onclick="initGame()">&#x1F642;</button>
+                <div class="lcd" id="timer">000</div>
             </div>
-
-            <!-- Game container -->
-            <div class="flex flex-col items-center">
-                <div id="game-wrapper" style="display:inline-block;">
-                    <div class="status-bar" id="status-bar">
-                        <div class="lcd" id="mine-counter">010</div>
-                        <button class="face-btn" id="face-btn" onclick="initGame()">🙂</button>
-                        <div class="lcd" id="timer">000</div>
-                    </div>
-                    <div class="board" id="board"></div>
-                </div>
+            <div class="map-container" id="map-container">
+                <svg class="map-bg" id="map-bg"></svg>
+                <div class="board" id="board"></div>
+                <!-- Map labels -->
+                <div class="map-label label-land" id="label-iran">Iran</div>
+                <div class="map-label label-land" id="label-oman">Oman</div>
+                <div class="map-label label-land" id="label-uae">U.A.E.</div>
+                <div class="map-label label-water" id="label-gulf">Persian Gulf</div>
+                <div class="map-label label-water" id="label-oman-gulf">Gulf of Oman</div>
+                <div class="map-label label-island" id="label-qeshm">Qeshm Is.</div>
+                <div class="map-label label-island" id="label-hormuz">Hormuz Is.</div>
+                <div class="map-label label-island" id="label-larak">Larak Is.</div>
             </div>
+        </div>
 
-            <hr class="section-break">
-
-            <div class="grid grid-cols-3 gap-4 text-center">
-                <div class="p-4 bg-blue-50 rounded-xl border border-blue-200">
-                    <div class="text-2xl mb-1">🚢</div>
-                    <div class="mono text-xs font-bold text-blue-900">~17 million barrels/day</div>
-                    <div class="text-xs text-blue-700 mt-1">pass through the strait</div>
-                </div>
-                <div class="p-4 bg-amber-50 rounded-xl border border-amber-200">
-                    <div class="text-2xl mb-1">💣</div>
-                    <div class="mono text-xs font-bold text-amber-900">1988: Operation Praying Mantis</div>
-                    <div class="text-xs text-amber-700 mt-1">US-Iran naval engagement after mine strike</div>
-                </div>
-                <div class="p-4 bg-stone-100 rounded-xl border border-stone-300">
-                    <div class="text-2xl mb-1">🌊</div>
-                    <div class="mono text-xs font-bold text-stone-900">21 miles at narrowest</div>
-                    <div class="text-xs text-stone-600 mt-1">two 2-mile shipping lanes</div>
-                </div>
+        <div class="info-bar">
+            <div class="info-item">
+                <div class="icon">&#x1F6A2;</div>
+                <div class="stat mono">~17M barrels/day</div>
+                <div class="desc">pass through the strait</div>
             </div>
-        </article>
+            <div class="info-item">
+                <div class="icon">&#x1F4A3;</div>
+                <div class="stat mono">1988: Op. Praying Mantis</div>
+                <div class="desc">US-Iran clash after mine strike</div>
+            </div>
+            <div class="info-item">
+                <div class="icon">&#x1F30A;</div>
+                <div class="stat mono">21 mi at narrowest</div>
+                <div class="desc">two 2-mile shipping lanes</div>
+            </div>
+        </div>
 
-        <footer class="mt-12 pt-8 border-t border-stone-200 text-center">
-            <a href="/" class="mono text-sm text-stone-500 hover:text-stone-700">&larr; Back to Projects</a>
+        <footer>
+            <a href="/">&larr; Back to Projects</a>
         </footer>
     </div>
 
     <script>
-        // Game state
-        let rows, cols, totalMines;
-        let board = [];       // 2D: { mine, revealed, flagged, adjacentMines }
-        let gameOver = false;
-        let gameWon = false;
-        let firstClick = true;
-        let timerInterval = null;
-        let seconds = 0;
-        let flagCount = 0;
+    // ── Land mask: 34 cols x 22 rows ──
+    // L = land, . = water
+    // Geography: Iran (top), Qeshm/Hormuz/Larak islands,
+    // Musandam Peninsula (Oman, bottom-right), UAE (bottom-left)
+    const LAND_MASK = [
+        "LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL", // 0  Iran interior
+        "LLLLLLLLLLLLLLLLLLLLLL............", // 1  Iran coast
+        "LLLLLLLLLLLLLLLLLLL...............", // 2
+        "LLLLLLLLLLLLLLLLLL................", // 3
+        "LLLLLLLLLLLLLLLLL.................", // 4  Iran coast curves
+        "LLLLLLLLLL.LLLLLL.................", // 5  channel before Qeshm
+        "LLLLLLLL...LLLLLLL................", // 6  Qeshm Island
+        "LLLLLLL.....LLLLL.................", // 7
+        "LLLLLL.......LLL....L.............", // 8  Hormuz Island
+        ".LLLL.........L......L............", // 9  Larak Island
+        "..LL..............................", // 10
+        "..L...............................", // 11
+        ".................................", // 12 open water
+        ".................................", // 13
+        ".....................LL...........", // 14 Musandam tip
+        "....................LLLL..........", // 15
+        "...................LLLLLL.........", // 16
+        ".................LLLLLLLLLL.......", // 17
+        "LL.............LLLLLLLLLLLLLLL....", // 18 UAE / Oman coast
+        "LLLLL.......LLLLLLLLLLLLLLLLLLLL..", // 19
+        "LLLLLLLLL.LLLLLLLLLLLLLLLLLLLLLLL.", // 20
+        "LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL", // 21 land
+    ];
 
-        const difficulties = {
-            beginner:     { rows: 9,  cols: 9,  mines: 10 },
-            intermediate: { rows: 16, cols: 16, mines: 40 },
-            expert:       { rows: 16, cols: 30, mines: 99 }
-        };
-        let currentDifficulty = 'beginner';
+    const ROWS = LAND_MASK.length;
+    const COLS = LAND_MASK[0].length;
+    const CELL_SIZE = 28;
 
-        function setDifficulty(diff) {
-            currentDifficulty = diff;
-            document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('diff-' + diff).classList.add('active');
-            initGame();
+    // Parse land mask
+    function isLand(r, c) {
+        if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return true;
+        return LAND_MASK[r][c] === 'L';
+    }
+
+    // Count water cells
+    let waterCellCount = 0;
+    for (let r = 0; r < ROWS; r++)
+        for (let c = 0; c < COLS; c++)
+            if (!isLand(r, c)) waterCellCount++;
+
+    // Difficulty: mine density as fraction of water cells
+    const difficulties = {
+        easy:   { fraction: 0.12 },
+        medium: { fraction: 0.18 },
+        hard:   { fraction: 0.24 },
+    };
+    let currentDifficulty = 'easy';
+
+    // Game state
+    let board = [];
+    let totalMines = 0;
+    let gameOver = false;
+    let gameWon = false;
+    let firstClick = true;
+    let timerInterval = null;
+    let seconds = 0;
+    let flagCount = 0;
+
+    function setDifficulty(diff) {
+        currentDifficulty = diff;
+        document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('diff-' + diff).classList.add('active');
+        initGame();
+    }
+
+    function initGame() {
+        const d = difficulties[currentDifficulty];
+        totalMines = Math.round(waterCellCount * d.fraction);
+        gameOver = false;
+        gameWon = false;
+        firstClick = true;
+        flagCount = 0;
+        seconds = 0;
+        clearInterval(timerInterval);
+        timerInterval = null;
+
+        document.getElementById('face-btn').textContent = '\u{1F642}';
+        document.getElementById('timer').textContent = '000';
+        updateMineCounter();
+
+        board = [];
+        for (let r = 0; r < ROWS; r++) {
+            board[r] = [];
+            for (let c = 0; c < COLS; c++) {
+                board[r][c] = {
+                    land: isLand(r, c),
+                    mine: false,
+                    revealed: false,
+                    flagged: false,
+                    adjacentMines: 0
+                };
+            }
         }
 
-        function initGame() {
-            const d = difficulties[currentDifficulty];
-            rows = d.rows;
-            cols = d.cols;
-            totalMines = d.mines;
-            gameOver = false;
-            gameWon = false;
-            firstClick = true;
-            flagCount = 0;
-            seconds = 0;
-            clearInterval(timerInterval);
-            timerInterval = null;
+        renderBoard();
+        positionLabels();
+    }
 
-            document.getElementById('face-btn').textContent = '🙂';
-            document.getElementById('timer').textContent = '000';
-            updateMineCounter();
+    function placeMines(safeR, safeC) {
+        const safe = new Set();
+        for (let dr = -1; dr <= 1; dr++)
+            for (let dc = -1; dc <= 1; dc++)
+                safe.add((safeR + dr) + ',' + (safeC + dc));
 
-            // Create empty board
-            board = [];
-            for (let r = 0; r < rows; r++) {
-                board[r] = [];
-                for (let c = 0; c < cols; c++) {
-                    board[r][c] = { mine: false, revealed: false, flagged: false, adjacentMines: 0 };
-                }
-            }
-
-            renderBoard();
-        }
-
-        function placeMines(safeR, safeC) {
-            // Place mines avoiding the first click and its neighbors
-            const safe = new Set();
-            for (let dr = -1; dr <= 1; dr++) {
-                for (let dc = -1; dc <= 1; dc++) {
-                    safe.add((safeR + dr) + ',' + (safeC + dc));
-                }
-            }
-
-            let placed = 0;
-            while (placed < totalMines) {
-                const r = Math.floor(Math.random() * rows);
-                const c = Math.floor(Math.random() * cols);
-                if (!board[r][c].mine && !safe.has(r + ',' + c)) {
-                    board[r][c].mine = true;
-                    placed++;
-                }
-            }
-
-            // Calculate adjacent counts
-            for (let r = 0; r < rows; r++) {
-                for (let c = 0; c < cols; c++) {
-                    if (board[r][c].mine) continue;
-                    let count = 0;
-                    forNeighbors(r, c, (nr, nc) => {
-                        if (board[nr][nc].mine) count++;
-                    });
-                    board[r][c].adjacentMines = count;
-                }
+        let placed = 0;
+        while (placed < totalMines) {
+            const r = Math.floor(Math.random() * ROWS);
+            const c = Math.floor(Math.random() * COLS);
+            if (!board[r][c].land && !board[r][c].mine && !safe.has(r + ',' + c)) {
+                board[r][c].mine = true;
+                placed++;
             }
         }
 
-        function forNeighbors(r, c, fn) {
-            for (let dr = -1; dr <= 1; dr++) {
-                for (let dc = -1; dc <= 1; dc++) {
-                    if (dr === 0 && dc === 0) continue;
-                    const nr = r + dr, nc = c + dc;
-                    if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
-                        fn(nr, nc);
-                    }
+        // Adjacency counts (only count water-cell mines)
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+                if (board[r][c].land || board[r][c].mine) continue;
+                let count = 0;
+                forNeighbors(r, c, (nr, nc) => {
+                    if (!board[nr][nc].land && board[nr][nc].mine) count++;
+                });
+                board[r][c].adjacentMines = count;
+            }
+        }
+    }
+
+    function forNeighbors(r, c, fn) {
+        for (let dr = -1; dr <= 1; dr++) {
+            for (let dc = -1; dc <= 1; dc++) {
+                if (dr === 0 && dc === 0) continue;
+                const nr = r + dr, nc = c + dc;
+                if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS) {
+                    fn(nr, nc);
                 }
             }
         }
+    }
 
-        function renderBoard() {
-            const boardEl = document.getElementById('board');
-            boardEl.style.gridTemplateColumns = `repeat(${cols}, 32px)`;
-            boardEl.innerHTML = '';
+    function renderBoard() {
+        const boardEl = document.getElementById('board');
+        boardEl.style.gridTemplateColumns = `repeat(${COLS}, ${CELL_SIZE}px)`;
+        boardEl.style.gridTemplateRows = `repeat(${ROWS}, ${CELL_SIZE}px)`;
+        boardEl.innerHTML = '';
 
-            for (let r = 0; r < rows; r++) {
-                for (let c = 0; c < cols; c++) {
-                    const cell = document.createElement('div');
-                    cell.className = 'cell cell-hidden';
-                    cell.dataset.r = r;
-                    cell.dataset.c = c;
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+                const cell = document.createElement('div');
+                cell.className = board[r][c].land ? 'cell cell-land' : 'cell cell-water-hidden';
+                cell.dataset.r = r;
+                cell.dataset.c = c;
 
+                if (!board[r][c].land) {
                     cell.addEventListener('click', () => handleClick(r, c));
                     cell.addEventListener('contextmenu', (e) => {
                         e.preventDefault();
                         handleRightClick(r, c);
                     });
-                    // Middle click / chord
                     cell.addEventListener('mousedown', (e) => {
-                        if (e.button === 1) {
-                            e.preventDefault();
-                            handleChord(r, c);
-                        }
+                        if (e.button === 1) { e.preventDefault(); handleChord(r, c); }
                     });
+                }
 
-                    boardEl.appendChild(cell);
+                boardEl.appendChild(cell);
+            }
+        }
+
+        // Size the status bar to match board width
+        const boardWidth = COLS * CELL_SIZE;
+        document.getElementById('status-bar').style.width = boardWidth + 'px';
+
+        drawMapBackground();
+    }
+
+    function drawMapBackground() {
+        const svg = document.getElementById('map-bg');
+        const w = COLS * CELL_SIZE;
+        const h = ROWS * CELL_SIZE;
+        svg.setAttribute('width', w);
+        svg.setAttribute('height', h);
+        svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+
+        // Build land polygons by tracing connected land regions
+        // Simple approach: draw filled rects for each land cell with slight overlap
+        let landRects = '';
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+                if (isLand(r, c)) {
+                    const x = c * CELL_SIZE;
+                    const y = r * CELL_SIZE;
+                    landRects += `<rect x="${x}" y="${y}" width="${CELL_SIZE+1}" height="${CELL_SIZE+1}" />`;
                 }
             }
-
-            // Adjust status bar width
-            document.getElementById('status-bar').style.width = (cols * 32 + 2) + 'px';
         }
 
-        function getCell(r, c) {
-            return document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
+        svg.innerHTML = `
+            <defs>
+                <linearGradient id="waterGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#0c2d4a"/>
+                    <stop offset="50%" style="stop-color:#133a5c"/>
+                    <stop offset="100%" style="stop-color:#0e3352"/>
+                </linearGradient>
+                <linearGradient id="landGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#8b7355"/>
+                    <stop offset="50%" style="stop-color:#7a6548"/>
+                    <stop offset="100%" style="stop-color:#6d5a3f"/>
+                </linearGradient>
+                <filter id="landShadow">
+                    <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
+                    <feOffset dx="0" dy="1"/>
+                    <feComposite in2="SourceAlpha" operator="arithmetic" k2="-1" k3="1"/>
+                    <feMerge>
+                        <feMergeNode/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+            </defs>
+            <!-- Water background -->
+            <rect width="${w}" height="${h}" fill="url(#waterGrad)"/>
+            <!-- Land masses -->
+            <g fill="url(#landGrad)" filter="url(#landShadow)" opacity="0.85">
+                ${landRects}
+            </g>
+            <!-- Subtle grid lines -->
+            <g stroke="rgba(255,255,255,0.04)" stroke-width="0.5">
+                ${Array.from({length: COLS+1}, (_, i) => `<line x1="${i*CELL_SIZE}" y1="0" x2="${i*CELL_SIZE}" y2="${h}"/>`).join('')}
+                ${Array.from({length: ROWS+1}, (_, i) => `<line x1="0" y1="${i*CELL_SIZE}" x2="${w}" y2="${i*CELL_SIZE}"/>`).join('')}
+            </g>
+        `;
+    }
+
+    function positionLabels() {
+        const cs = CELL_SIZE;
+        // Iran - top center of the land mass
+        setLabelPos('label-iran', 5 * cs, 0.5 * cs);
+        // UAE - bottom left
+        setLabelPos('label-uae', 1 * cs, 19 * cs);
+        // Oman - bottom right, near Musandam
+        setLabelPos('label-oman', 21 * cs, 18 * cs);
+        // Persian Gulf - left water area
+        setLabelPos('label-gulf', 1 * cs, 13 * cs);
+        // Gulf of Oman - right water area
+        setLabelPos('label-oman-gulf', 24 * cs, 10 * cs);
+        // Qeshm Island
+        setLabelPos('label-qeshm', 11 * cs, 5.5 * cs);
+        // Hormuz Island
+        setLabelPos('label-hormuz', 17 * cs, 8 * cs);
+        // Larak Island
+        setLabelPos('label-larak', 20 * cs, 9.2 * cs);
+    }
+
+    function setLabelPos(id, x, y) {
+        const el = document.getElementById(id);
+        el.style.left = x + 'px';
+        el.style.top = y + 'px';
+    }
+
+    function getCell(r, c) {
+        return document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
+    }
+
+    function handleClick(r, c) {
+        if (gameOver || gameWon) return;
+        const cell = board[r][c];
+        if (cell.land || cell.flagged || cell.revealed) return;
+
+        if (firstClick) {
+            firstClick = false;
+            placeMines(r, c);
+            startTimer();
         }
 
-        function handleClick(r, c) {
-            if (gameOver || gameWon) return;
-            const cell = board[r][c];
-            if (cell.flagged || cell.revealed) return;
+        if (cell.mine) {
+            cell.revealed = true;
+            revealAllMines(r, c);
+            gameOver = true;
+            clearInterval(timerInterval);
+            document.getElementById('face-btn').textContent = '\u{1F480}';
+            return;
+        }
 
-            if (firstClick) {
-                firstClick = false;
-                placeMines(r, c);
-                startTimer();
-            }
+        reveal(r, c);
+        checkWin();
+    }
 
-            if (cell.mine) {
-                // Game over
-                cell.revealed = true;
+    function handleRightClick(r, c) {
+        if (gameOver || gameWon) return;
+        const cell = board[r][c];
+        if (cell.land || cell.revealed) return;
+
+        cell.flagged = !cell.flagged;
+        flagCount += cell.flagged ? 1 : -1;
+        updateMineCounter();
+
+        const el = getCell(r, c);
+        if (cell.flagged) {
+            el.className = 'cell cell-flagged';
+            el.textContent = '\u{1F6A9}';
+        } else {
+            el.className = 'cell cell-water-hidden';
+            el.textContent = '';
+        }
+    }
+
+    function handleChord(r, c) {
+        if (gameOver || gameWon) return;
+        const cell = board[r][c];
+        if (cell.land || !cell.revealed || cell.adjacentMines === 0) return;
+
+        let flaggedNeighbors = 0;
+        forNeighbors(r, c, (nr, nc) => {
+            if (!board[nr][nc].land && board[nr][nc].flagged) flaggedNeighbors++;
+        });
+
+        if (flaggedNeighbors === cell.adjacentMines) {
+            let hitMine = false;
+            forNeighbors(r, c, (nr, nc) => {
+                const n = board[nr][nc];
+                if (!n.land && !n.revealed && !n.flagged) {
+                    if (n.mine) {
+                        hitMine = true;
+                        n.revealed = true;
+                    } else {
+                        reveal(nr, nc);
+                    }
+                }
+            });
+
+            if (hitMine) {
                 revealAllMines(r, c);
                 gameOver = true;
                 clearInterval(timerInterval);
-                document.getElementById('face-btn').textContent = '💀';
+                document.getElementById('face-btn').textContent = '\u{1F480}';
                 return;
             }
-
-            reveal(r, c);
             checkWin();
         }
+    }
 
-        function handleRightClick(r, c) {
-            if (gameOver || gameWon) return;
-            const cell = board[r][c];
-            if (cell.revealed) return;
+    function reveal(r, c) {
+        const cell = board[r][c];
+        if (cell.land || cell.revealed || cell.flagged || cell.mine) return;
 
-            cell.flagged = !cell.flagged;
-            flagCount += cell.flagged ? 1 : -1;
-            updateMineCounter();
+        cell.revealed = true;
+        const el = getCell(r, c);
+        el.className = 'cell cell-water-revealed cell-reveal-anim';
 
-            const el = getCell(r, c);
-            if (cell.flagged) {
-                el.className = 'cell cell-flagged';
-                el.textContent = '🚩';
-            } else {
-                el.className = 'cell cell-hidden';
-                el.textContent = '';
-            }
-        }
-
-        function handleChord(r, c) {
-            if (gameOver || gameWon) return;
-            const cell = board[r][c];
-            if (!cell.revealed || cell.adjacentMines === 0) return;
-
-            // Count adjacent flags
-            let flaggedNeighbors = 0;
+        if (cell.adjacentMines > 0) {
+            el.textContent = cell.adjacentMines;
+            el.classList.add('num-' + cell.adjacentMines);
+        } else {
             forNeighbors(r, c, (nr, nc) => {
-                if (board[nr][nc].flagged) flaggedNeighbors++;
+                if (!board[nr][nc].land) reveal(nr, nc);
             });
-
-            if (flaggedNeighbors === cell.adjacentMines) {
-                let hitMine = false;
-                forNeighbors(r, c, (nr, nc) => {
-                    const n = board[nr][nc];
-                    if (!n.revealed && !n.flagged) {
-                        if (n.mine) {
-                            hitMine = true;
-                            n.revealed = true;
-                        } else {
-                            reveal(nr, nc);
-                        }
-                    }
-                });
-
-                if (hitMine) {
-                    revealAllMines(r, c);
-                    gameOver = true;
-                    clearInterval(timerInterval);
-                    document.getElementById('face-btn').textContent = '💀';
-                    return;
-                }
-                checkWin();
-            }
         }
+    }
 
-        function reveal(r, c) {
-            const cell = board[r][c];
-            if (cell.revealed || cell.flagged || cell.mine) return;
-
-            cell.revealed = true;
-            const el = getCell(r, c);
-            el.className = 'cell cell-revealed cell-reveal-anim';
-
-            if (cell.adjacentMines > 0) {
-                el.textContent = cell.adjacentMines;
-                el.classList.add('num-' + cell.adjacentMines);
-            } else {
-                // Flood fill
-                forNeighbors(r, c, (nr, nc) => {
-                    reveal(nr, nc);
-                });
-            }
-        }
-
-        function revealAllMines(hitR, hitC) {
-            for (let r = 0; r < rows; r++) {
-                for (let c = 0; c < cols; c++) {
-                    const cell = board[r][c];
-                    const el = getCell(r, c);
-                    if (cell.mine) {
-                        if (r === hitR && c === hitC) {
-                            el.className = 'cell cell-mine-source';
-                            el.textContent = '💣';
-                        } else if (!cell.flagged) {
-                            el.className = 'cell cell-mine';
-                            el.textContent = '💣';
-                        }
-                    } else if (cell.flagged) {
-                        // Wrong flag
+    function revealAllMines(hitR, hitC) {
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+                const cell = board[r][c];
+                if (cell.land) continue;
+                const el = getCell(r, c);
+                if (cell.mine) {
+                    if (r === hitR && c === hitC) {
+                        el.className = 'cell cell-mine-source';
+                        el.textContent = '\u{1F4A3}';
+                    } else if (!cell.flagged) {
                         el.className = 'cell cell-mine';
-                        el.textContent = '❌';
+                        el.textContent = '\u{1F4A3}';
                     }
+                } else if (cell.flagged) {
+                    el.className = 'cell cell-mine';
+                    el.textContent = '\u274C';
                 }
             }
         }
+    }
 
-        function checkWin() {
-            let unrevealedSafe = 0;
-            for (let r = 0; r < rows; r++) {
-                for (let c = 0; c < cols; c++) {
-                    if (!board[r][c].mine && !board[r][c].revealed) {
-                        unrevealedSafe++;
-                    }
+    function checkWin() {
+        let unrevealedSafe = 0;
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+                if (!board[r][c].land && !board[r][c].mine && !board[r][c].revealed) {
+                    unrevealedSafe++;
                 }
             }
-            if (unrevealedSafe === 0) {
-                gameWon = true;
-                clearInterval(timerInterval);
-                document.getElementById('face-btn').textContent = '😎';
-                // Auto-flag remaining mines
-                for (let r = 0; r < rows; r++) {
-                    for (let c = 0; c < cols; c++) {
-                        if (board[r][c].mine && !board[r][c].flagged) {
-                            board[r][c].flagged = true;
-                            const el = getCell(r, c);
-                            el.className = 'cell cell-flagged';
-                            el.textContent = '🚩';
-                        }
-                    }
-                }
-                flagCount = totalMines;
-                updateMineCounter();
-            }
         }
-
-        function updateMineCounter() {
-            const remaining = totalMines - flagCount;
-            const display = remaining < 0
-                ? '-' + String(Math.abs(remaining)).padStart(2, '0')
-                : String(remaining).padStart(3, '0');
-            document.getElementById('mine-counter').textContent = display;
-        }
-
-        function startTimer() {
-            seconds = 0;
+        if (unrevealedSafe === 0) {
+            gameWon = true;
             clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-                seconds++;
-                if (seconds > 999) seconds = 999;
-                document.getElementById('timer').textContent = String(seconds).padStart(3, '0');
-            }, 1000);
+            document.getElementById('face-btn').textContent = '\u{1F60E}';
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    if (!board[r][c].land && board[r][c].mine && !board[r][c].flagged) {
+                        board[r][c].flagged = true;
+                        const el = getCell(r, c);
+                        el.className = 'cell cell-flagged';
+                        el.textContent = '\u{1F6A9}';
+                    }
+                }
+            }
+            flagCount = totalMines;
+            updateMineCounter();
         }
+    }
 
-        // Start
-        initGame();
+    function updateMineCounter() {
+        const remaining = totalMines - flagCount;
+        const display = remaining < 0
+            ? '-' + String(Math.abs(remaining)).padStart(2, '0')
+            : String(remaining).padStart(3, '0');
+        document.getElementById('mine-counter').textContent = display;
+    }
+
+    function startTimer() {
+        seconds = 0;
+        clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            seconds++;
+            if (seconds > 999) seconds = 999;
+            document.getElementById('timer').textContent = String(seconds).padStart(3, '0');
+        }, 1000);
+    }
+
+    // Touch support for mobile (long press = flag)
+    let touchTimer = null;
+    let touchMoved = false;
+    document.getElementById('board').addEventListener('touchstart', (e) => {
+        const cell = e.target.closest('.cell');
+        if (!cell) return;
+        touchMoved = false;
+        const r = parseInt(cell.dataset.r);
+        const c = parseInt(cell.dataset.c);
+        if (board[r][c].land) return;
+        touchTimer = setTimeout(() => {
+            e.preventDefault();
+            handleRightClick(r, c);
+            touchTimer = null;
+        }, 400);
+    }, { passive: false });
+    document.getElementById('board').addEventListener('touchmove', () => {
+        touchMoved = true;
+        clearTimeout(touchTimer);
+    });
+    document.getElementById('board').addEventListener('touchend', (e) => {
+        if (touchTimer) {
+            clearTimeout(touchTimer);
+            const cell = e.target.closest('.cell');
+            if (cell && !touchMoved) {
+                const r = parseInt(cell.dataset.r);
+                const c = parseInt(cell.dataset.c);
+                handleClick(r, c);
+            }
+        }
+        e.preventDefault();
+    }, { passive: false });
+
+    // Prevent context menu on the board
+    document.getElementById('board').addEventListener('contextmenu', e => e.preventDefault());
+
+    // Boot
+    initGame();
     </script>
 </body>
 </html>
