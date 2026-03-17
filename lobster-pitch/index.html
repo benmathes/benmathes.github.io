@@ -167,6 +167,20 @@
   #restart-btn:hover { background: #ff9933; }
   .win-color { color: #33ff66; }
   .lose-color { color: #ff3333; }
+  #mute-btn {
+    position: absolute;
+    top: 6px;
+    right: 10px;
+    background: transparent;
+    border: 1px solid #555;
+    color: #aaa;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    cursor: pointer;
+    z-index: 10;
+  }
+  #mute-btn:hover { color: #ff9933; border-color: #ff6600; }
   #notification-popup {
     position: fixed;
     top: 20px;
@@ -191,8 +205,9 @@
 
 <div id="notification-popup"><span class="notif-icon">⌚</span><span id="notif-text"></span></div>
 
-<div id="game-container">
+<div id="game-container" style="position:relative">
   <div id="title-bar">✦ LOBSTER PITCH: A YC ADVENTURE ✦ &nbsp;|&nbsp; SPRING 26 BATCH &nbsp;|&nbsp; PRESS ANY KEY TO FUND</div>
+  <button id="mute-btn" onclick="toggleMute()">♪ SOUND</button>
   <canvas id="scene-canvas" width="800" height="340"></canvas>
   <div id="dialogue-box">
     <div id="speaker-name">GARRY TAN</div>
@@ -261,60 +276,56 @@ function drawScene(garryMood, playerMood) {
   drawPoster(30, 30, 'MOVE FAST', '#ff6600');
   drawPoster(600, 30, 'DEFAULT ALIVE', '#33ff66');
 
-  // ── Desk ──
+  // ── Desk (centered) ──
   ctx.fillStyle = '#5c3d1e';
-  ctx.fillRect(200, 195, 400, 12);
+  ctx.fillRect(180, 195, 440, 12);
   ctx.fillStyle = '#4a3010';
-  ctx.fillRect(200, 207, 400, 30);
+  ctx.fillRect(180, 207, 440, 30);
 
   // Desk legs
   ctx.fillStyle = '#3a2508';
-  ctx.fillRect(220, 237, 16, 60);
-  ctx.fillRect(564, 237, 16, 60);
+  ctx.fillRect(200, 237, 16, 60);
+  ctx.fillRect(584, 237, 16, 60);
 
   // ── On the desk ──
-  // MacBook (left)
+  // MacBook (left of Garry)
   ctx.fillStyle = '#555';
-  ctx.fillRect(230, 175, 80, 52);
+  ctx.fillRect(210, 175, 80, 52);
   ctx.fillStyle = '#111';
-  ctx.fillRect(233, 178, 74, 42);
+  ctx.fillRect(213, 178, 74, 42);
   ctx.fillStyle = '#0a0';
   ctx.font = '9px monospace';
-  ctx.fillText('vim', 243, 205);
+  ctx.fillText('vim', 223, 205);
   ctx.fillStyle = '#0f0';
   ctx.font = '8px monospace';
-  ctx.fillText('2000 LOC/min', 238, 218);
+  ctx.fillText('2000 LOC/min', 218, 218);
 
-  // MacBook (right)
+  // MacBook (right of Garry)
   ctx.fillStyle = '#555';
-  ctx.fillRect(490, 175, 80, 52);
+  ctx.fillRect(510, 175, 80, 52);
   ctx.fillStyle = '#111';
-  ctx.fillRect(493, 178, 74, 42);
+  ctx.fillRect(513, 178, 74, 42);
   ctx.fillStyle = '#0a0';
   ctx.font = '9px monospace';
-  ctx.fillText('gstack', 498, 202);
+  ctx.fillText('gstack', 518, 202);
   ctx.fillStyle = '#33f';
   ctx.font = '8px monospace';
-  ctx.fillText('DEPLOYING...', 496, 216);
+  ctx.fillText('DEPLOYING...', 516, 216);
 
-  // Coffee mug
+  // Coffee mug (centered)
   ctx.fillStyle = '#888';
-  ctx.fillRect(350, 185, 18, 14);
+  ctx.fillRect(390, 185, 18, 14);
   ctx.fillStyle = '#333';
-  ctx.fillRect(352, 187, 14, 10);
+  ctx.fillRect(392, 187, 14, 10);
   ctx.fillStyle = '#ff9900';
   ctx.font = '6px monospace';
-  ctx.fillText('YC', 353, 195);
+  ctx.fillText('YC', 393, 195);
 
-  // ── GARRY TAN (right side of desk, lobster suit) ──
-  drawGarry(460, 60, garryMood);
+  // ── GARRY TAN (center, behind desk, lobster suit, first-person POV) ──
+  drawGarry(310, 50, garryMood);
 
-  // ── PLAYER (left side) ──
-  drawPlayer(140, 100, playerMood);
-
-  // ── Name plates ──
-  drawNameTag(420, 290, 'GARRY TAN', '#ff6600');
-  drawNameTag(80, 290, 'YOU', '#33aaff');
+  // ── Name plate ──
+  drawNameTag(280, 290, 'GARRY', '#ff6600');
 }
 
 function drawPoster(x, y, text, color) {
@@ -337,206 +348,287 @@ function drawNameTag(x, y, text, color) {
 }
 
 function drawGarry(x, y, mood) {
-  // Lobster body (torso) - bright red
-  px(x+4,  y+18, 22, 30, '#cc2200'); // main torso
-  px(x+2,  y+20, 4, 24, '#aa1a00');  // left shell
-  px(x+26, y+20, 4, 24, '#aa1a00');  // right shell
+  const t = Date.now();
 
-  // Lobster shell segments on torso
-  px(x+4, y+22, 22, 2, '#dd3300');
-  px(x+4, y+28, 22, 2, '#dd3300');
-  px(x+4, y+34, 22, 2, '#dd3300');
-  px(x+4, y+40, 22, 2, '#dd3300');
+  // Stan-style animated arm offsets (wild, independent, never-stop gesticulating)
+  // Left arm: fast sinusoidal flail at different frequencies
+  const lArmAngle = Math.sin(t / 120) * 0.7 + Math.sin(t / 73) * 0.4;
+  const lClawY = Math.sin(t / 90) * 12 + Math.cos(t / 150) * 6;
+  const lClawX = Math.cos(t / 110) * 15 - 20;
+  // Right arm: offset phase, different speed (like Stan's asymmetric flailing)
+  const rArmAngle = Math.sin(t / 95 + 2) * 0.6 + Math.cos(t / 130) * 0.5;
+  const rClawY = Math.cos(t / 80 + 1) * 14 + Math.sin(t / 170) * 5;
+  const rClawX = Math.sin(t / 100 + 3) * 15 + 50;
 
-  // Lobster tail
-  px(x+6,  y+48, 18, 8, '#cc2200');
-  px(x+4,  y+52, 6, 12, '#aa1a00');
-  px(x+10, y+52, 6, 12, '#bb2000');
-  px(x+16, y+52, 6, 12, '#aa1a00');
-  px(x+22, y+52, 6, 10, '#993300');
+  // Lobster body (torso) - bright red, bigger for center stage
+  px(x+2,  y+18, 26, 34, '#cc2200'); // main torso
+  px(x-2,  y+20, 6, 28, '#aa1a00');  // left shell ridge
+  px(x+26, y+20, 6, 28, '#aa1a00');  // right shell ridge
 
-  // Lobster claws
-  px(x-8, y+22, 10, 14, '#cc2200'); // left claw base
-  px(x-14, y+18, 10, 8, '#dd3300'); // left upper claw
-  px(x-14, y+28, 10, 6, '#bb1e00'); // left lower claw
-  px(x-16, y+24, 2, 4, '#ff4422');  // left claw gap
+  // Lobster shell segments on torso (horizontal ridges)
+  for (let seg = 0; seg < 5; seg++) {
+    px(x+2, y+22 + seg*6, 26, 2, '#dd3300');
+  }
 
-  px(x+28, y+22, 10, 14, '#cc2200'); // right claw base
-  px(x+34, y+18, 10, 8, '#dd3300');  // right upper claw
-  px(x+34, y+28, 10, 6, '#bb1e00');  // right lower claw
-  px(x+46, y+24, 2, 4, '#ff4422');   // right claw gap
+  // Lobster tail (visible below desk line)
+  px(x+4,  y+52, 22, 8, '#cc2200');
+  px(x+2,  y+56, 6, 14, '#aa1a00');
+  px(x+8,  y+56, 8, 14, '#bb2000');
+  px(x+16, y+56, 6, 14, '#aa1a00');
+  px(x+22, y+56, 6, 12, '#993300');
 
-  // Typing arms (in lobster suit, claw tips on keyboards)
-  px(x-6, y+36, 8, 3, '#cc2200');
-  px(x+28, y+36, 8, 3, '#cc2200');
+  // ── STAN-STYLE ANIMATED ARMS ──
+  // Left arm — upper arm segment
+  ctx.save();
+  ctx.translate((x-2)*S, (y+28)*S);
+  ctx.rotate(lArmAngle);
+  ctx.fillStyle = '#cc2200';
+  ctx.fillRect(-6*S, -3*S, 18*S, 6*S); // upper arm
+  // Forearm
+  ctx.translate(-6*S, 0);
+  ctx.rotate(Math.sin(t / 60) * 0.5);
+  ctx.fillRect(-14*S, -3*S, 14*S, 6*S); // forearm
+  // Left claw at end of arm
+  ctx.fillStyle = '#dd3300';
+  ctx.fillRect(-22*S, -5*S, 10*S, 6*S); // upper pincer
+  ctx.fillStyle = '#bb1e00';
+  ctx.fillRect(-22*S, 1*S, 10*S, 5*S);  // lower pincer
+  ctx.fillStyle = '#ff4422';
+  ctx.fillRect(-24*S, -1*S, 2*S, 4*S);  // claw gap
+  ctx.restore();
 
-  // Human head poking out top
+  // Right arm — upper arm segment
+  ctx.save();
+  ctx.translate((x+32)*S, (y+28)*S);
+  ctx.rotate(rArmAngle);
+  ctx.fillStyle = '#cc2200';
+  ctx.fillRect(0, -3*S, 18*S, 6*S); // upper arm
+  // Forearm
+  ctx.translate(18*S, 0);
+  ctx.rotate(Math.cos(t / 55 + 1) * 0.5);
+  ctx.fillRect(0, -3*S, 14*S, 6*S); // forearm
+  // Right claw
+  ctx.fillStyle = '#dd3300';
+  ctx.fillRect(12*S, -5*S, 10*S, 6*S);
+  ctx.fillStyle = '#bb1e00';
+  ctx.fillRect(12*S, 1*S, 10*S, 5*S);
+  ctx.fillStyle = '#ff4422';
+  ctx.fillRect(22*S, -1*S, 2*S, 4*S);
+  ctx.restore();
+
+  // Apple Watch on left wrist (follows arm animation roughly)
+  const watchX = x - 16 + Math.cos(t / 110) * 8;
+  const watchY = y + 26 + Math.sin(t / 90) * 6;
+  if (mood === 'typing' || mood === 'triumphant') {
+    const watchColor = (t % 400) < 200 ? '#33ff66' : '#ff3366';
+    px(Math.round(watchX), Math.round(watchY), 5, 4, watchColor);
+  } else {
+    px(Math.round(watchX), Math.round(watchY), 5, 4, '#333');
+  }
+
+  // Human head poking out top of lobster suit
   // Neck
   px(x+9, y+10, 12, 10, '#e8b88a');
 
-  // Head
-  px(x+7, y-14, 16, 24, '#e8b88a');
+  // Head (slightly bigger for center-stage presence)
+  px(x+5, y-16, 20, 26, '#e8b88a');
 
   // Hair
-  px(x+7, y-14, 16, 5, '#1a0a00');
-  px(x+5, y-12, 4, 8, '#1a0a00');
+  px(x+5, y-16, 20, 6, '#1a0a00');
+  px(x+3, y-14, 4, 10, '#1a0a00');
+  px(x+23, y-14, 4, 6, '#1a0a00');
 
-  // Garry's glasses
-  px(x+8, y-2, 6, 4, '#111');   // left lens
-  px(x+16, y-2, 6, 4, '#111');  // right lens
-  px(x+14, y-1, 2, 2, '#666');  // bridge
+  // Garry's glasses (bigger, more prominent)
+  px(x+7, y-3, 7, 5, '#111');   // left lens
+  px(x+16, y-3, 7, 5, '#111');  // right lens
+  px(x+14, y-2, 2, 3, '#666');  // bridge
+  px(x+5, y-1, 2, 2, '#555');   // left arm of glasses
+  px(x+23, y-1, 2, 2, '#555');  // right arm of glasses
 
-  // Eyes behind glasses
-  px(x+9, y-1, 4, 2, '#222');
-  px(x+17, y-1, 4, 2, '#222');
+  // Eyes behind glasses (with slight animation)
+  const eyeShift = Math.round(Math.sin(t / 2000) * 1); // slow eye drift
+  px(x+9+eyeShift, y-1, 3, 2, '#222');
+  px(x+18+eyeShift, y-1, 3, 2, '#222');
 
   // Mouth / expression
   if (mood === 'normal') {
     px(x+11, y+5, 8, 2, '#c09070');
   } else if (mood === 'typing') {
-    px(x+11, y+5, 8, 2, '#c09070');
-    // add strobe light watch visual
-    px(x+34, y+30, 8, 6, '#ffffff');
-    ctx.fillStyle = '#fff';
-    ctx.font = '8px monospace';
-    ctx.fillText('⌚', (x+34)*S, (y+38)*S);
+    // Talking while typing — mouth animates
+    const mouthOpen = Math.sin(t / 100) > 0 ? 3 : 1;
+    px(x+11, y+5, 8, mouthOpen, '#c09070');
+    if (mouthOpen > 1) px(x+12, y+6, 6, 1, '#222');
   } else if (mood === 'shocked') {
-    px(x+11, y+4, 8, 3, '#c09070'); // open mouth
+    px(x+11, y+4, 8, 4, '#c09070'); // big open mouth
     px(x+12, y+5, 6, 2, '#222');
   } else if (mood === 'triumphant') {
-    // big grin
-    px(x+10, y+5, 10, 2, '#ff9966');
-    px(x+10, y+7, 2, 2, '#ff9966');
-    px(x+18, y+7, 2, 2, '#ff9966');
+    // Wide grin
+    px(x+9, y+5, 12, 3, '#ff9966');
+    px(x+9, y+8, 2, 2, '#ff9966');
+    px(x+19, y+8, 2, 2, '#ff9966');
+    // Teeth
+    px(x+11, y+6, 8, 1, '#eee');
   } else if (mood === 'excited') {
     px(x+10, y+4, 10, 4, '#ff9966');
     px(x+11, y+5, 8, 2, '#eee');
   }
 
-  // Antennae
+  // Antennae (with slight wobble)
+  const antWobbleL = Math.sin(t / 200) * 3;
+  const antWobbleR = Math.cos(t / 180) * 3;
   ctx.strokeStyle = '#cc2200';
-  ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo((x+10)*S, (y-14)*S); ctx.lineTo((x+4)*S, (y-26)*S); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo((x+20)*S, (y-14)*S); ctx.lineTo((x+26)*S, (y-26)*S); ctx.stroke();
+  ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo((x+10)*S, (y-16)*S); ctx.lineTo((x+2+antWobbleL)*S, (y-30)*S); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo((x+20)*S, (y-16)*S); ctx.lineTo((x+28+antWobbleR)*S, (y-30)*S); ctx.stroke();
 
-  // Antennae tips
-  px(x+3, y-28, 3, 3, '#ff4422');
-  px(x+25, y-28, 3, 3, '#ff4422');
+  // Antennae tips (little bobbles)
+  px(x+1+Math.round(antWobbleL), y-32, 4, 4, '#ff4422');
+  px(x+27+Math.round(antWobbleR), y-32, 4, 4, '#ff4422');
 
-  // Apple Watch strobe
-  if (mood === 'typing' || mood === 'triumphant') {
-    const t = Date.now() % 400;
-    const watchColor = t < 200 ? '#33ff66' : '#ff3366';
-    px(x+29, y+30, 7, 5, watchColor);
-  }
-
-  // "YC Partner" badge
+  // "YC Partner" badge on lobster suit
   ctx.fillStyle = '#ff6600';
-  ctx.font = 'bold 8px monospace';
-  ctx.fillText('YC Partner', (x-4)*S, (y+75)*S);
+  ctx.font = 'bold 9px monospace';
+  ctx.fillText('YC PARTNER', (x-6)*S, (y+78)*S);
 }
 
-function drawPlayer(x, y, mood) {
-  // Body / blazer
-  px(x+2, y+20, 26, 35, '#2a4a7a');
-  px(x+10, y+20, 10, 35, '#cccccc'); // shirt
-  px(x+2, y+20, 8, 35, '#1a3a6a');   // left lapel
-  px(x+20, y+20, 8, 35, '#1a3a6a');  // right lapel
+// Player is not drawn — the scene is first-person POV from the founder's perspective
 
-  // Tie
-  px(x+12, y+22, 6, 28, '#cc3300');
-  px(x+13, y+22, 4, 3, '#881100');
+// ─── CHIPTUNE ENGINE (Web Audio API) ──────────────────────────────────────────
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+let chiptuneStarted = false;
 
-  // Arms
-  px(x-2, y+22, 6, 26, '#2a4a7a');
-  px(x+26, y+22, 6, 26, '#2a4a7a');
-  // Hands
-  px(x-4, y+46, 8, 8, '#e8b88a');
-  px(x+26, y+46, 8, 8, '#e8b88a');
+function startChiptune() {
+  if (chiptuneStarted) return;
+  chiptuneStarted = true;
+  audioCtx = new AudioCtx();
 
-  // Legs
-  px(x+4, y+55, 8, 22, '#1a3060');
-  px(x+18, y+55, 8, 22, '#1a3060');
-  px(x+4, y+75, 8, 5, '#111');   // shoes
-  px(x+18, y+75, 8, 5, '#111');
+  const masterGain = audioCtx.createGain();
+  masterGain.gain.value = 0.18;
+  masterGain.connect(audioCtx.destination);
 
-  // Neck
-  px(x+11, y+12, 8, 10, '#e8b88a');
+  // Musical notes (frequencies)
+  const C4=261.63, D4=293.66, E4=329.63, F4=349.23, G4=392.00, A4=440.00, B4=493.88;
+  const C5=523.25, D5=587.33, E5=659.25, G3=196.00, A3=220.00, B3=246.94, F3=174.61;
+  const C3=130.81, D3=146.83, E3=164.81;
 
-  // Head
-  px(x+7, y-12, 16, 24, '#e8b88a');
+  // Main melody — jaunty, adventurous, LucasArts-ish
+  const melody = [
+    E4,E4,0,G4, A4,A4,0,B4, C5,B4,A4,G4, A4,0,E4,0,
+    D4,D4,0,F4, G4,G4,0,A4, B4,A4,G4,F4, E4,0,C4,0,
+    E4,G4,A4,C5, B4,A4,G4,E4, D4,F4,G4,B4, A4,G4,E4,D4,
+    C4,E4,G4,C5, D5,C5,B4,A4, G4,A4,B4,G4, C5,0,0,0,
+  ];
 
-  // Hair
-  px(x+7, y-12, 16, 4, '#4a2800');
-  px(x+5, y-10, 4, 6, '#4a2800');
-  px(x+21, y-10, 4, 4, '#4a2800');
+  // Bass line
+  const bass = [
+    C3,0,C3,0, C3,0,G3,0, F3,0,F3,0, F3,0,C3,0,
+    G3,0,G3,0, G3,0,D3,0, A3,0,A3,0, E3,0,C3,0,
+    C3,0,E3,0, G3,0,C3,0, D3,0,F3,0, G3,0,G3,0,
+    C3,0,E3,0, F3,0,A3,0, G3,0,G3,0, C3,0,0,0,
+  ];
 
-  // Eyes
-  if (mood === 'nervous') {
-    px(x+10, y+2, 3, 3, '#111');
-    px(x+17, y+2, 3, 3, '#111');
-    // sweat drop
-    px(x+24, y-2, 2, 4, '#88aaff');
-  } else if (mood === 'confident') {
-    px(x+10, y+2, 3, 3, '#111');
-    px(x+17, y+2, 3, 3, '#111');
-    // sparkle
-    ctx.fillStyle = '#ffff00';
-    ctx.font = '8px monospace';
-    ctx.fillText('★', (x+22)*S, (y-2)*S);
-  } else if (mood === 'shocked') {
-    // big eyes
-    px(x+9, y+1, 5, 5, '#fff');
-    px(x+16, y+1, 5, 5, '#fff');
-    px(x+10, y+2, 3, 3, '#111');
-    px(x+17, y+2, 3, 3, '#111');
-    // open mouth
-    px(x+11, y+8, 8, 5, '#111');
-  } else if (mood === 'defeated') {
-    // sad eyes
-    px(x+10, y+2, 3, 3, '#111');
-    px(x+17, y+2, 3, 3, '#111');
-    // tears
-    px(x+10, y+6, 2, 6, '#88aaff');
-    px(x+19, y+6, 2, 6, '#88aaff');
-    // frown
-    px(x+10, y+10, 10, 2, '#c09070');
-    px(x+10, y+8, 2, 3, '#c09070');
-    px(x+18, y+8, 2, 3, '#c09070');
-  } else if (mood === 'pitch') {
-    px(x+10, y+2, 3, 3, '#111');
-    px(x+17, y+2, 3, 3, '#111');
-    // talking mouth
-    px(x+11, y+7, 8, 4, '#c09070');
-    px(x+12, y+8, 6, 2, '#111');
-  } else {
-    px(x+10, y+2, 3, 3, '#111');
-    px(x+17, y+2, 3, 3, '#111');
-    px(x+11, y+7, 8, 2, '#c09070');
+  // Arpeggio pattern (higher octave sparkle)
+  const arp = [
+    C5,E5,G4,E5, C5,G4,E5,C5, F4,A4,C5,A4, F4,C5,A4,F4,
+    G4,B4,D5,B4, G4,D5,B4,G4, A4,C5,E5,C5, E4,G4,C5,G4,
+    C5,G4,E5,G4, E4,C5,G4,E4, D5,B4,G4,B4, G4,D5,B4,G4,
+    C5,E5,G4,C5, D5,A4,F4,D5, G4,B4,D5,G4, C5,0,E5,0,
+  ];
+
+  const bpm = 150;
+  const noteLen = 60 / bpm / 2; // sixteenth notes
+  const loopLen = melody.length * noteLen;
+
+  function scheduleNote(freq, time, duration, type, gainVal, dest) {
+    if (freq === 0) return;
+    const osc = audioCtx.createOscillator();
+    const env = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    env.gain.setValueAtTime(gainVal, time);
+    env.gain.exponentialRampToValueAtTime(0.001, time + duration * 0.9);
+    osc.connect(env);
+    env.connect(dest);
+    osc.start(time);
+    osc.stop(time + duration);
   }
 
-  // Holding phone or deck
-  if (mood === 'shocked' || mood === 'defeated') {
-    // Phone with dropping chart
-    px(x+28, y+30, 10, 16, '#222');
-    px(x+29, y+31, 8, 12, '#0a0a2a');
-    ctx.fillStyle = '#ff3333';
-    ctx.font = '7px monospace';
-    ctx.fillText('📉', (x+28)*S, (y+42)*S);
+  function scheduleLoop(startTime) {
+    for (let i = 0; i < melody.length; i++) {
+      const t = startTime + i * noteLen;
+      // Melody — square wave (classic chiptune lead)
+      scheduleNote(melody[i], t, noteLen * 0.8, 'square', 0.35, masterGain);
+      // Bass — triangle wave (warm low end)
+      scheduleNote(bass[i], t, noteLen * 0.9, 'triangle', 0.5, masterGain);
+      // Arpeggio — pulse-ish square at lower volume
+      scheduleNote(arp[i], t, noteLen * 0.4, 'square', 0.12, masterGain);
+    }
+
+    // Drums — noise-based kick and hi-hat
+    for (let i = 0; i < melody.length; i++) {
+      const t = startTime + i * noteLen;
+      if (i % 8 === 0) {
+        // Kick
+        const kickOsc = audioCtx.createOscillator();
+        const kickEnv = audioCtx.createGain();
+        kickOsc.type = 'sine';
+        kickOsc.frequency.setValueAtTime(150, t);
+        kickOsc.frequency.exponentialRampToValueAtTime(30, t + 0.08);
+        kickEnv.gain.setValueAtTime(0.6, t);
+        kickEnv.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+        kickOsc.connect(kickEnv);
+        kickEnv.connect(masterGain);
+        kickOsc.start(t);
+        kickOsc.stop(t + 0.12);
+      }
+      if (i % 4 === 2) {
+        // Hi-hat (short noise burst)
+        const bufSize = audioCtx.sampleRate * 0.03;
+        const buf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let s = 0; s < bufSize; s++) data[s] = Math.random() * 2 - 1;
+        const noise = audioCtx.createBufferSource();
+        noise.buffer = buf;
+        const hhEnv = audioCtx.createGain();
+        hhEnv.gain.setValueAtTime(0.15, t);
+        hhEnv.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+        // High-pass to make it sizzle
+        const hp = audioCtx.createBiquadFilter();
+        hp.type = 'highpass';
+        hp.frequency.value = 8000;
+        noise.connect(hp);
+        hp.connect(hhEnv);
+        hhEnv.connect(masterGain);
+        noise.start(t);
+        noise.stop(t + 0.05);
+      }
+    }
   }
 
-  // Startup lanyard
-  ctx.strokeStyle = '#ff6600';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo((x+15)*S, (y+12)*S);
-  ctx.lineTo((x+10)*S, (y+32)*S);
-  ctx.lineTo((x+20)*S, (y+32)*S);
-  ctx.stroke();
-  px(x+9, y+32, 12, 8, '#fff');
-  ctx.fillStyle = '#ff6600';
-  ctx.font = '5px monospace';
-  ctx.fillText('FNDME', (x+9)*S, (y+38)*S);
+  // Schedule first two loops, then keep scheduling
+  let nextLoopTime = audioCtx.currentTime + 0.1;
+  scheduleLoop(nextLoopTime);
+  scheduleLoop(nextLoopTime + loopLen);
+  nextLoopTime += loopLen * 2;
+
+  setInterval(() => {
+    if (audioCtx.currentTime > nextLoopTime - loopLen) {
+      scheduleLoop(nextLoopTime);
+      nextLoopTime += loopLen;
+    }
+  }, 500);
+}
+
+// Start chiptune on first user interaction (required by browsers)
+document.addEventListener('click', startChiptune, { once: false });
+
+let muted = false;
+function toggleMute() {
+  if (!audioCtx) { startChiptune(); return; }
+  muted = !muted;
+  audioCtx.suspend && audioCtx.resume && (muted ? audioCtx.suspend() : audioCtx.resume());
+  document.getElementById('mute-btn').textContent = muted ? '♪ OFF' : '♪ SOUND';
 }
 
 // ─── GAME STATE ───────────────────────────────────────────────────────────────
@@ -1209,11 +1301,9 @@ function resetGame() {
   renderNode('start');
 }
 
-// ─── ANIMATION LOOP (for watch strobe) ───────────────────────────────────────
+// ─── ANIMATION LOOP (Stan-style arms always animate) ─────────────────────────
 function animLoop() {
-  if (garryMood === 'typing' || garryMood === 'triumphant') {
-    drawScene(garryMood, playerMood);
-  }
+  drawScene(garryMood, playerMood);
   animFrame = requestAnimationFrame(animLoop);
 }
 
