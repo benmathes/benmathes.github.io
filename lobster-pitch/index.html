@@ -273,61 +273,60 @@ function drawScene(garryMood, playerMood) {
   ctx.fillText('Y COMBINATOR', 330, 75);
 
   // Motivational posters
-  drawPoster(30, 30, 'MOVE FAST', '#ff6600');
-  drawPoster(600, 30, 'DEFAULT ALIVE', '#33ff66');
+  drawPoster(170, 30, 'MOVE FAST', '#ff6600');
+  drawPoster(620, 30, 'DEFAULT ALIVE', '#33ff66');
 
-  // ── Desk (centered) ──
+  // ── PLAYER (left side, in front of desk) ──
+  // Draw player BEFORE desk so they appear in front
+  drawPlayer(30, 75, playerMood);
+
+  // ── Desk (shifted right to make room for player) ──
   ctx.fillStyle = '#5c3d1e';
-  ctx.fillRect(180, 195, 440, 12);
+  ctx.fillRect(260, 195, 380, 12);
   ctx.fillStyle = '#4a3010';
-  ctx.fillRect(180, 207, 440, 30);
+  ctx.fillRect(260, 207, 380, 30);
 
   // Desk legs
   ctx.fillStyle = '#3a2508';
-  ctx.fillRect(200, 237, 16, 60);
-  ctx.fillRect(584, 237, 16, 60);
+  ctx.fillRect(280, 237, 16, 60);
+  ctx.fillRect(604, 237, 16, 60);
 
   // ── On the desk ──
-  // MacBook (left of Garry)
+  // MacBook (left)
   ctx.fillStyle = '#555';
-  ctx.fillRect(210, 175, 80, 52);
+  ctx.fillRect(290, 175, 80, 52);
   ctx.fillStyle = '#111';
-  ctx.fillRect(213, 178, 74, 42);
+  ctx.fillRect(293, 178, 74, 42);
   ctx.fillStyle = '#0a0';
   ctx.font = '9px monospace';
-  ctx.fillText('vim', 223, 205);
+  ctx.fillText('vim', 303, 205);
   ctx.fillStyle = '#0f0';
   ctx.font = '8px monospace';
-  ctx.fillText('2000 LOC/min', 218, 218);
+  ctx.fillText('2000 LOC/min', 298, 218);
 
-  // MacBook (right of Garry)
+  // MacBook (right)
   ctx.fillStyle = '#555';
-  ctx.fillRect(510, 175, 80, 52);
+  ctx.fillRect(530, 175, 80, 52);
   ctx.fillStyle = '#111';
-  ctx.fillRect(513, 178, 74, 42);
+  ctx.fillRect(533, 178, 74, 42);
   ctx.fillStyle = '#0a0';
   ctx.font = '9px monospace';
-  ctx.fillText('gstack', 518, 202);
+  ctx.fillText('gstack', 538, 202);
   ctx.fillStyle = '#33f';
   ctx.font = '8px monospace';
-  ctx.fillText('DEPLOYING...', 516, 216);
+  ctx.fillText('DEPLOYING...', 536, 216);
 
-  // Coffee mug (centered)
+  // Coffee mug
   ctx.fillStyle = '#888';
-  ctx.fillRect(390, 185, 18, 14);
+  ctx.fillRect(440, 185, 18, 14);
   ctx.fillStyle = '#333';
-  ctx.fillRect(392, 187, 14, 10);
+  ctx.fillRect(442, 187, 14, 10);
   ctx.fillStyle = '#ff9900';
   ctx.font = '6px monospace';
-  ctx.fillText('YC', 393, 195);
-
-  // ── PLAYER (left side of desk) ──
-  drawPlayer(60, 90, playerMood);
+  ctx.fillText('YC', 443, 195);
 
   // ── GARRY TAN (right side, behind desk, lobster suit) ──
-  drawGarry(310, 50, garryMood);
-
-  // No name labels — the lobster suit speaks for itself
+  drawGarry(340, 50, garryMood);
 }
 
 function drawPoster(x, y, text, color) {
