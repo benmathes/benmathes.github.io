@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LOBSTER PITCH: A YC Adventure</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0a0a;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: 'Courier New', monospace;
+    color: #e0e0e0;
+  }
+  #game-container {
+    width: 800px;
+    border: 3px solid #ff6600;
+    box-shadow: 0 0 30px #ff660055, 0 0 60px #ff660022;
+    background: #111;
+    image-rendering: pixelated;
+  }
+  #title-bar {
+    background: linear-gradient(90deg, #ff6600, #ff9933, #ff6600);
+    color: #000;
+    text-align: center;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 4px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  #scene-canvas {
+    width: 800px;
+    height: 340px;
+    display: block;
+    background: #1a1a2e;
+    image-rendering: pixelated;
+  }
+  #dialogue-box {
+    background: #0d0d1a;
+    border-top: 2px solid #ff6600;
+    padding: 12px 16px;
+    min-height: 90px;
+    position: relative;
+  }
+  #speaker-name {
+    color: #ff9933;
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  #dialogue-text {
+    color: #d0d0d0;
+    font-size: 13px;
+    line-height: 1.6;
+    min-height: 40px;
+  }
+  #choices-area {
+    background: #080814;
+    border-top: 1px solid #333;
+    padding: 10px 16px;
+    min-height: 110px;
+  }
+  #choices-label {
+    color: #666;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+  }
+  .choice-btn {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: 1px solid #222;
+    color: #aaa;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    padding: 7px 10px;
+    margin-bottom: 5px;
+    cursor: pointer;
+    transition: all 0.1s;
+    line-height: 1.4;
+  }
+  .choice-btn:hover {
+    background: #1a1a2e;
+    border-color: #ff6600;
+    color: #ff9933;
+  }
+  .choice-btn::before {
+    content: '▶ ';
+    color: #ff6600;
+    opacity: 0;
+  }
+  .choice-btn:hover::before { opacity: 1; }
+  #status-bar {
+    background: #050510;
+    border-top: 1px solid #222;
+    padding: 5px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: #444;
+    letter-spacing: 1px;
+  }
+  #yc-meter-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #yc-meter-bar {
+    width: 120px;
+    height: 8px;
+    background: #111;
+    border: 1px solid #333;
+    position: relative;
+  }
+  #yc-meter-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #333, #ff6600);
+    width: 0%;
+    transition: width 0.5s;
+  }
+  #typing-indicator {
+    color: #ff6600;
+    font-size: 11px;
+    animation: blink 0.8s step-end infinite;
+    display: none;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+  .outcome-screen {
+    text-align: center;
+    padding: 40px 20px;
+    display: none;
+  }
+  .outcome-screen h2 {
+    font-size: 24px;
+    margin-bottom: 20px;
+  }
+  .outcome-screen p {
+    font-size: 14px;
+    line-height: 1.8;
+    max-width: 600px;
+    margin: 0 auto 20px;
+    color: #bbb;
+  }
+  #restart-btn {
+    background: #ff6600;
+    color: #000;
+    border: none;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    font-weight: bold;
+    padding: 10px 24px;
+    cursor: pointer;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 10px;
+  }
+  #restart-btn:hover { background: #ff9933; }
+  .win-color { color: #33ff66; }
+  .lose-color { color: #ff3333; }
+  #notification-popup {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 10px 14px;
+    font-size: 11px;
+    color: #999;
+    max-width: 220px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    z-index: 999;
+  }
+  #notification-popup.show { opacity: 1; }
+  .notif-icon { font-size: 16px; display: inline-block; margin-right: 6px; }
+</style>
+</head>
+<body>
+
+<div id="notification-popup"><span class="notif-icon">⌚</span><span id="notif-text"></span></div>
+
+<div id="game-container">
+  <div id="title-bar">✦ LOBSTER PITCH: A YC ADVENTURE ✦ &nbsp;|&nbsp; SPRING 26 BATCH &nbsp;|&nbsp; PRESS ANY KEY TO FUND</div>
+  <canvas id="scene-canvas" width="800" height="340"></canvas>
+  <div id="dialogue-box">
+    <div id="speaker-name">GARRY TAN</div>
+    <div id="dialogue-text"></div>
+    <span id="typing-indicator">█</span>
+  </div>
+  <div id="choices-area">
+    <div id="choices-label">What do you say?</div>
+    <div id="choices-container"></div>
+  </div>
+  <div id="status-bar">
+    <span>YC SPRING 26 INTERVIEW</span>
+    <div id="yc-meter-container">
+      <span>VIBES:</span>
+      <div id="yc-meter-bar"><div id="yc-meter-fill"></div></div>
+      <span id="yc-meter-pct">0%</span>
+    </div>
+    <span id="status-right">OFFICE: YC HQ, SF</span>
+  </div>
+</div>
+
+<script>
+// ─── PIXEL ART RENDERER ───────────────────────────────────────────────────────
+const canvas = document.getElementById('scene-canvas');
+const ctx = canvas.getContext('2d');
+ctx.imageSmoothingEnabled = false;
+
+const S = 2; // scale factor (each "pixel" = 2x2)
+
+function px(x, y, w, h, color) {
+  ctx.fillStyle = color;
+  ctx.fillRect(x * S, y * S, w * S, h * S);
+}
+
+function drawScene(garryMood, playerMood) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // ── Background ──
+  // Wall
+  ctx.fillStyle = '#1a1240';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Wall paneling
+  for (let i = 0; i < 800; i += 80) {
+    ctx.fillStyle = '#1e1548';
+    ctx.fillRect(i * S/S, 0, 2, canvas.height);
+  }
+
+  // Floor
+  ctx.fillStyle = '#2a1f0e';
+  ctx.fillRect(0, 240, 800, 100);
+  ctx.fillStyle = '#231a0b';
+  for (let i = 0; i < 800; i += 60) {
+    ctx.fillRect(i, 240, 2, 100);
+  }
+
+  // YC logo on wall
+  ctx.fillStyle = '#ff6600';
+  ctx.font = 'bold 28px monospace';
+  ctx.fillText('YC', 360, 60);
+  ctx.font = '11px monospace';
+  ctx.fillStyle = '#ff660088';
+  ctx.fillText('Y COMBINATOR', 330, 75);
+
+  // Motivational posters
+  drawPoster(30, 30, 'MOVE FAST', '#ff6600');
+  drawPoster(600, 30, 'DEFAULT ALIVE', '#33ff66');
+
+  // ── Desk ──
+  ctx.fillStyle = '#5c3d1e';
+  ctx.fillRect(200, 195, 400, 12);
+  ctx.fillStyle = '#4a3010';
+  ctx.fillRect(200, 207, 400, 30);
+
+  // Desk legs
+  ctx.fillStyle = '#3a2508';
+  ctx.fillRect(220, 237, 16, 60);
+  ctx.fillRect(564, 237, 16, 60);
+
+  // ── On the desk ──
+  // MacBook (left)
+  ctx.fillStyle = '#555';
+  ctx.fillRect(230, 175, 80, 52);
+  ctx.fillStyle = '#111';
+  ctx.fillRect(233, 178, 74, 42);
+  ctx.fillStyle = '#0a0';
+  ctx.font = '9px monospace';
+  ctx.fillText('vim', 243, 205);
+  ctx.fillStyle = '#0f0';
+  ctx.font = '8px monospace';
+  ctx.fillText('2000 LOC/min', 238, 218);
+
+  // MacBook (right)
+  ctx.fillStyle = '#555';
+  ctx.fillRect(490, 175, 80, 52);
+  ctx.fillStyle = '#111';
+  ctx.fillRect(493, 178, 74, 42);
+  ctx.fillStyle = '#0a0';
+  ctx.font = '9px monospace';
+  ctx.fillText('gstack', 498, 202);
+  ctx.fillStyle = '#33f';
+  ctx.font = '8px monospace';
+  ctx.fillText('DEPLOYING...', 496, 216);
+
+  // Coffee mug
+  ctx.fillStyle = '#888';
+  ctx.fillRect(350, 185, 18, 14);
+  ctx.fillStyle = '#333';
+  ctx.fillRect(352, 187, 14, 10);
+  ctx.fillStyle = '#ff9900';
+  ctx.font = '6px monospace';
+  ctx.fillText('YC', 353, 195);
+
+  // ── GARRY TAN (right side of desk, lobster suit) ──
+  drawGarry(460, 60, garryMood);
+
+  // ── PLAYER (left side) ──
+  drawPlayer(140, 100, playerMood);
+
+  // ── Name plates ──
+  drawNameTag(420, 290, 'GARRY TAN', '#ff6600');
+  drawNameTag(80, 290, 'YOU', '#33aaff');
+}
+
+function drawPoster(x, y, text, color) {
+  ctx.fillStyle = '#0d0d25';
+  ctx.fillRect(x, y, 90, 55);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x, y, 90, 55);
+  ctx.fillStyle = color;
+  ctx.font = 'bold 9px monospace';
+  ctx.fillText(text, x + 8, y + 32);
+}
+
+function drawNameTag(x, y, text, color) {
+  ctx.fillStyle = '#0005';
+  ctx.fillRect(x - 2, y, text.length * 7.5 + 8, 18);
+  ctx.fillStyle = color;
+  ctx.font = '10px monospace';
+  ctx.fillText(text, x + 2, y + 13);
+}
+
+function drawGarry(x, y, mood) {
+  // Lobster body (torso) - bright red
+  px(x+4,  y+18, 22, 30, '#cc2200'); // main torso
+  px(x+2,  y+20, 4, 24, '#aa1a00');  // left shell
+  px(x+26, y+20, 4, 24, '#aa1a00');  // right shell
+
+  // Lobster shell segments on torso
+  px(x+4, y+22, 22, 2, '#dd3300');
+  px(x+4, y+28, 22, 2, '#dd3300');
+  px(x+4, y+34, 22, 2, '#dd3300');
+  px(x+4, y+40, 22, 2, '#dd3300');
+
+  // Lobster tail
+  px(x+6,  y+48, 18, 8, '#cc2200');
+  px(x+4,  y+52, 6, 12, '#aa1a00');
+  px(x+10, y+52, 6, 12, '#bb2000');
+  px(x+16, y+52, 6, 12, '#aa1a00');
+  px(x+22, y+52, 6, 10, '#993300');
+
+  // Lobster claws
+  px(x-8, y+22, 10, 14, '#cc2200'); // left claw base
+  px(x-14, y+18, 10, 8, '#dd3300'); // left upper claw
+  px(x-14, y+28, 10, 6, '#bb1e00'); // left lower claw
+  px(x-16, y+24, 2, 4, '#ff4422');  // left claw gap
+
+  px(x+28, y+22, 10, 14, '#cc2200'); // right claw base
+  px(x+34, y+18, 10, 8, '#dd3300');  // right upper claw
+  px(x+34, y+28, 10, 6, '#bb1e00');  // right lower claw
+  px(x+46, y+24, 2, 4, '#ff4422');   // right claw gap
+
+  // Typing arms (in lobster suit, claw tips on keyboards)
+  px(x-6, y+36, 8, 3, '#cc2200');
+  px(x+28, y+36, 8, 3, '#cc2200');
+
+  // Human head poking out top
+  // Neck
+  px(x+9, y+10, 12, 10, '#e8b88a');
+
+  // Head
+  px(x+7, y-14, 16, 24, '#e8b88a');
+
+  // Hair
+  px(x+7, y-14, 16, 5, '#1a0a00');
+  px(x+5, y-12, 4, 8, '#1a0a00');
+
+  // Garry's glasses
+  px(x+8, y-2, 6, 4, '#111');   // left lens
+  px(x+16, y-2, 6, 4, '#111');  // right lens
+  px(x+14, y-1, 2, 2, '#666');  // bridge
+
+  // Eyes behind glasses
+  px(x+9, y-1, 4, 2, '#222');
+  px(x+17, y-1, 4, 2, '#222');
+
+  // Mouth / expression
+  if (mood === 'normal') {
+    px(x+11, y+5, 8, 2, '#c09070');
+  } else if (mood === 'typing') {
+    px(x+11, y+5, 8, 2, '#c09070');
+    // add strobe light watch visual
+    px(x+34, y+30, 8, 6, '#ffffff');
+    ctx.fillStyle = '#fff';
+    ctx.font = '8px monospace';
+    ctx.fillText('⌚', (x+34)*S, (y+38)*S);
+  } else if (mood === 'shocked') {
+    px(x+11, y+4, 8, 3, '#c09070'); // open mouth
+    px(x+12, y+5, 6, 2, '#222');
+  } else if (mood === 'triumphant') {
+    // big grin
+    px(x+10, y+5, 10, 2, '#ff9966');
+    px(x+10, y+7, 2, 2, '#ff9966');
+    px(x+18, y+7, 2, 2, '#ff9966');
+  } else if (mood === 'excited') {
+    px(x+10, y+4, 10, 4, '#ff9966');
+    px(x+11, y+5, 8, 2, '#eee');
+  }
+
+  // Antennae
+  ctx.strokeStyle = '#cc2200';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo((x+10)*S, (y-14)*S); ctx.lineTo((x+4)*S, (y-26)*S); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo((x+20)*S, (y-14)*S); ctx.lineTo((x+26)*S, (y-26)*S); ctx.stroke();
+
+  // Antennae tips
+  px(x+3, y-28, 3, 3, '#ff4422');
+  px(x+25, y-28, 3, 3, '#ff4422');
+
+  // Apple Watch strobe
+  if (mood === 'typing' || mood === 'triumphant') {
+    const t = Date.now() % 400;
+    const watchColor = t < 200 ? '#33ff66' : '#ff3366';
+    px(x+29, y+30, 7, 5, watchColor);
+  }
+
+  // "YC Partner" badge
+  ctx.fillStyle = '#ff6600';
+  ctx.font = 'bold 8px monospace';
+  ctx.fillText('YC Partner', (x-4)*S, (y+75)*S);
+}
+
+function drawPlayer(x, y, mood) {
+  // Body / blazer
+  px(x+2, y+20, 26, 35, '#2a4a7a');
+  px(x+10, y+20, 10, 35, '#cccccc'); // shirt
+  px(x+2, y+20, 8, 35, '#1a3a6a');   // left lapel
+  px(x+20, y+20, 8, 35, '#1a3a6a');  // right lapel
+
+  // Tie
+  px(x+12, y+22, 6, 28, '#cc3300');
+  px(x+13, y+22, 4, 3, '#881100');
+
+  // Arms
+  px(x-2, y+22, 6, 26, '#2a4a7a');
+  px(x+26, y+22, 6, 26, '#2a4a7a');
+  // Hands
+  px(x-4, y+46, 8, 8, '#e8b88a');
+  px(x+26, y+46, 8, 8, '#e8b88a');
+
+  // Legs
+  px(x+4, y+55, 8, 22, '#1a3060');
+  px(x+18, y+55, 8, 22, '#1a3060');
+  px(x+4, y+75, 8, 5, '#111');   // shoes
+  px(x+18, y+75, 8, 5, '#111');
+
+  // Neck
+  px(x+11, y+12, 8, 10, '#e8b88a');
+
+  // Head
+  px(x+7, y-12, 16, 24, '#e8b88a');
+
+  // Hair
+  px(x+7, y-12, 16, 4, '#4a2800');
+  px(x+5, y-10, 4, 6, '#4a2800');
+  px(x+21, y-10, 4, 4, '#4a2800');
+
+  // Eyes
+  if (mood === 'nervous') {
+    px(x+10, y+2, 3, 3, '#111');
+    px(x+17, y+2, 3, 3, '#111');
+    // sweat drop
+    px(x+24, y-2, 2, 4, '#88aaff');
+  } else if (mood === 'confident') {
+    px(x+10, y+2, 3, 3, '#111');
+    px(x+17, y+2, 3, 3, '#111');
+    // sparkle
+    ctx.fillStyle = '#ffff00';
+    ctx.font = '8px monospace';
+    ctx.fillText('★', (x+22)*S, (y-2)*S);
+  } else if (mood === 'shocked') {
+    // big eyes
+    px(x+9, y+1, 5, 5, '#fff');
+    px(x+16, y+1, 5, 5, '#fff');
+    px(x+10, y+2, 3, 3, '#111');
+    px(x+17, y+2, 3, 3, '#111');
+    // open mouth
+    px(x+11, y+8, 8, 5, '#111');
+  } else if (mood === 'defeated') {
+    // sad eyes
+    px(x+10, y+2, 3, 3, '#111');
+    px(x+17, y+2, 3, 3, '#111');
+    // tears
+    px(x+10, y+6, 2, 6, '#88aaff');
+    px(x+19, y+6, 2, 6, '#88aaff');
+    // frown
+    px(x+10, y+10, 10, 2, '#c09070');
+    px(x+10, y+8, 2, 3, '#c09070');
+    px(x+18, y+8, 2, 3, '#c09070');
+  } else if (mood === 'pitch') {
+    px(x+10, y+2, 3, 3, '#111');
+    px(x+17, y+2, 3, 3, '#111');
+    // talking mouth
+    px(x+11, y+7, 8, 4, '#c09070');
+    px(x+12, y+8, 6, 2, '#111');
+  } else {
+    px(x+10, y+2, 3, 3, '#111');
+    px(x+17, y+2, 3, 3, '#111');
+    px(x+11, y+7, 8, 2, '#c09070');
+  }
+
+  // Holding phone or deck
+  if (mood === 'shocked' || mood === 'defeated') {
+    // Phone with dropping chart
+    px(x+28, y+30, 10, 16, '#222');
+    px(x+29, y+31, 8, 12, '#0a0a2a');
+    ctx.fillStyle = '#ff3333';
+    ctx.font = '7px monospace';
+    ctx.fillText('📉', (x+28)*S, (y+42)*S);
+  }
+
+  // Startup lanyard
+  ctx.strokeStyle = '#ff6600';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo((x+15)*S, (y+12)*S);
+  ctx.lineTo((x+10)*S, (y+32)*S);
+  ctx.lineTo((x+20)*S, (y+32)*S);
+  ctx.stroke();
+  px(x+9, y+32, 12, 8, '#fff');
+  ctx.fillStyle = '#ff6600';
+  ctx.font = '5px monospace';
+  ctx.fillText('FNDME', (x+9)*S, (y+38)*S);
+}
+
+// ─── GAME STATE ───────────────────────────────────────────────────────────────
+let vibes = 0;
+let currentNode = 'start';
+let animFrame = null;
+let typeTimer = null;
+let displayedText = '';
+let targetText = '';
+let typeIndex = 0;
+let garryMood = 'normal';
+let playerMood = 'nervous';
+
+const notifications = [
+  '📱 Garry retweeted your competitor',
+  '⌚ Calendar: 47 more pitches today',
+  '📧 gstack.ai: 1,247 new signups',
+  '💬 Marc Andreessen: "lgtm"',
+  '📱 New commit: vibe-coded entire SaaS',
+  '⌚ Notification: You have 0 notifications',
+  '📧 From: Sam Altman — "same"',
+  '⌚ Stand reminder (ignored)',
+  '📱 PG essay published: "Do Things"',
+  '💬 New Hacker News post about you',
+];
+let notifIndex = 0;
+
+function showNotification() {
+  const el = document.getElementById('notification-popup');
+  document.getElementById('notif-text').textContent = notifications[notifIndex % notifications.length];
+  notifIndex++;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+// Randomly flash notifications
+setInterval(() => {
+  if (Math.random() < 0.4) showNotification();
+}, 3500);
+
+// ─── DIALOGUE TREE ────────────────────────────────────────────────────────────
+// vibesDelta: how much vibes change. Only ONE path leads to win.
+// The winning path requires specific choices that accumulate vibes >= 80.
+
+const tree = {
+  start: {
+    speaker: 'GARRY TAN',
+    text: 'So... what do you guys do?',
+    garry: 'normal',
+    player: 'pitch',
+    vibesDelta: 0,
+    choices: [
+      { text: 'We\'re building an AI-powered B2B SaaS platform that leverages machine learning to synergize enterprise workflows with blockchain-verified cloud infrastructure.', next: 'too_buzzword' },
+      { text: 'We make it 10x cheaper for small restaurants to manage inventory. $8k MRR, growing 20% week over week.', next: 'good_start', vibesDelta: 20 },
+      { text: 'Honestly? We\'re not totally sure yet. We\'re still finding product-market fit in the problem space.', next: 'no_clue' },
+      { text: '[Say nothing. Maintain intense eye contact for 45 seconds.]', next: 'eye_contact' },
+    ]
+  },
+
+  too_buzzword: {
+    speaker: 'GARRY TAN',
+    text: '*furious typing on both keyboards simultaneously* I have deployed an AI that understood your pitch, built a competitor, and already has 400 users. Continue.',
+    garry: 'typing',
+    player: 'nervous',
+    vibesDelta: -10,
+    choices: [
+      { text: 'Okay okay — we help restaurants track inventory. $8k MRR, 20% WoW growth.', next: 'recovery_pitch', vibesDelta: 10 },
+      { text: 'But our blockchain layer is truly differentiated—', next: 'blockchain_trap' },
+      { text: 'I... I can see you\'re already funding us so maybe we skip to the term sheet?', next: 'skip_to_term_sheet' },
+    ]
+  },
+
+  no_clue: {
+    speaker: 'GARRY TAN',
+    text: 'I respect the honesty. Rare. Most founders lie to me AND themselves. What problem keeps your first 10 users up at night?',
+    garry: 'normal',
+    player: 'nervous',
+    vibesDelta: 5,
+    choices: [
+      { text: 'Restaurant owners spending 6 hours a week manually counting inventory when they could be cooking.', next: 'specific_problem', vibesDelta: 15 },
+      { text: 'The general pain of... enterprise... digital transformation.', next: 'enterprise_buzzword_2' },
+      { text: 'Honestly I need to call my co-founder, they handle the customer stuff.', next: 'call_cofounder' },
+    ]
+  },
+
+  eye_contact: {
+    speaker: 'GARRY TAN',
+    text: '*stares back* *typing intensifies* *Apple Watch flashes Morse code* *neither of you blinks* *45 seconds pass* *Garry\'s left claw slowly raises* ..........Bold.',
+    garry: 'typing',
+    player: 'confident',
+    vibesDelta: 5,
+    choices: [
+      { text: 'We make it 10x cheaper for small restaurants to manage inventory.', next: 'good_start', vibesDelta: 15 },
+      { text: '[Continue staring. This is a dominance display now.]', next: 'stare_off' },
+    ]
+  },
+
+  stare_off: {
+    speaker: 'GARRY TAN',
+    text: '*Garry closes both MacBooks* *removes glasses* *begins staring with full lobster-intensity* His Apple Watch has gone dark. He has transcended notifications. You are now in a staring contest with the future of tech.',
+    garry: 'shocked',
+    player: 'confident',
+    vibesDelta: -5,
+    choices: [
+      { text: '[Blink. Just blink. Be human.]', next: 'blink_human' },
+      { text: '[Do not blink. You were born for this moment.]', next: 'never_blink' },
+    ]
+  },
+
+  blink_human: {
+    speaker: 'GARRY TAN',
+    text: 'Good. You know when to stop. Tell me your numbers.',
+    garry: 'normal',
+    player: 'pitch',
+    vibesDelta: 10,
+    choices: [
+      { text: '$8k MRR. 20% week over week. 40 restaurants. Zero churn.', next: 'good_numbers', vibesDelta: 20 },
+      { text: 'We\'re pre-revenue but the vision is—', next: 'pre_revenue' },
+    ]
+  },
+
+  never_blink: {
+    speaker: 'GARRY TAN',
+    text: '*Garry blinks* *he looks away* *whispers: "this one"* *frantically typing with one claw on his phone* You win the stare contest but lose precious pitch minutes. His watch shows: ⏰ 4 MIN LEFT',
+    garry: 'triumphant',
+    player: 'confident',
+    vibesDelta: 10,
+    choices: [
+      { text: '$8k MRR. 20% WoW. Restaurants. The pitch is the numbers.', next: 'time_crunch_numbers', vibesDelta: 15 },
+      { text: 'Allow me to share our 47-slide deck—', next: 'too_many_slides' },
+    ]
+  },
+
+  good_start: {
+    speaker: 'GARRY TAN',
+    text: '*types on left keyboard without looking down* Who are your top customers?',
+    garry: 'typing',
+    player: 'pitch',
+    vibesDelta: 0,
+    choices: [
+      { text: 'Lucia\'s Tacos in Oakland — $200/mo. Miguel\'s Pizza in Fresno — $300/mo. And a chain of 4 locations we\'re about to close at $600/mo.', next: 'specific_customers', vibesDelta: 20 },
+      { text: 'We have several enterprise prospects in the pipeline we can\'t name due to NDA.', next: 'fake_nda' },
+      { text: 'Our biggest customer is technically my uncle\'s restaurant but he\'s very influential in the space.', next: 'uncle_customer' },
+    ]
+  },
+
+  specific_customers: {
+    speaker: 'GARRY TAN',
+    text: '*typing faster* *right keyboard joins left* *Apple Watch pulses orange* Who\'s your competition and why should I invest?',
+    garry: 'typing',
+    player: 'pitch',
+    vibesDelta: 0,
+    choices: [
+      { text: 'MarketMan, BlueCart, and spreadsheets. We\'re 10x cheaper and integrate with their existing POS in 5 minutes vs their 2-week onboarding.', next: 'knows_competition', vibesDelta: 25 },
+      { text: 'There is no competition. We are the only product in this space.', next: 'false_claim' },
+      { text: 'Our real competition is the status quo — doing nothing.', next: 'status_quo_answer' },
+    ]
+  },
+
+  knows_competition: {
+    speaker: 'GARRY TAN',
+    text: '*Garry slows his typing. He\'s reading what he typed. He rotates one MacBook screen toward you. It\'s a spreadsheet. It says "REAL ONES" at the top. Your company name is not on it.* Why aren\'t you on this list yet?',
+    garry: 'normal',
+    player: 'nervous',
+    vibesDelta: 0,
+    choices: [
+      { text: 'Because we\'ve been building, not pitching. This is our first YC interview ever. But we will be.', next: 'first_interview_honest', vibesDelta: 30 },
+      { text: 'I... I didn\'t know there was a list. Can I be on the list? How do I get on the list?', next: 'list_anxiety' },
+      { text: 'Define "real."', next: 'define_real' },
+    ]
+  },
+
+  first_interview_honest: {
+    speaker: 'GARRY TAN',
+    text: '*long pause* *types something with one claw* *both keyboards go silent* *his Apple Watch dims* You know what most founders do? They tell me they\'re already on every list. They name-drop. They\'ve been "in conversations with" everyone.  You just... said the thing.',
+    garry: 'normal',
+    player: 'confident',
+    vibesDelta: 0,
+    choices: [
+      { text: 'I\'d rather be honest and rejected than dishonest and funded.', next: 'the_pivot_moment', vibesDelta: 20 },
+      { text: 'Is that... good? I can\'t tell if that\'s good.', next: 'uncertain_good' },
+    ]
+  },
+
+  the_pivot_moment: {
+    speaker: 'GARRY TAN',
+    text: '*Garry stands up* *lobster suit rustles dramatically* *he walks to the window* *SF skyline. The fog. Oracle Park. A Waymo driving itself in circles.* You know I vibe-coded three companies this morning before 9am.',
+    garry: 'triumphant',
+    player: 'nervous',
+    vibesDelta: 0,
+    choices: [
+      { text: 'I know. We saw your tweet. We still came.', next: 'we_still_came', vibesDelta: 25 },
+      { text: 'Three? I heard it was seven. Was it seven?', next: 'seven_companies' },
+      { text: 'We can out-vibe-code you. Our CTO codes in his sleep. Literally. We have a GitHub commit from 3am last Tuesday.', next: 'vibe_battle_offer' },
+    ]
+  },
+
+  we_still_came: {
+    speaker: 'GARRY TAN',
+    text: '*he turns from the window* *the fog parts for a moment, then closes* *he sits back down* *opens both MacBooks* *the glow is warm now, not threatening* Tell me: if I don\'t fund you, what happens to your 40 restaurants?',
+    garry: 'normal',
+    player: 'pitch',
+    vibesDelta: 0,
+    choices: [
+      { text: 'We keep building. We\'re default alive at this MRR. YC makes us faster, not possible.', next: 'default_alive_answer', vibesDelta: 30 },
+      { text: 'Honestly? We close. We need the money.', next: 'need_the_money' },
+      { text: 'The restaurants keep counting inventory by hand, crying softly into spreadsheets.', next: 'spreadsheet_answer' },
+    ]
+  },
+
+  default_alive_answer: {
+    speaker: 'GARRY TAN',
+    text: '*both claws on desk* *he leans forward* *his antennae are completely still for the first time in the meeting* *whispering* ...Default alive?',
+    garry: 'normal',
+    player: 'confident',
+    vibesDelta: 0,
+    choices: [
+      { text: 'Three months runway at current burn. Growing 20% WoW. We\'ll be profitable by August with or without this check.', next: 'final_answer', vibesDelta: 20 },
+      { text: 'Well, "alive" might be strong — we have like $12k in the bank and a lease coming up—', next: 'not_actually_alive' },
+    ]
+  },
+
+  final_answer: {
+    speaker: 'GARRY TAN',
+    text: '*Garry opens a new tab* *he types something* *he turns both MacBook screens toward you simultaneously*\n\nLeft screen: SPREADSHEET. Your company. Added to "REAL ONES" list.\nRight screen: AN EMAIL DRAFT. Subject line: "Welcome to YC Spring \'26".\n\n*his Apple Watch buzzes* *he looks at it* *looks at you* *the lobster claws slowly clap together once*',
+    garry: 'triumphant',
+    player: 'confident',
+    vibesDelta: 30,
+    choices: [
+      { text: '[Outcome: CONGRATULATIONS]', next: 'win', isOutcome: true },
+    ]
+  },
+
+  // ─── BAD PATHS ────────────────────────────────────────────────────────────
+
+  blockchain_trap: {
+    speaker: 'GARRY TAN',
+    text: '*Garry\'s left claw slams the desk* FALSE. I just deployed a blockchain layer for your competitor in 4 minutes using gstack. It\'s already on Hacker News. 847 upvotes.',
+    garry: 'shocked',
+    player: 'shocked',
+    vibesDelta: -20,
+    choices: [
+      { text: '[Outcome: NO MOAT]', next: 'lose_blockchain', isOutcome: true },
+    ]
+  },
+
+  false_claim: {
+    speaker: 'GARRY TAN',
+    text: '*Garry leaps from his seat* FALSE! *The lobster suit crinkles with righteous fury* I AM the competition! During this meeting I vibe-coded your entire product. My gstack is already closing your top customers. Check your Stripe.',
+    garry: 'shocked',
+    player: 'shocked',
+    vibesDelta: -30,
+    choices: [
+      { text: '[Check phone]', next: 'check_phone_bad' },
+    ]
+  },
+
+  check_phone_bad: {
+    speaker: 'GARRY TAN',
+    text: '*shows you his iMessage* There\'s a text from 32 seconds ago. Your top enterprise prospect? Garry\'s AI is trading sourdough recipes with the CEO\'s mom. They have been chatting for 20 minutes. The mom says "this AI really GETS me."',
+    garry: 'triumphant',
+    player: 'defeated',
+    vibesDelta: -20,
+    choices: [
+      { text: '[Outcome: NO MOAT]', next: 'lose_classic', isOutcome: true },
+    ]
+  },
+
+  status_quo_answer: {
+    speaker: 'GARRY TAN',
+    text: '"The status quo" is not a competitor. It\'s a philosophy. I can\'t build a defensible business against a philosophy. Also I just deployed a philosophy last Tuesday. It has 2000 users.',
+    garry: 'typing',
+    player: 'nervous',
+    vibesDelta: -15,
+    choices: [
+      { text: '[Outcome: PHILOSOPHICAL LOSS]', next: 'lose_philosophy', isOutcome: true },
+    ]
+  },
+
+  fake_nda: {
+    speaker: 'GARRY TAN',
+    text: 'I respect NDAs. *typing* I have just asked my AI to guess your top 5 customers based on your LinkedIn connections. *pause* It\'s correct, isn\'t it.',
+    garry: 'typing',
+    player: 'nervous',
+    vibesDelta: -10,
+    choices: [
+      { text: 'Yes. It\'s correct. The NDA wasn\'t real.', next: 'nda_confession', vibesDelta: -5 },
+      { text: '[Outcome: BUSTED]', next: 'lose_nda', isOutcome: true },
+    ]
+  },
+
+  nda_confession: {
+    speaker: 'GARRY TAN',
+    text: 'I know. I already knew. You get 30 seconds. Actual customers. Go.',
+    garry: 'normal',
+    player: 'nervous',
+    vibesDelta: 5,
+    choices: [
+      { text: 'Lucia\'s Tacos. Miguel\'s Pizza. A 4-location chain we\'re closing this week. Real names. Real money.', next: 'specific_customers', vibesDelta: 15 },
+      { text: '[Freeze. Brain empty. The 30 seconds pass in silence.]', next: 'lose_brain_empty', isOutcome: true },
+    ]
+  },
+
+  uncle_customer: {
+    speaker: 'GARRY TAN',
+    text: '...Is your uncle\'s restaurant good?',
+    garry: 'normal',
+    player: 'nervous',
+    vibesDelta: 0,
+    choices: [
+      { text: 'Objectively? Top 3 tacos in Fresno.', next: 'uncle_recovery', vibesDelta: 5 },
+      { text: 'It\'s fine. He gives me a family discount.', next: 'lose_uncle', isOutcome: true },
+    ]
+  },
+
+  uncle_recovery: {
+    speaker: 'GARRY TAN',
+    text: '*a claw reaches for his phone* I am adding Lucia\'s Tacos to my must-visit list. But I need 10x more Lucias. How?',
+    garry: 'normal',
+    player: 'pitch',
+    vibesDelta: 5,
+    choices: [
+      { text: 'Word of mouth in the restaurant owner community is tight. Every happy customer gives us 3 referrals. We\'re not spending on ads.', next: 'specific_customers', vibesDelta: 15 },
+      { text: '[Outcome: ONE UNCLE IS NOT A BUSINESS]', next: 'lose_uncle', isOutcome: true },
+    ]
+  },
+
+  enterprise_buzzword_2: {
+    speaker: 'GARRY TAN',
+    text: '*stops typing* *stares* I have heard that sentence 400 times today. I have heard it so many times that my AI has started generating it autonomously. It just sent that sentence to your investors.',
+    garry: 'typing',
+    player: 'shocked',
+    vibesDelta: -20,
+    choices: [
+      { text: '[Outcome: BUZZWORD FATALITY]', next: 'lose_buzzword', isOutcome: true },
+    ]
+  },
+
+  call_cofounder: {
+    speaker: 'GARRY TAN',
+    text: '*Garry stares as you call your cofounder* *it goes to voicemail* *the voicemail greeting says "we\'re building the future, leave a message"* *Garry\'s watch flashes red*',
+    garry: 'shocked',
+    player: 'nervous',
+    vibesDelta: -15,
+    choices: [
+      { text: '[Outcome: COFOUNDER ISSUES]', next: 'lose_cofounder', isOutcome: true },
+    ]
+  },
+
+  pre_revenue: {
+    speaker: 'GARRY TAN',
+    text: 'What is the vision?',
+    garry: 'typing',
+    player: 'nervous',
+    vibesDelta: -5,
+    choices: [
+      { text: '[Outcome: PRE-REVENUE PATH TO REJECTION]', next: 'lose_pre_revenue', isOutcome: true },
+    ]
+  },
+
+  list_anxiety: {
+    speaker: 'GARRY TAN',
+    text: 'The list is real. The list matters. You get on the list by doing real things. You seem more concerned about the list than the restaurants.',
+    garry: 'normal',
+    player: 'nervous',
+    vibesDelta: -10,
+    choices: [
+      { text: '[Outcome: LIST ANXIETY TERMINAL]', next: 'lose_list', isOutcome: true },
+    ]
+  },
+
+  define_real: {
+    speaker: 'GARRY TAN',
+    text: '*a full 8 seconds of silence* *the MacBooks keep typing on their own* Real means: customers who would cry if you died. Do you have those?',
+    garry: 'normal',
+    player: 'nervous',
+    vibesDelta: 5,
+    choices: [
+      { text: 'Yes. Lucia texted me last week asking if we were okay because our app was down for 20 minutes.', next: 'first_interview_honest', vibesDelta: 20 },
+      { text: 'Define "cry."', next: 'lose_define_cry', isOutcome: true },
+    ]
+  },
+
+  uncertain_good: {
+    speaker: 'GARRY TAN',
+    text: 'It\'s good. It\'s very good. Most people spend the whole meeting performing confidence. You just... were here. *typing* I\'m writing that down.',
+    garry: 'normal',
+    player: 'confident',
+    vibesDelta: 10,
+    choices: [
+      { text: 'Thank you. We\'d rather spend energy on the product than the pitch.', next: 'the_pivot_moment', vibesDelta: 15 },
+      { text: '[Outcome: TRAIL OFF INTO NOTHING]', next: 'lose_trail_off', isOutcome: true },
+    ]
+  },
+
+  seven_companies: {
+    speaker: 'GARRY TAN',
+    text: 'Eleven. By now it\'s eleven. *glances at phone* Twelve. *His claw is a blur on the keyboard* You were saying?',
+    garry: 'typing',
+    player: 'nervous',
+    vibesDelta: -5,
+    choices: [
+      { text: '[Outcome: DISTRACTED BY GARRY\'S GARRY-NESS]', next: 'lose_distracted', isOutcome: true },
+    ]
+  },
+
+  vibe_battle_offer: {
+    speaker: 'GARRY TAN',
+    text: '*Garry pauses both keyboards* ...You want to vibe-code battle me?',
+    garry: 'shocked',
+    player: 'confident',
+    vibesDelta: 5,
+    choices: [
+      { text: 'No, I want to sell software to restaurants. But I respect the art.', next: 'we_still_came', vibesDelta: 20 },
+      { text: 'Yes. Right now. Best product in 5 minutes gets the investment.', next: 'lose_vibe_battle', isOutcome: true },
+    ]
+  },
+
+  need_the_money: {
+    speaker: 'GARRY TAN',
+    text: 'Honest. I appreciate honest. But I don\'t fund companies that die without me. I fund companies that become more dangerous with me. There\'s a difference.',
+    garry: 'normal',
+    player: 'nervous',
+    vibesDelta: -15,
+    choices: [
+      { text: '[Outcome: DEPENDENT ENERGY]', next: 'lose_dependent', isOutcome: true },
+    ]
+  },
+
+  spreadsheet_answer: {
+    speaker: 'GARRY TAN',
+    text: '*he pauses* *laughs once, a genuine claw-clap* That\'s the first joke anyone has made in this room in 6 days. But I need more than jokes. What actually happens to the business?',
+    garry: 'triumphant',
+    player: 'pitch',
+    vibesDelta: 10,
+    choices: [
+      { text: 'We keep growing. We\'re default alive. YC is jet fuel, not oxygen.', next: 'default_alive_answer', vibesDelta: 20 },
+      { text: '[Outcome: COMEDIC BUT FATAL]', next: 'lose_comedian', isOutcome: true },
+    ]
+  },
+
+  not_actually_alive: {
+    speaker: 'GARRY TAN',
+    text: '$12k and a lease. *typing* I\'ve funded companies with less. I\'ve also watched them die. The question is the 20% WoW. Is that real or is that one good week?',
+    garry: 'typing',
+    player: 'nervous',
+    vibesDelta: -5,
+    choices: [
+      { text: 'Eight consecutive weeks of 20%+. I have the Stripe screenshots. Not the good-looking ones. The real ones.', next: 'final_answer', vibesDelta: 25 },
+      { text: '[Outcome: IT WAS ONE GOOD WEEK]', next: 'lose_one_week', isOutcome: true },
+    ]
+  },
+
+  recovery_pitch: {
+    speaker: 'GARRY TAN',
+    text: 'Better. Who are your top customers?',
+    garry: 'typing',
+    player: 'pitch',
+    vibesDelta: 0,
+    choices: [
+      { text: 'Lucia\'s Tacos — $200/mo. Miguel\'s Pizza — $300/mo. Closing a 4-location chain at $600/mo this week.', next: 'specific_customers', vibesDelta: 20 },
+      { text: 'We are still validating the customer segment through iterative market feedback loops.', next: 'lose_buzzword', isOutcome: true },
+    ]
+  },
+
+  specific_problem: {
+    speaker: 'GARRY TAN',
+    text: '*typing on right keyboard, left claw drumming the desk* That\'s specific. Do you have any customers?',
+    garry: 'typing',
+    player: 'pitch',
+    vibesDelta: 0,
+    choices: [
+      { text: '$8k MRR. 40 restaurants. 20% week-over-week for 8 straight weeks.', next: 'good_start', vibesDelta: 20 },
+      { text: 'We\'re still in beta with friends and family.', next: 'lose_faf', isOutcome: true },
+    ]
+  },
+
+  skip_to_term_sheet: {
+    speaker: 'GARRY TAN',
+    text: 'I have never, in 11 years, skipped to a term sheet. *typing* I just built your competitor. *shows screen* It has the term sheet already filled out. For them.',
+    garry: 'triumphant',
+    player: 'defeated',
+    vibesDelta: -30,
+    choices: [
+      { text: '[Outcome: TOO CLEVER BY HALF]', next: 'lose_clever', isOutcome: true },
+    ]
+  },
+
+  time_crunch_numbers: {
+    speaker: 'GARRY TAN',
+    text: '*checks watch: 3 MIN LEFT* That\'s a good pitch. Who are the customers?',
+    garry: 'normal',
+    player: 'pitch',
+    vibesDelta: 0,
+    choices: [
+      { text: 'Lucia\'s Tacos. Miguel\'s Pizza. 4-location chain closing this week. Names, numbers, real.', next: 'specific_customers', vibesDelta: 20 },
+    ]
+  },
+
+  too_many_slides: {
+    speaker: 'GARRY TAN',
+    text: '*Garry\'s watch buzzes* *the meeting timer is up* *your deck is slide 1 of 47* Slide 1 says "About Us." *he stands* Thank you.',
+    garry: 'normal',
+    player: 'defeated',
+    vibesDelta: -20,
+    choices: [
+      { text: '[Outcome: DEATH BY DECK]', next: 'lose_slides', isOutcome: true },
+    ]
+  },
+
+  good_numbers: {
+    speaker: 'GARRY TAN',
+    text: '*the typing stops* *both keyboards go silent* *first time in 8 minutes* Zero churn.',
+    garry: 'normal',
+    player: 'confident',
+    vibesDelta: 0,
+    choices: [
+      { text: 'Zero. Restaurants cancel their other subscriptions before they cancel ours.', next: 'knows_competition', vibesDelta: 25 },
+      { text: 'Well, "zero" is directionally correct — we had one cancel but that restaurant closed so it almost doesn\'t count.', next: 'lose_zero_asterisk', isOutcome: true },
+    ]
+  },
+
+  // ─── OUTCOME NODES ────────────────────────────────────────────────────────
+  win: { outcome: 'win' },
+  lose_blockchain: { outcome: 'lose', reason: 'You pivoted to blockchain in a restaurant inventory app. Garry vibe-coded your entire stack in 4 minutes. It\'s already on ProductHunt. 847 upvotes.' },
+  lose_classic: { outcome: 'lose', reason: 'You have no moat. Garry\'s AI is now best friends with all of your customers\' moms. Your Stripe shows 100% churn. The CEO\'s mom says the AI "gets her" in a way your product never did.' },
+  lose_philosophy: { outcome: 'lose', reason: 'Garry deployed a philosophy. It is more scalable than your company. The philosophy has series A term sheets from 3 top firms.' },
+  lose_nda: { outcome: 'lose', reason: 'The NDA wasn\'t real. Garry knew. He had already texted your "NDA" customers before you walked in. They said yes to him.' },
+  lose_brain_empty: { outcome: 'lose', reason: 'The 30 seconds passed. Then 60. Then the meeting timer went off. Garry typed something. You still haven\'t said anything.' },
+  lose_uncle: { outcome: 'lose', reason: 'One uncle is not a business. Garry has funded companies with uncles before. It did not go well. He has a rule now.' },
+  lose_buzzword: { outcome: 'lose', reason: 'Your buzzwords triggered Garry\'s AI autoresponder. It sent a rejection on his behalf before the meeting was over. The email was more specific than your pitch.' },
+  lose_cofounder: { outcome: 'lose', reason: 'Your cofounder\'s voicemail played during the meeting. The voicemail greeting was 45 seconds long. It described the vision. Garry typed through all of it.' },
+  lose_pre_revenue: { outcome: 'lose', reason: 'The vision was large. It was also entirely unprovable. Garry has a spreadsheet of 2,000 large visions. Yours is now on it.' },
+  lose_list: { outcome: 'lose', reason: 'You asked about the list 4 more times after the meeting. Garry\'s assistant has your name in a different spreadsheet now.' },
+  lose_define_cry: { outcome: 'lose', reason: 'Garry defined "cry." It took 3 minutes. It was moving. You didn\'t have an answer. The meeting ended during his definition.' },
+  lose_trail_off: { outcome: 'lose', reason: 'The sentence trailed off. You both watched it trail off. Garry finished typing. He typed faster than you talked.' },
+  lose_distracted: { outcome: 'lose', reason: 'You spent 8 minutes asking about Garry\'s companies. He spent 8 minutes building 3 more. The meeting ended. You learned a lot about gstack.' },
+  lose_vibe_battle: { outcome: 'lose', reason: 'You vibe-coded for 5 minutes. Garry vibe-coded for 5 minutes. His product had 400 users before yours had a landing page. He said "nice try" and meant it.' },
+  lose_dependent: { outcome: 'lose', reason: 'Garry funds companies that become dangerous with his money, not companies that survive because of it. You needed oxygen. He sells jet fuel.' },
+  lose_comedian: { outcome: 'lose', reason: 'The joke landed. He laughed. Then the meeting ended. He funded a different company. He still thinks about the joke sometimes.' },
+  lose_one_week: { outcome: 'lose', reason: 'It was one good week. Week 7. The other weeks were 3-4%. Garry\'s AI had already pulled your Stripe data before you walked in.' },
+  lose_clever: { outcome: 'lose', reason: 'You tried to shortcut the meeting. Garry has seen this move 400 times. He made a note: "clever, not builders." The note is in a shared doc with all YC partners.' },
+  lose_slides: { outcome: 'lose', reason: 'Slide 1 was "About Us." Slides 2-12 were the team. Slide 13 was the problem. Slide 47 was "Thank you." You never got there.' },
+  lose_faf: { outcome: 'lose', reason: 'Friends and family beta. Garry\'s AI already beta tested your product, left a 2-star review, and filed a feature request. The feature request was better than your roadmap.' },
+  lose_zero_asterisk: { outcome: 'lose', reason: 'There\'s always an asterisk. Garry collects asterisks. He has a spreadsheet called "asterisks." You are in it. Your churn was 2.3%.' },
+};
+
+// ─── GAME LOGIC ───────────────────────────────────────────────────────────────
+function setVibes(v) {
+  vibes = Math.max(0, Math.min(100, v));
+  const pct = vibes + '%';
+  document.getElementById('yc-meter-fill').style.width = pct;
+  document.getElementById('yc-meter-pct').textContent = vibes + '%';
+}
+
+function typeText(text, cb) {
+  const el = document.getElementById('dialogue-text');
+  const ind = document.getElementById('typing-indicator');
+  el.textContent = '';
+  ind.style.display = 'inline';
+  let i = 0;
+  clearInterval(typeTimer);
+  typeTimer = setInterval(() => {
+    el.textContent += text[i];
+    i++;
+    if (i >= text.length) {
+      clearInterval(typeTimer);
+      ind.style.display = 'none';
+      if (cb) cb();
+    }
+  }, 18);
+}
+
+function renderNode(nodeId) {
+  currentNode = nodeId;
+  const node = tree[nodeId];
+
+  if (node.outcome) {
+    showOutcome(node.outcome, node.reason);
+    return;
+  }
+
+  // Apply vibes
+  if (node.vibesDelta) setVibes(vibes + node.vibesDelta);
+
+  // Update moods
+  garryMood = node.garry || 'normal';
+  playerMood = node.player || 'nervous';
+  drawScene(garryMood, playerMood);
+
+  // Speaker name
+  document.getElementById('speaker-name').textContent = node.speaker || 'GARRY TAN';
+
+  // Type dialogue
+  typeText(node.text, () => {
+    // Render choices
+    const container = document.getElementById('choices-container');
+    container.innerHTML = '';
+    (node.choices || []).forEach(choice => {
+      const btn = document.createElement('button');
+      btn.className = 'choice-btn';
+      btn.textContent = choice.text;
+      btn.addEventListener('click', () => {
+        const nextId = choice.next;
+        const nextNode = tree[nextId];
+        // Apply choice-level vibes delta
+        if (choice.vibesDelta) setVibes(vibes + choice.vibesDelta);
+        // Check if outcome
+        if (choice.isOutcome || (nextNode && nextNode.outcome)) {
+          renderNode(nextId);
+        } else {
+          renderNode(nextId);
+        }
+      });
+      container.appendChild(btn);
+    });
+  });
+}
+
+function showOutcome(type, reason) {
+  // Clear dialogue
+  document.getElementById('dialogue-text').textContent = '';
+  document.getElementById('speaker-name').textContent = '';
+  document.getElementById('choices-container').innerHTML = '';
+  document.getElementById('typing-indicator').style.display = 'none';
+
+  if (type === 'win') {
+    garryMood = 'triumphant';
+    playerMood = 'confident';
+    setVibes(100);
+    drawScene(garryMood, playerMood);
+
+    document.getElementById('dialogue-text').innerHTML =
+      '<span style="color:#33ff66;font-size:16px;font-weight:bold;">★ CONGRATULATIONS ★</span><br><br>' +
+      'Garry\'s lobster claws clap together three times. His Apple Watch plays a tiny fanfare. Both MacBooks simultaneously open a single tab: your company\'s YC application, marked ACCEPTED.<br><br>' +
+      'He reaches across the desk with one claw. You shake it. It\'s firmer than you expected. Warmer too.<br><br>' +
+      '<span style="color:#ff9933">"Don\'t make me regret this. And get Lucia\'s Tacos to 500 locations."</span><br><br>' +
+      '<em style="color:#666">You have been accepted to Y Combinator Spring \'26. The lobster suit was never explained.</em>';
+
+    const btn = document.createElement('button');
+    btn.id = 'restart-btn';
+    btn.textContent = '▶ PLAY AGAIN';
+    btn.addEventListener('click', resetGame);
+    document.getElementById('choices-container').appendChild(btn);
+
+  } else {
+    garryMood = 'typing';
+    playerMood = 'defeated';
+    setVibes(Math.max(0, vibes - 20));
+    drawScene(garryMood, playerMood);
+
+    document.getElementById('dialogue-text').innerHTML =
+      '<span style="color:#ff3333;font-size:16px;font-weight:bold;">✗ NOT ADMITTED</span><br><br>' +
+      (reason || 'You have no moat.') + '<br><br>' +
+      '<em style="color:#666">Thank you for playing. Garry is already building your replacement.</em>';
+
+    const btn = document.createElement('button');
+    btn.id = 'restart-btn';
+    btn.textContent = '▶ TRY AGAIN';
+    btn.addEventListener('click', resetGame);
+    document.getElementById('choices-container').appendChild(btn);
+  }
+}
+
+function resetGame() {
+  vibes = 0;
+  setVibes(0);
+  garryMood = 'normal';
+  playerMood = 'nervous';
+  renderNode('start');
+}
+
+// ─── ANIMATION LOOP (for watch strobe) ───────────────────────────────────────
+function animLoop() {
+  if (garryMood === 'typing' || garryMood === 'triumphant') {
+    drawScene(garryMood, playerMood);
+  }
+  animFrame = requestAnimationFrame(animLoop);
+}
+
+// ─── START ────────────────────────────────────────────────────────────────────
+drawScene('normal', 'nervous');
+renderNode('start');
+animLoop();
+</script>
+</body>
+</html>
