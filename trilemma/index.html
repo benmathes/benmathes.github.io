@@ -248,6 +248,27 @@
                         gets: 'A bit of each quality, but nothing exceptional.',
                         loses: 'Excellence in any dimension. Jack of all trades, master of none.',
                         examples: ['Most internal projects', 'Typical corporate software', 'Balanced but unremarkable work']
+                    },
+                    a: {
+                        name: 'Reckless Speed',
+                        tagline: 'Fast but expensive and shoddy',
+                        gets: 'Extreme speed. You ship immediately, damn the consequences.',
+                        loses: 'Both quality and budget. You pay top dollar for rushed, buggy work.',
+                        examples: ['Emergency hotfixes', 'Panic-mode crunch time', 'Last-minute trade show demos']
+                    },
+                    b: {
+                        name: 'Bargain Basement',
+                        tagline: 'Cheap but slow and low quality',
+                        gets: 'Minimal cost. Almost free.',
+                        loses: 'Both speed and quality. You get what you pay for, eventually.',
+                        examples: ['Unpaid interns', 'Free tier everything', '"My nephew can build a website"']
+                    },
+                    c: {
+                        name: 'Perfectionist\'s Trap',
+                        tagline: 'Good but slow and expensive',
+                        gets: 'Excellence. The work is impeccable.',
+                        loses: 'Both time and money. Gold-plating everything.',
+                        examples: ['Overengineered systems', 'Scope-creep projects', 'Artisanal hand-crafted everything']
                     }
                 }
             },
@@ -290,6 +311,27 @@
                         gets: 'Maximum capability: reads your data, processes any content, communicates freely.',
                         loses: 'Security. Prompt injection attacks can now steal and exfiltrate your private data.',
                         examples: ['Full-featured email agents', 'Autonomous web agents with data access', 'MCP servers mixing tools']
+                    },
+                    a: {
+                        name: 'Data Vault',
+                        tagline: 'Locked down and isolated',
+                        gets: 'Access to private data, but with no external exposure vectors.',
+                        loses: 'Both communication and untrusted input processing. A completely isolated data store.',
+                        examples: ['Encrypted local backup', 'Air-gapped data archive', 'Offline database']
+                    },
+                    b: {
+                        name: 'Broadcast Tower',
+                        tagline: 'Can talk but knows nothing',
+                        gets: 'Communication capability, but no private data and no external content processing.',
+                        loses: 'Access to private data and ability to process untrusted input. Just a message relay.',
+                        examples: ['Simple notification service', 'Static email forwarder', 'Alert webhook']
+                    },
+                    c: {
+                        name: 'Input Sink',
+                        tagline: 'Processes content in a vacuum',
+                        gets: 'Can process untrusted input, but cannot access private data or communicate results.',
+                        loses: 'Both private data access and communication. Processes content but can\'t do anything with it.',
+                        examples: ['Sandboxed content validator', 'Isolated spam filter', 'Offline document scanner']
                     }
                 }
             },
@@ -332,6 +374,27 @@
                         gets: 'Nothing practical - this is mathematically proven impossible in distributed systems.',
                         loses: 'The CAP theorem proves you cannot have all three guarantees simultaneously.',
                         examples: ['Does not exist', 'Marketing claims aside, no system achieves this']
+                    },
+                    a: {
+                        name: 'Consistent but Fragile',
+                        tagline: 'Correct data, nothing else guaranteed',
+                        gets: 'Strong consistency. Data is always correct when you can read it.',
+                        loses: 'Both availability and partition tolerance. System may be down or fail on network issues.',
+                        examples: ['Single-node strict mode databases', 'Pessimistic locking systems']
+                    },
+                    b: {
+                        name: 'Always On, Always Wrong',
+                        tagline: 'Responds but data may be stale',
+                        gets: 'The system always responds to requests.',
+                        loses: 'Both consistency and partition tolerance. You get answers, but they may be wrong.',
+                        examples: ['Stale caches with no invalidation', 'Optimistic systems without conflict resolution']
+                    },
+                    c: {
+                        name: 'Survives but Struggles',
+                        tagline: 'Handles failures, guarantees little',
+                        gets: 'The system keeps running through network failures.',
+                        loses: 'Both consistency and availability guarantees. It survives but may not respond or return correct data.',
+                        examples: ['Minimal gossip protocols', 'Best-effort distributed systems']
                     }
                 }
             },
@@ -374,6 +437,27 @@
                         gets: 'Temporarily, countries attempt all three...',
                         loses: 'Stability. Speculators will attack. See: 1997 Asian crisis, 1992 ERM crisis.',
                         examples: ['Pre-crisis Thailand (1997)', 'UK before Black Wednesday (1992)']
+                    },
+                    a: {
+                        name: 'Isolated Peg',
+                        tagline: 'Stable currency, nothing else',
+                        gets: 'Exchange rate stability, but at maximum cost.',
+                        loses: 'Both free capital movement and monetary independence. Maximum restrictions for minimal flexibility.',
+                        examples: ['Heavily sanctioned economies with currency pegs', 'Wartime currency controls']
+                    },
+                    b: {
+                        name: 'Financial Wild West',
+                        tagline: 'Money moves freely, no controls',
+                        gets: 'Unrestricted capital flows.',
+                        loses: 'Both exchange rate stability and monetary independence. Markets determine everything.',
+                        examples: ['Dollarized economies without central bank', 'Unregulated financial zones']
+                    },
+                    c: {
+                        name: 'Fortress Economy',
+                        tagline: 'Full control, fully isolated',
+                        gets: 'Complete monetary policy independence.',
+                        loses: 'Both exchange rate stability and free capital. Closed economy with volatile currency.',
+                        examples: ['Autarkic economies', 'North Korea', 'Extreme isolationist monetary policy']
                     }
                 }
             },
@@ -416,6 +500,27 @@
                         gets: 'Nothing sustainable. The position is logically impossible.',
                         loses: 'One of the three must give way. No one can be honest, intelligent, AND a true believer in a system of lies.',
                         examples: ['Brief moments before disillusionment', 'The path to becoming a dissident']
+                    },
+                    a: {
+                        name: 'The Fool',
+                        tagline: 'Honest but naive and disloyal',
+                        gets: 'Truthfulness, but without intelligence to understand or loyalty to the system.',
+                        loses: 'Both intelligence and loyalty. Speaks truth accidentally, not from insight.',
+                        examples: ['The village idiot who blurts out truth', 'Children who say what they see', 'Useful idiots for the opposition']
+                    },
+                    b: {
+                        name: 'The Zealot',
+                        tagline: 'Loyal but dishonest and dim',
+                        gets: 'Absolute devotion to the regime.',
+                        loses: 'Both honesty and intelligence. Blind faith without understanding or truthfulness.',
+                        examples: ['Fanatical enforcers', 'Cult followers', 'Those who report neighbors without understanding why']
+                    },
+                    c: {
+                        name: 'The Observer',
+                        tagline: 'Smart but silent and uncommitted',
+                        gets: 'Clear understanding of the system.',
+                        loses: 'Both honesty and loyalty. Sees everything, commits to nothing—neither supporting nor opposing.',
+                        examples: ['Detached academics', 'Cynical observers', 'Those who understand but refuse to engage']
                     }
                 }
             },
@@ -458,6 +563,27 @@
                         gets: 'Excellent excuses. Infinite buck-passing. An impenetrable fog of complexity where nothing is anyone\'s fault and nothing ever changes.',
                         loses: 'Any hope of accountability, reform, or useful output. The organization survives for decades while producing nothing of value.',
                         examples: ['Failed states', 'Worst corporate scandals', 'Organizations that outlive their purpose', 'Multi-decade infrastructure projects']
+                    },
+                    a: {
+                        name: 'Pure Evil',
+                        tagline: 'Competent, unbureaucratic villain',
+                        gets: 'Efficient malice. Bad intent executed skillfully outside the system.',
+                        loses: 'Any pretense of legitimacy or institutional cover. Naked self-interest, easily identified.',
+                        examples: ['Con artists', 'Lone-wolf fraudsters', 'Competent criminals operating outside institutions']
+                    },
+                    b: {
+                        name: 'Pure Stupidity',
+                        tagline: 'Well-meaning, unencumbered idiocy',
+                        gets: 'No malicious intent and no bureaucratic cover. Just honest inability.',
+                        loses: 'Both competence and systemic protection. Failure is obvious and usually harmless.',
+                        examples: ['Harmless mistakes', 'The Peter Principle in action', 'Well-meaning volunteers in over their heads']
+                    },
+                    c: {
+                        name: 'Pure Process',
+                        tagline: 'The system works as designed (that\'s the problem)',
+                        gets: 'Order, predictability, and documented procedures. Nobody is malicious or incompetent.',
+                        loses: 'Outcomes. The process becomes the product. Everything runs smoothly and nothing gets done.',
+                        examples: ['Committee meetings about meetings', 'Perfectly followed procedures that solve nothing', 'ISO-certified irrelevance']
                     }
                 }
             },
@@ -500,6 +626,27 @@
                         gets: 'Flexibility, but no clear strategy. You keep all doors open.',
                         loses: 'Effectiveness. Loyalty undermines exit credibility. Exit threat undermines voice authenticity. You seem uncommitted to everything.',
                         examples: ['The perpetually job-searching employee', 'Customers who complain but never leave', 'The ambivalent organization member']
+                    },
+                    a: {
+                        name: 'The Deserter',
+                        tagline: 'Leaves without loyalty or complaint',
+                        gets: 'Freedom. Complete detachment from the organization.',
+                        loses: 'Both voice and loyalty. No attempt to fix things, no attachment. Just gone.',
+                        examples: ['Ghosting employers', 'Silent customer churn', 'Emigration without political engagement']
+                    },
+                    b: {
+                        name: 'The Doormat',
+                        tagline: 'Stays silent and stays put',
+                        gets: 'Stability and belonging. No conflict.',
+                        loses: 'Both voice and exit option. Endures decline without speaking up or leaving.',
+                        examples: ['Lifers in declining organizations', 'Abused brand loyalty', '"This is fine" meme personified']
+                    },
+                    c: {
+                        name: 'The Gadfly',
+                        tagline: 'Complains but won\'t leave or commit',
+                        gets: 'The satisfaction of being heard (or at least of speaking).',
+                        loses: 'Both loyalty and exit. Constant criticism without commitment or follow-through.',
+                        examples: ['Perpetual complainers', 'Online reviewers who keep buying', 'Armchair critics']
                     }
                 }
             }
@@ -649,22 +796,23 @@
             document.getElementById('bar-b-pct').textContent = `${Math.round(weights.b * 100)}%`;
             document.getElementById('bar-c-pct').textContent = `${Math.round(weights.c * 100)}%`;
 
-            // Determine combination
-            const sorted = Object.entries(weights).sort((a, b) => b[1] - a[1]);
-            const [first, second, third] = sorted;
+            // Determine combination based on 0.25 threshold matching the drawn dashed lines
+            const above = ['a', 'b', 'c'].filter(v => weights[v] >= 0.25);
+            const below = ['a', 'b', 'c'].filter(v => weights[v] < 0.25);
 
             let combo, sacrificed;
-            if (first[1] > 0.4 && second[1] > 0.4 && third[1] < 0.25) {
-                // Clear two-way combination
-                combo = [first[0], second[0]].sort().join('');
-                sacrificed = third[0];
-            } else if (third[1] > 0.25) {
-                // Balanced / danger zone
+            if (above.length === 3) {
+                // Inside inner triangle - balanced
                 combo = 'balanced';
                 sacrificed = null;
+            } else if (above.length === 2) {
+                // Between inner triangle and an edge - two-vertex combo
+                combo = above.sort().join('');
+                sacrificed = below[0];
             } else {
-                combo = [first[0], second[0]].sort().join('');
-                sacrificed = third[0];
+                // In a corner - single vertex dominant
+                combo = above[0];
+                sacrificed = null;
             }
 
             const comboData = tri.combinations[combo];
@@ -672,13 +820,20 @@
             // Update sacrifice badge
             const sacrificeBadge = document.getElementById('sacrifice-badge');
             if (sacrificed) {
+                // Two-vertex combo: sacrificing one thing
                 sacrificeBadge.style.display = 'block';
                 document.getElementById('sacrifice-name').textContent = tri.vertices[sacrificed].name;
+            } else if (combo === 'balanced') {
+                sacrificeBadge.style.display = 'block';
+                document.getElementById('sacrifice-name').textContent = currentTrilemma === 'lethal-trifecta' ? 'SECURITY!' : 'Focus';
+            } else if (combo.length === 1) {
+                // Single vertex: sacrificing two things
+                const sacrificedTwo = ['a', 'b', 'c'].filter(v => v !== combo);
+                sacrificeBadge.style.display = 'block';
+                document.getElementById('sacrifice-name').textContent =
+                    `${tri.vertices[sacrificedTwo[0]].name} & ${tri.vertices[sacrificedTwo[1]].name}`;
             } else {
-                sacrificeBadge.style.display = combo === 'balanced' ? 'block' : 'none';
-                if (combo === 'balanced') {
-                    document.getElementById('sacrifice-name').textContent = currentTrilemma === 'lethal-trifecta' ? 'SECURITY!' : 'Focus';
-                }
+                sacrificeBadge.style.display = 'none';
             }
 
             // Update combination display
@@ -751,7 +906,7 @@
 
             // Update combo cards
             const cardsHtml = Object.entries(tri.combinations)
-                .filter(([k]) => k !== 'balanced')
+                .filter(([k]) => k.length === 2)
                 .map(([key, combo]) => {
                     const [v1, v2] = key.split('');
                     const sacrifices = ['a', 'b', 'c'].find(v => v !== v1 && v !== v2);
