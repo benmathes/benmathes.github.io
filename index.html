@@ -216,6 +216,30 @@
 
         .projects li {
             border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            padding: 14px 0;
+            transition: padding-left 0.2s ease;
+            position: relative;
+        }
+
+        .projects li::before {
+            content: '\2192';
+            position: absolute;
+            left: -20px;
+            opacity: 0;
+            transition: left 0.2s ease, opacity 0.2s ease;
+            color: var(--accent);
+        }
+
+        .projects li:hover {
+            padding-left: 24px;
+        }
+
+        .projects li:hover::before {
+            left: 0;
+            opacity: 1;
         }
 
         .projects li.hidden {
@@ -225,37 +249,20 @@
         .item-tags {
             display: flex;
             gap: 6px;
-            padding-bottom: 10px;
+            flex-shrink: 0;
+            margin-left: auto;
         }
 
         .projects a {
-            display: block;
-            padding: 14px 0 4px;
             color: var(--text);
             text-decoration: none;
             font-size: 1.125rem;
             font-weight: 400;
-            position: relative;
-            transition: padding-left 0.2s ease, color 0.2s ease;
+            transition: color 0.2s ease;
         }
 
-        .projects a::before {
-            content: '\2192';
-            position: absolute;
-            left: -20px;
-            opacity: 0;
-            transition: left 0.2s ease, opacity 0.2s ease;
+        .projects li:hover a {
             color: var(--accent);
-        }
-
-        .projects a:hover {
-            padding-left: 24px;
-            color: var(--accent);
-        }
-
-        .projects a:hover::before {
-            left: 0;
-            opacity: 1;
         }
 
         .tag {
