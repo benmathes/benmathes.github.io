@@ -120,18 +120,18 @@
             min-width: 280px;
         }
 
-        .headshot {
-            width: 120px;
-            height: 120px;
+        .avatar-container {
+            width: 140px;
+            height: 140px;
             border-radius: 8px;
-            object-fit: cover;
-            filter: grayscale(20%);
-            transition: filter 0.3s ease, transform 0.3s ease;
+            overflow: hidden;
+            flex-shrink: 0;
+            cursor: default;
         }
 
-        .headshot:hover {
-            filter: grayscale(0%);
-            transform: rotate(2deg);
+        .avatar-container svg {
+            width: 100%;
+            height: 100%;
         }
 
         /* Section styling */
@@ -329,7 +329,101 @@
                     <h1><span class="wave">Hi</span>, I'm Ben</h1>
                     <p class="tagline">I make small, one-off things here. Sometimes they're useful.</p>
                 </div>
-                <img src="/images/ben.jpg" alt="Ben Mathes" class="headshot">
+                <div class="avatar-container" id="avatar">
+                    <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Background -->
+                        <rect width="200" height="200" rx="12" fill="#a8d8ea"/>
+
+                        <!-- Doodle decorations -->
+                        <g fill="none" stroke="#2a2a2a" stroke-width="1.5" stroke-linecap="round" opacity="0.7">
+                            <!-- Speech bubble top-left -->
+                            <path d="M25,30 Q20,20 30,18 Q40,16 42,24 Q44,30 38,33 L34,38 L33,32 Q28,34 25,30Z"/>
+                            <!-- Stars -->
+                            <path d="M165,20 l2,5 5,1 -4,3 1,5 -4,-3 -5,2 2,-5 -3,-4 5,0Z"/>
+                            <path d="M50,15 l1,3 3,1 -2,2 0,3 -2,-2 -3,1 1,-3 -2,-2 3,0Z"/>
+                            <!-- Arrow right -->
+                            <path d="M170,55 Q175,50 180,55 M175,50 l5,5 M175,50 l5,-3"/>
+                            <!-- Sparkle dots -->
+                            <circle cx="155" cy="35" r="1.5" fill="#2a2a2a"/>
+                            <circle cx="40" cy="42" r="1" fill="#2a2a2a"/>
+                            <!-- Thought bubble bottom-right -->
+                            <circle cx="175" cy="75" r="4"/>
+                            <circle cx="168" cy="82" r="2.5"/>
+                            <circle cx="163" cy="87" r="1.5"/>
+                            <!-- Arrow left -->
+                            <path d="M15,70 Q10,65 18,60"/>
+                            <path d="M18,60 l-5,1 M18,60 l-1,5"/>
+                            <!-- More stars -->
+                            <path d="M180,90 l1,3 3,0 -2,2 1,3 -3,-1 -2,2 0,-3 -3,-1 3,-1Z"/>
+                        </g>
+
+                        <!-- Shirt/body at bottom -->
+                        <path d="M55,175 Q60,158 100,155 Q140,158 145,175 L145,200 L55,200Z" fill="#9b8fc2"/>
+                        <path d="M55,175 Q60,158 100,155 Q140,158 145,175" fill="none" stroke="#8577ad" stroke-width="1"/>
+                        <!-- Collar -->
+                        <path d="M88,157 L96,168 L104,157" fill="none" stroke="#8577ad" stroke-width="1.5"/>
+
+                        <!-- Neck -->
+                        <rect x="88" y="145" width="24" height="16" rx="4" fill="#e8b89a"/>
+
+                        <!-- Face shape -->
+                        <ellipse cx="100" cy="115" rx="38" ry="42" fill="#f0c8a0"/>
+                        <!-- Jaw/chin slightly more defined -->
+                        <path d="M68,120 Q72,155 100,160 Q128,155 132,120" fill="#f0c8a0"/>
+
+                        <!-- Beard -->
+                        <path d="M72,125 Q74,150 100,158 Q126,150 128,125 Q125,140 100,150 Q75,140 72,125Z" fill="#6b4c3a"/>
+                        <!-- Beard texture -->
+                        <path d="M80,135 Q90,148 100,150 Q110,148 120,135" fill="none" stroke="#5a3d2e" stroke-width="0.5" opacity="0.5"/>
+                        <path d="M85,140 Q95,150 100,152 Q105,150 115,140" fill="none" stroke="#5a3d2e" stroke-width="0.5" opacity="0.5"/>
+                        <!-- Mustache -->
+                        <path d="M85,125 Q92,130 100,127 Q108,130 115,125 Q108,133 100,131 Q92,133 85,125Z" fill="#6b4c3a"/>
+
+                        <!-- Mouth/smile visible through beard -->
+                        <path d="M90,130 Q95,136 100,136 Q105,136 110,130" fill="#d4756b" stroke="#c0615a" stroke-width="0.5"/>
+                        <!-- Lower lip hint -->
+                        <path d="M92,134 Q100,139 108,134" fill="none" stroke="#c0615a" stroke-width="0.8"/>
+
+                        <!-- Nose -->
+                        <path d="M100,108 Q96,115 98,120 Q100,122 102,120 Q104,115 100,108" fill="none" stroke="#c49a78" stroke-width="1.5" stroke-linecap="round"/>
+
+                        <!-- Eyes - white sclera (large cartoon eyes) -->
+                        <ellipse cx="82" cy="103" rx="13" ry="14" fill="white" stroke="#333" stroke-width="1.5"/>
+                        <ellipse cx="118" cy="103" rx="13" ry="14" fill="white" stroke="#333" stroke-width="1.5"/>
+
+                        <!-- Irises (these move) -->
+                        <circle id="iris-left" cx="84" cy="103" r="7" fill="#8B6914"/>
+                        <circle id="iris-right" cx="120" cy="103" r="7" fill="#8B6914"/>
+
+                        <!-- Pupils (these move with irises) -->
+                        <circle id="pupil-left" cx="85" cy="102" r="3.5" fill="#1a1a1a"/>
+                        <circle id="pupil-right" cx="121" cy="102" r="3.5" fill="#1a1a1a"/>
+
+                        <!-- Eye shine -->
+                        <circle id="shine-left" cx="87" cy="99" r="2" fill="white" opacity="0.8"/>
+                        <circle id="shine-right" cx="123" cy="99" r="2" fill="white" opacity="0.8"/>
+
+                        <!-- Eyebrows -->
+                        <path d="M68,90 Q76,82 96,88" fill="none" stroke="#5a3d2e" stroke-width="2.5" stroke-linecap="round"/>
+                        <path d="M104,88 Q124,82 132,90" fill="none" stroke="#5a3d2e" stroke-width="2.5" stroke-linecap="round"/>
+
+                        <!-- Hair -->
+                        <g fill="#5a3520">
+                            <!-- Top hair mass -->
+                            <path d="M55,95 Q50,60 65,48 Q80,38 100,35 Q120,38 135,48 Q150,60 145,95 Q140,75 130,65 Q115,55 100,53 Q85,55 70,65 Q60,75 55,95Z"/>
+                            <!-- Left side hair flowing down -->
+                            <path d="M55,95 Q50,85 48,100 Q46,115 50,130 Q52,135 58,128 Q60,115 58,100 Q57,95 55,95Z"/>
+                            <!-- Right side hair flowing down -->
+                            <path d="M145,95 Q150,85 152,100 Q154,115 150,130 Q148,135 142,128 Q140,115 142,100 Q143,95 145,95Z"/>
+                            <!-- Hair wave details -->
+                            <path d="M70,50 Q80,42 95,40 Q85,48 78,55" fill="#4d2e1a"/>
+                            <path d="M105,40 Q120,42 130,50 Q122,55 115,48" fill="#4d2e1a"/>
+                            <!-- Top wavy strands -->
+                            <path d="M75,45 Q82,36 95,34 Q88,30 80,33 Q70,38 75,45Z" fill="#4d2e1a"/>
+                            <path d="M125,45 Q118,36 105,34 Q112,30 120,33 Q130,38 125,45Z" fill="#4d2e1a"/>
+                        </g>
+                    </svg>
+                </div>
             </div>
         </header>
 
@@ -492,6 +586,55 @@
                 const visible = itemTags.some(t => activeTags.has(t));
                 li.classList.toggle('hidden', !visible);
             });
+        }
+
+        // Eye-following cursor logic
+        const avatar = document.getElementById('avatar');
+        const svg = avatar.querySelector('svg');
+        const irisLeft = document.getElementById('iris-left');
+        const irisRight = document.getElementById('iris-right');
+        const pupilLeft = document.getElementById('pupil-left');
+        const pupilRight = document.getElementById('pupil-right');
+        const shineLeft = document.getElementById('shine-left');
+        const shineRight = document.getElementById('shine-right');
+
+        const eyeCenters = {
+            left: { cx: 82, cy: 103 },
+            right: { cx: 118, cy: 103 }
+        };
+        const maxIrisMove = 5;
+        const maxPupilMove = 5.5;
+        const maxShineMove = 4;
+
+        document.addEventListener('mousemove', (e) => {
+            const rect = svg.getBoundingClientRect();
+            const svgW = rect.width;
+            const svgH = rect.height;
+            // Convert mouse position to SVG coordinate space (viewBox 0 0 200 200)
+            const mouseX = ((e.clientX - rect.left) / svgW) * 200;
+            const mouseY = ((e.clientY - rect.top) / svgH) * 200;
+
+            moveEye(mouseX, mouseY, eyeCenters.left, irisLeft, pupilLeft, shineLeft);
+            moveEye(mouseX, mouseY, eyeCenters.right, irisRight, pupilRight, shineRight);
+        });
+
+        function moveEye(mx, my, center, iris, pupil, shine) {
+            const dx = mx - center.cx;
+            const dy = my - center.cy;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const angle = Math.atan2(dy, dx);
+
+            // Scale movement — closer = less movement, further = more (capped)
+            const irisD = Math.min(dist / 20, 1) * maxIrisMove;
+            const pupilD = Math.min(dist / 18, 1) * maxPupilMove;
+            const shineD = Math.min(dist / 22, 1) * maxShineMove;
+
+            iris.setAttribute('cx', center.cx + Math.cos(angle) * irisD + 2);
+            iris.setAttribute('cy', center.cy + Math.sin(angle) * irisD);
+            pupil.setAttribute('cx', center.cx + Math.cos(angle) * pupilD + 3);
+            pupil.setAttribute('cy', center.cy + Math.sin(angle) * pupilD - 1);
+            shine.setAttribute('cx', center.cx + Math.cos(angle) * shineD + 5);
+            shine.setAttribute('cy', center.cy + Math.sin(angle) * shineD - 4);
         }
     </script>
 </body>
