@@ -1284,7 +1284,7 @@ const tree = {
   lose_zero_asterisk: { outcome: 'lose', reason: 'There\'s always an asterisk. Garry collects asterisks. He has a spreadsheet called "asterisks." You are in it. Your churn was 2.3%.' },
 };
 
-// ─── SCENARIO TREES ───────────────────────────────────────────────────────────
+// ─── SCENARIO TREES (expanded) ────────────────────────────────────────────────
 const scenarioTrees = {
 
   notion: {
@@ -1292,63 +1292,113 @@ const scenarioTrees = {
       speaker: 'GARRY TAN', text: 'So... what do you do?',
       garry: 'normal', player: 'pitch', vibesDelta: 0,
       choices: [
-        { text: 'We\'re building a better Microsoft Word.', next: 'notion_too_simple', vibesDelta: -5 },
-        { text: 'It\'s a doc. But it\'s also a database. But it\'s also a wiki. But it can replace Jira AND Confluence AND Google Docs.', next: 'notion_explain', vibesDelta: 10 },
-        { text: 'Productivity software.', next: 'notion_too_vague' },
-        { text: 'We nearly went bankrupt twice. We have 500 paying users who would genuinely cry if we shut down.', next: 'notion_honest', vibesDelta: 15 },
+        { text: 'We\'re building a better Word.', next: 'notion_word_trap', vibesDelta: -5 },
+        { text: 'It\'s a doc that\'s also a database. Replace your wiki, your project tracker, and your CRM — all in one tool.', next: 'notion_explain', vibesDelta: 15 },
+        { text: 'Productivity software for teams.', next: 'notion_vague' },
+        { text: 'We nearly went bankrupt twice. 500 users who would cry if we shut down. And we rebuilt the entire product from scratch in Kyoto.', next: 'notion_kyoto_lead', vibesDelta: 20 },
       ]
     },
-    notion_too_simple: {
-      speaker: 'GARRY TAN', text: '*both keyboards pause* I just vibe-coded a better Microsoft Word in 11 minutes. It\'s called WordMax. 340 users. Dark mode. Continue.',
+    notion_word_trap: {
+      speaker: 'GARRY TAN', text: '*both keyboards pause* I deployed WordMax eleven minutes ago. 340 users. Dark mode. What specifically do you do?',
       garry: 'typing', player: 'nervous', vibesDelta: -10,
       choices: [
-        { text: 'No — every block is a database. You can build your entire company wiki, CRM, and project tracker in one tool.', next: 'notion_explain', vibesDelta: 15 },
-        { text: '[Outcome: WORD-SHAPED HOLE]', next: 'lose_notion_word', isOutcome: true },
+        { text: 'Not Word — every block is a database. Build your entire company knowledge base in a single tool. No more 5 different apps.', next: 'notion_explain', vibesDelta: 15 },
+        { text: 'We have better templates than Word.', next: 'lose_notion_templates', isOutcome: true },
+        { text: 'Our collaboration features are significantly stronger.', next: 'lose_notion_collab', isOutcome: true },
+        { text: 'We have a dark mode too, actually.', next: 'lose_notion_darkmode', isOutcome: true },
       ]
     },
-    notion_too_vague: {
-      speaker: 'GARRY TAN', text: '"Productivity software." I have funded seventeen productivity software companies. Four are now the same company. What makes yours the one that doesn\'t get absorbed?',
+    notion_vague: {
+      speaker: 'GARRY TAN', text: '"Productivity software for teams." I have funded seventeen of those. Four are now the same company. What makes yours survive the merge?',
       garry: 'typing', player: 'nervous', vibesDelta: -10,
       choices: [
-        { text: 'The database-as-document model creates lock-in that calendar apps and note apps don\'t. Once your whole company\'s knowledge graph lives in us, you never leave.', next: 'notion_explain', vibesDelta: 20 },
-        { text: '[Outcome: GENERIC PRODUCTIVITY FATALITY]', next: 'lose_notion_vague', isOutcome: true },
+        { text: 'The database-as-document model creates lock-in that calendar apps and note apps don\'t. Once your company\'s knowledge graph lives in us, you don\'t leave.', next: 'notion_explain', vibesDelta: 20 },
+        { text: 'Our UX is genuinely better than everything else out there.', next: 'lose_notion_ux', isOutcome: true },
+        { text: 'We\'re focused on a specific vertical — startups.', next: 'lose_notion_vertical', isOutcome: true },
+        { text: 'Network effects. The more teams use it, the better it gets.', next: 'lose_notion_network', isOutcome: true },
       ]
     },
-    notion_honest: {
-      speaker: 'GARRY TAN', text: '*pauses typing* ...Twice.',
-      garry: 'normal', player: 'nervous', vibesDelta: 0,
+    notion_kyoto_lead: {
+      speaker: 'GARRY TAN', text: '*one keyboard stops* Kyoto. Why Kyoto?',
+      garry: 'normal', player: 'confident', vibesDelta: 5,
       choices: [
-        { text: 'We ran out of money in 2015. The two cofounders moved to Kyoto, cut every expense, and rebuilt the entire architecture from scratch. Version 2.0 shipped 18 months later.', next: 'notion_explain', vibesDelta: 25 },
-        { text: '"Bankruptcy" is a strong word. More like very discouraging bank statements.', next: 'lose_notion_hedge', isOutcome: true },
+        { text: 'Cheaper than San Francisco. Zero distractions. When you\'re almost dead, you don\'t need a WeWork — you need a quiet room and six months of runway.', next: 'notion_explain', vibesDelta: 20 },
+        { text: 'Lower cost of living meant the runway lasted long enough to rebuild the entire architecture from scratch.', next: 'notion_explain', vibesDelta: 15 },
+        { text: 'The founders had roots there. It felt right.', next: 'notion_explain', vibesDelta: 10 },
+        { text: 'The internet there is very fast.', next: 'lose_notion_wifi', isOutcome: true },
       ]
     },
     notion_explain: {
-      speaker: 'GARRY TAN', text: '*one claw slowly closes and reopens* If everything is everything, how do users start? Most people freeze with infinite flexibility.',
+      speaker: 'GARRY TAN', text: '*claw taps desk once* If everything is everything, why doesn\'t the user freeze? Infinite flexibility is the enemy of onboarding.',
       garry: 'normal', player: 'pitch', vibesDelta: 0,
       choices: [
-        { text: 'Templates. 500+ of them. You start with a template for your use case and never touch the underlying structure. Complexity is hidden until you want it.', next: 'notion_numbers', vibesDelta: 20 },
-        { text: 'That\'s a valid concern we\'re still working through in onboarding.', next: 'lose_notion_onboarding', isOutcome: true },
+        { text: '500+ templates designed by real designers. You start with "Engineering Wiki" or "Startup CRM" and never touch the underlying structure. Complexity is hidden until you want it.', next: 'notion_moat', vibesDelta: 25 },
+        { text: 'We have onboarding flows that guide new users through setup step by step.', next: 'notion_moat', vibesDelta: 10 },
+        { text: 'Power users figure it out quickly. The freedom is the feature.', next: 'lose_notion_power_users', isOutcome: true },
+        { text: 'We\'re working through the onboarding problem. It\'s our biggest challenge right now.', next: 'lose_notion_onboarding', isOutcome: true },
+      ]
+    },
+    notion_moat: {
+      speaker: 'GARRY TAN', text: '*types on both keyboards without looking* What happens when Google Docs adds a database feature?',
+      garry: 'typing', player: 'pitch', vibesDelta: 0,
+      choices: [
+        { text: 'They\'ve tried for four years. Google Tables, Google Sites, Google Keep — none work together. Google ships features. We ship a philosophy. Those are fundamentally different products.', next: 'notion_competition', vibesDelta: 25 },
+        { text: 'Our switching costs are very high by then — all company data is structured in our format.', next: 'notion_competition', vibesDelta: 20 },
+        { text: 'By the time they do, we\'ll have enough users that we\'re the default for teams.', next: 'notion_competition', vibesDelta: 10 },
+        { text: 'That\'s a real risk we think about.', next: 'lose_notion_google', isOutcome: true },
+      ]
+    },
+    notion_competition: {
+      speaker: 'GARRY TAN', text: '*both screens rotate toward you briefly* What makes someone leave Confluence for you?',
+      garry: 'normal', player: 'pitch', vibesDelta: 0,
+      choices: [
+        { text: 'Confluence requires an admin to set up. We\'re live in 5 minutes. Confluence charges per user — we charge per workspace. And Confluence pages are isolated. Ours are linked databases. It\'s a different object model.', next: 'notion_pricing', vibesDelta: 25 },
+        { text: 'Ours looks dramatically better. Confluence is genuinely unusable for most people.', next: 'lose_notion_ugly', isOutcome: true },
+        { text: 'We\'re 10x cheaper at small scale.', next: 'notion_pricing', vibesDelta: 10 },
+        { text: 'The user experience is night and day. People who use ours don\'t go back.', next: 'notion_pricing', vibesDelta: 15 },
+      ]
+    },
+    notion_pricing: {
+      speaker: 'GARRY TAN', text: '*Apple Watch pulses twice* What\'s your pricing model and why is it structured that way?',
+      garry: 'normal', player: 'pitch', vibesDelta: 0,
+      choices: [
+        { text: 'Free personal tier to hook individuals. $8/user/month for team features. Free converts to paid at 9% when a user tries to share with a coworker — that collaboration moment is the trigger. We designed the funnel around it.', next: 'notion_numbers', vibesDelta: 25 },
+        { text: '$10 per user per month. Standard SaaS pricing.', next: 'notion_numbers', vibesDelta: 10 },
+        { text: 'We\'re still testing pricing. Free for now while we build the user base.', next: 'lose_notion_free', isOutcome: true },
+        { text: 'Freemium, but we haven\'t fully nailed the conversion moment yet.', next: 'lose_notion_conversion', isOutcome: true },
       ]
     },
     notion_numbers: {
-      speaker: 'GARRY TAN', text: '*Apple Watch pulses orange* Numbers.',
+      speaker: 'GARRY TAN', text: '*both keyboards go quiet* Numbers.',
       garry: 'normal', player: 'confident', vibesDelta: 0,
       choices: [
-        { text: '4,000 paying users. $800k ARR. 15% month-over-month for 10 months. NPS of 72. Zero paid acquisition.', next: 'notion_win', vibesDelta: 30 },
-        { text: 'We\'re focused on user love over revenue right now. Monetization comes later.', next: 'lose_notion_love', isOutcome: true },
+        { text: '4,000 paying users. $800k ARR. 15% month-over-month for 10 months. NPS of 72. Zero paid acquisition. The product rebuilt itself once and came out ten times better for it.', next: 'notion_win', vibesDelta: 30 },
+        { text: '4,000 paying users. $800k ARR. Growing consistently.', next: 'notion_win', vibesDelta: 20 },
+        { text: '18,000 users but mostly free. Revenue is secondary to love right now.', next: 'lose_notion_love', isOutcome: true },
+        { text: 'Strong engagement metrics. Pre-revenue still.', next: 'lose_notion_pre_rev', isOutcome: true },
       ]
     },
     notion_win: {
-      speaker: 'GARRY TAN', text: '*Garry turns both screens toward you. Left: a doc page. It says "Promising." Right: his calendar. A block labeled "follow-up" has been added.* NPS of 72 means your users are selling this for you. They rebuilt from scratch in Kyoto. I respect Kyoto.',
+      speaker: 'GARRY TAN', text: '*Garry opens a doc page on screen. Types "Promising." Adds a block: "Follow-up: this week."* NPS of 72 means your users are missionaries. They rebuilt from scratch in Kyoto. The product came out ten times better. *single claw clap* That is the story.',
       garry: 'triumphant', player: 'confident', vibesDelta: 20,
       choices: [{ text: '[Outcome: CONGRATULATIONS]', next: 'win', isOutcome: true }]
     },
     win: { outcome: 'win', company: 'a docs-database hybrid' },
-    lose_notion_word: { outcome: 'lose', reason: 'WordMax shipped while you were explaining. It has dark mode. Your product does not.' },
-    lose_notion_vague: { outcome: 'lose', reason: 'Garry has a spreadsheet of productivity software companies. He added you to it. The spreadsheet is managed in a tool just like yours.' },
-    lose_notion_hedge: { outcome: 'lose', reason: 'Discouraging bank statements are not the same as near-death and resurrection. Garry funds founders who survived real winters, not bad months.' },
-    lose_notion_onboarding: { outcome: 'lose', reason: 'You identified the hardest problem in your product and said you\'re "still working on it." Garry wrote: "infinite canvas, finite founder." You are not on the list.' },
-    lose_notion_love: { outcome: 'lose', reason: 'User love without a monetization theory is a hobby. Garry funds businesses. He added you to the "good product, fuzzy founder" spreadsheet.' },
+    lose_notion_templates: { outcome: 'lose', reason: 'WordMax has 400 templates. They launched this morning. Your differentiator was there before you found it.' },
+    lose_notion_collab: { outcome: 'lose', reason: 'Garry opened Google Docs during your answer. He shared it with you in real time. "Collaboration features," he typed, "are table stakes." You had no moat left to defend.' },
+    lose_notion_darkmode: { outcome: 'lose', reason: 'WordMax also has dark mode. Garry checked. You lost a pitch to a feature toggle.' },
+    lose_notion_ux: { outcome: 'lose', reason: '"Better UX" is not defensible. Every founder says it. Garry has a spreadsheet of 200 "better UX" pitches. They are all in it together.' },
+    lose_notion_vertical: { outcome: 'lose', reason: 'Startups are Garry\'s favorite customers. They are also the least loyal. You picked the hardest possible market to retain.' },
+    lose_notion_network: { outcome: 'lose', reason: 'Documents do not have network effects. You described a growth tactic as a moat. Garry has a chart of this confusion. You are now on it.' },
+    lose_notion_wifi: { outcome: 'lose', reason: 'You moved your company to Japan for the internet. Garry has now typed this in a spreadsheet labeled "founders I am rooting for but cannot fund."' },
+    lose_notion_power_users: { outcome: 'lose', reason: 'Power users are not a business. They are a fan club. Garry funds the thing that makes 10 million regular people feel like power users.' },
+    lose_notion_onboarding: { outcome: 'lose', reason: 'You named your biggest problem without a solution. Garry funds builders, not founders describing the map of their own failure.' },
+    lose_notion_google: { outcome: 'lose', reason: 'You called Google a risk and agreed with it. The meeting ended with both of you agreeing your company might die. That is not where you wanted to leave it.' },
+    lose_notion_ugly: { outcome: 'lose', reason: 'Garry opened Confluence. It has 200 million users. He agrees it is ugly. He cannot fund ugly as a moat.' },
+    lose_notion_free: { outcome: 'lose', reason: 'Free is a distribution strategy, not a business. Garry has funded three "free until we figure it out" companies. The figuring-out took longer than the runway.' },
+    lose_notion_conversion: { outcome: 'lose', reason: 'Freemium without a defined conversion moment is a charity. You have users. You don\'t have a business model. Garry funds both.' },
+    lose_notion_love: { outcome: 'lose', reason: 'User love is a leading indicator. It is not revenue. Garry funds businesses, not feelings.' },
+    lose_notion_pre_rev: { outcome: 'lose', reason: 'Pre-revenue at 18,000 users means you\'ve been giving away value. Garry invests at the intersection of love and dollars. You found one half.' },
   },
 
   plaid: {
@@ -1356,63 +1406,100 @@ const scenarioTrees = {
       speaker: 'GARRY TAN', text: 'What do you do?',
       garry: 'normal', player: 'pitch', vibesDelta: 0,
       choices: [
-        { text: 'We make it easy for apps to connect to users\' bank accounts via API.', next: 'plaid_reaction', vibesDelta: 15 },
+        { text: 'We let apps read users\' bank account data via API — without the app ever seeing real credentials.', next: 'plaid_how_it_works', vibesDelta: 15 },
         { text: 'We\'re building financial infrastructure for the internet.', next: 'plaid_big_claim' },
-        { text: 'You know how Venmo asks for your bank login? We\'re the invisible layer that makes that work securely — without your app ever touching real credentials.', next: 'plaid_moat', vibesDelta: 25 },
-        { text: 'Fintech middleware.', next: 'plaid_too_short' },
-      ]
-    },
-    plaid_reaction: {
-      speaker: 'GARRY TAN', text: '...That\'s it?',
-      garry: 'normal', player: 'nervous', vibesDelta: 0,
-      choices: [
-        { text: 'That\'s it. And every fintech app ever built needs us. Venmo, Robinhood, Coinbase — none of them work without us. We\'re the plumbing.', next: 'plaid_moat', vibesDelta: 20 },
-        { text: 'Well when you say it like that—', next: 'lose_plaid_shrink', isOutcome: true },
+        { text: 'You know how Venmo asks for your bank login? We\'re the invisible layer that makes that work securely. Like OAuth, but for money.', next: 'plaid_analogy', vibesDelta: 25 },
+        { text: 'Developer API for connecting to bank accounts. One SDK, every US bank.', next: 'plaid_developer_angle', vibesDelta: 10 },
       ]
     },
     plaid_big_claim: {
-      speaker: 'GARRY TAN', text: '"Financial infrastructure for the internet." I have heard this twelve times today. Give me something a plumber would understand.',
-      garry: 'typing', player: 'nervous', vibesDelta: -5,
+      speaker: 'GARRY TAN', text: '"Financial infrastructure for the internet." That is eight words that say nothing specific. Give me one sentence a plumber would understand.',
+      garry: 'typing', player: 'nervous', vibesDelta: -10,
       choices: [
-        { text: 'Like OAuth but for money. We let apps read your bank balance without you handing over your actual login credentials.', next: 'plaid_moat', vibesDelta: 15 },
-        { text: '[Outcome: BUZZWORD INFRASTRUCTURE FATALITY]', next: 'lose_plaid_buzz', isOutcome: true },
+        { text: 'We let apps read your bank balance without you handing over your actual bank password. One API call.', next: 'plaid_analogy', vibesDelta: 20 },
+        { text: 'Think Stripe, but for reading bank data instead of charging cards.', next: 'plaid_analogy', vibesDelta: 20 },
+        { text: 'We connect financial institutions to software applications via secure API protocols.', next: 'lose_plaid_jargon', isOutcome: true },
+        { text: 'We enable fintech applications to access banking data with user consent.', next: 'lose_plaid_jargon', isOutcome: true },
       ]
     },
-    plaid_too_short: {
-      speaker: 'GARRY TAN', text: '"Fintech middleware." That is two words. I have time for twelve. Continue.',
-      garry: 'typing', player: 'nervous', vibesDelta: -5,
+    plaid_developer_angle: {
+      speaker: 'GARRY TAN', text: '*typing* One SDK, every bank. Why would a developer use you instead of calling the bank directly?',
+      garry: 'typing', player: 'nervous', vibesDelta: 0,
       choices: [
-        { text: 'You know how Venmo asks for your bank login? We make that work without your app ever touching the real credentials.', next: 'plaid_moat', vibesDelta: 15 },
-        { text: '[Outcome: TWO-WORD PITCH TERMINAL]', next: 'lose_plaid_short', isOutcome: true },
+        { text: 'Banks don\'t have APIs. They have PDFs. We\'ve built 2,400 bank integrations so no developer ever has to build one.', next: 'plaid_analogy', vibesDelta: 20 },
+        { text: 'One SDK handles all compliance, credential handling, and token management. The developer writes ten lines of code.', next: 'plaid_analogy', vibesDelta: 20 },
+        { text: 'Better developer experience — cleaner docs, better uptime.', next: 'lose_plaid_dx', isOutcome: true },
+        { text: 'The OAuth flow is complex. We abstract it.', next: 'lose_plaid_oauth', isOutcome: true },
+      ]
+    },
+    plaid_how_it_works: {
+      speaker: 'GARRY TAN', text: '*stops typing* How does it actually work — you\'re not screen-scraping, right?',
+      garry: 'normal', player: 'pitch', vibesDelta: 0,
+      choices: [
+        { text: 'For banks with APIs, we use them directly. For banks without — most — we handle credential exchange with MFA support, generate a scoped read-only token, and never store the raw credentials. The app gets the token. We handle the bank.', next: 'plaid_analogy', vibesDelta: 20 },
+        { text: 'Some screen-scraping, but we\'re moving to direct API integrations as banks build them out.', next: 'lose_plaid_scraping', isOutcome: true },
+        { text: 'Direct API integrations with all major financial institutions.', next: 'plaid_analogy', vibesDelta: 15 },
+        { text: 'The technical architecture varies by institution type.', next: 'lose_plaid_vague_tech', isOutcome: true },
+      ]
+    },
+    plaid_analogy: {
+      speaker: 'GARRY TAN', text: '*one claw points* Good. Who needs you to exist? Name them. Specifically.',
+      garry: 'normal', player: 'confident', vibesDelta: 5,
+      choices: [
+        { text: 'Venmo. Robinhood. Coinbase. Betterment. Every personal finance app built in the last five years. None of them work without us. We are the socket they plug into.', next: 'plaid_security', vibesDelta: 20 },
+        { text: 'Any fintech startup that needs to read bank data — which is almost all of them.', next: 'plaid_security', vibesDelta: 10 },
+        { text: 'The entire consumer fintech ecosystem is our customer.', next: 'plaid_security', vibesDelta: 5 },
+        { text: 'We\'re still fully mapping the customer landscape.', next: 'lose_plaid_mapping', isOutcome: true },
+      ]
+    },
+    plaid_security: {
+      speaker: 'GARRY TAN', text: '*both keyboards stop* You have access to everyone\'s bank accounts. Walk me through your security model.',
+      garry: 'normal', player: 'nervous', vibesDelta: 0,
+      choices: [
+        { text: 'We never store credentials. We exchange them for an access token scoped to exactly what the app requested — read-only balance check, transactions, account number. We are SOC 2 Type II audited. The bank sees us. The app sees only the token.', next: 'plaid_moat', vibesDelta: 25 },
+        { text: 'Industry-standard encryption. All data in transit is TLS. At rest, AES-256.', next: 'lose_plaid_standard', isOutcome: true },
+        { text: 'We take security extremely seriously. It\'s our top priority.', next: 'lose_plaid_seriously', isOutcome: true },
+        { text: 'We\'re working with legal counsel on the compliance framework still.', next: 'lose_plaid_working', isOutcome: true },
       ]
     },
     plaid_moat: {
-      speaker: 'GARRY TAN', text: '*stops typing* *left claw points* Who breaks if you disappear tomorrow?',
-      garry: 'normal', player: 'confident', vibesDelta: 0,
+      speaker: 'GARRY TAN', text: '*Apple Watch pulses* What happens when JP Morgan builds its own API and tells every app to use that instead?',
+      garry: 'typing', player: 'pitch', vibesDelta: 0,
       choices: [
-        { text: 'Venmo, Robinhood, Coinbase, Betterment, and about 2,000 fintech apps in production. They can\'t switch providers in under 6 months. We have 2,400 bank integrations they\'d have to rebuild.', next: 'plaid_numbers', vibesDelta: 25 },
-        { text: 'Quite a few companies would be mildly inconvenienced.', next: 'lose_plaid_mild', isOutcome: true },
+        { text: 'JP Morgan is one bank. We have 2,400. A developer integrating us gets all of them. When JP Morgan builds an API, it talks to us — not to every app individually. We become more valuable as banks modernize, not less.', next: 'plaid_numbers', vibesDelta: 30 },
+        { text: 'JP Morgan building a truly developer-friendly API in the near term is unlikely. Their incentives are different from ours.', next: 'plaid_numbers', vibesDelta: 15 },
+        { text: 'We\'re building relationships with banks so they partner with us rather than compete.', next: 'plaid_numbers', vibesDelta: 20 },
+        { text: 'We\'ll cross that bridge when we come to it.', next: 'lose_plaid_bridge', isOutcome: true },
       ]
     },
     plaid_numbers: {
-      speaker: 'GARRY TAN', text: '*Apple Watch pulses* The boring infrastructure play is almost always the right play. Numbers.',
-      garry: 'normal', player: 'confident', vibesDelta: 10,
+      speaker: 'GARRY TAN', text: '*typing resumes, slower now* Numbers. Revenue, growth, customers.',
+      garry: 'typing', player: 'pitch', vibesDelta: 0,
       choices: [
-        { text: '$2M ARR, 1,400 developer customers, 30% month-over-month for 7 months. Revenue scales with our customers\' usage — when they grow, we grow automatically.', next: 'plaid_win', vibesDelta: 30 },
-        { text: 'Still in developer preview. Revenue is secondary to adoption right now.', next: 'lose_plaid_no_rev', isOutcome: true },
+        { text: '$2M ARR. 1,400 developer customers. 30% month-over-month for 7 months. Revenue is per API call — it scales automatically with our customers\' usage. When their apps grow, we grow with them without adding a single sales call.', next: 'plaid_win', vibesDelta: 30 },
+        { text: '$800k ARR. Growing fast. Developer adoption is the leading indicator.', next: 'plaid_win', vibesDelta: 15 },
+        { text: 'Strong developer adoption. Revenue is still catching up to usage.', next: 'lose_plaid_usage', isOutcome: true },
+        { text: 'Pre-revenue. Optimizing for developer adoption first, then monetization.', next: 'lose_plaid_pre', isOutcome: true },
       ]
     },
     plaid_win: {
-      speaker: 'GARRY TAN', text: '*both MacBooks close simultaneously* *first time this has happened in 4 years* Revenue that compounds with your customers\' success. 2,400 bank integrations as a moat. Developer lock-in. *whispering* This is infrastructure.',
+      speaker: 'GARRY TAN', text: '*both MacBooks close simultaneously. First time in 4 years.* Revenue that scales with your customers\' success. 2,400 bank integrations no competitor can replicate quickly. SOC 2. Token-based. Boring. Perfect. *whispers* This is infrastructure.',
       garry: 'triumphant', player: 'confident', vibesDelta: 20,
       choices: [{ text: '[Outcome: CONGRATULATIONS]', next: 'win', isOutcome: true }]
     },
     win: { outcome: 'win', company: 'the banking API layer' },
-    lose_plaid_shrink: { outcome: 'lose', reason: 'You apologized for your product. Garry has a rule: if you can\'t defend the pitch in two sentences, you haven\'t found it yet.' },
-    lose_plaid_buzz: { outcome: 'lose', reason: 'Garry\'s AI generates "financial infrastructure for the internet" in 0.3 seconds. You needed something it couldn\'t.' },
-    lose_plaid_short: { outcome: 'lose', reason: 'Two words. Garry can vibe-code an entire company description in two words. He used his. You used yours. They were different words.' },
-    lose_plaid_mild: { outcome: 'lose', reason: '"Mildly inconvenienced" is not a moat. Garry funds companies whose disappearance would cause a multi-billion dollar ecosystem to stop working.' },
-    lose_plaid_no_rev: { outcome: 'lose', reason: 'Developer adoption without a monetization wedge is a grant, not a business. Garry has funded three "developer adoption first" companies. One survived. It pivoted to revenue in month 8.' },
+    lose_plaid_jargon: { outcome: 'lose', reason: 'You re-said the same thing in longer words. Garry\'s jargon detector filed a rejection before you finished the sentence.' },
+    lose_plaid_dx: { outcome: 'lose', reason: '"Better docs" is a feature, not a company. Garry has funded companies with worse docs that became infrastructure. Docs are table stakes.' },
+    lose_plaid_oauth: { outcome: 'lose', reason: 'OAuth abstraction is a library, not a company. Garry has funded OAuth wrappers before. They were acquired for $2M and used as a write-off.' },
+    lose_plaid_scraping: { outcome: 'lose', reason: 'Banks are actively blocking screen scrapers. Garry knows this. You are building on a foundation being removed while you speak.' },
+    lose_plaid_vague_tech: { outcome: 'lose', reason: '"Varies by regulatory context" means you don\'t have a consistent architecture. In financial infrastructure, consistent is the only answer.' },
+    lose_plaid_mapping: { outcome: 'lose', reason: 'You\'re building critical financial infrastructure and still mapping the customer landscape. Garry maps customer landscapes before he funds companies.' },
+    lose_plaid_standard: { outcome: 'lose', reason: '"Industry standard" is the minimum. You hold people\'s bank credentials. Garry wanted to hear you exceed it. You hit it exactly.' },
+    lose_plaid_seriously: { outcome: 'lose', reason: '"We take it seriously" is what every company says before a breach. Garry heard no specifics. He funded the specifics.' },
+    lose_plaid_working: { outcome: 'lose', reason: 'You\'re building a financial data company without a compliance framework. Garry legally cannot fund this conversation.' },
+    lose_plaid_bridge: { outcome: 'lose', reason: 'JP Morgan is building a bridge. You said you\'ll cross it when you get there. It is already taller than your company.' },
+    lose_plaid_usage: { outcome: 'lose', reason: '"Revenue catching up to usage" means you\'ve been giving away valuable API calls. Garry funds companies that capture value, not ones that distribute it.' },
+    lose_plaid_pre: { outcome: 'lose', reason: 'Pre-revenue financial infrastructure with bank credential access and an evolving compliance framework. Garry counted three reasons not to proceed. He stopped at three.' },
   },
 
   canva: {
@@ -1420,63 +1507,98 @@ const scenarioTrees = {
       speaker: 'GARRY TAN', text: 'What do you do?',
       garry: 'normal', player: 'pitch', vibesDelta: 0,
       choices: [
-        { text: 'Graphic design for people who can\'t use Photoshop. Which is most people.', next: 'canva_designers_hate', vibesDelta: 20 },
+        { text: 'Graphic design for people who can\'t use Photoshop. Which is most people.', next: 'canva_who_hates_you', vibesDelta: 20 },
         { text: 'We\'re democratizing design.', next: 'canva_democratize' },
-        { text: 'We started as a school yearbook company in Perth, Australia. Got rejected by over a hundred VCs. Kept building anyway. 50,000 users before anyone called back.', next: 'canva_hundred_nos', vibesDelta: 20 },
-        { text: 'Drag-and-drop design platform.', next: 'canva_too_generic' },
+        { text: 'We started as a school yearbook tool in Perth, got rejected by over a hundred VCs, and kept building anyway. 50,000 users before anyone called back.', next: 'canva_hundred_nos', vibesDelta: 20 },
+        { text: 'Drag-and-drop design platform. Templates, exports, real-time collaboration.', next: 'canva_powerpoint' },
       ]
     },
     canva_democratize: {
-      speaker: 'GARRY TAN', text: '"Democratizing design." *types* My AI just designed fourteen logos. Three are beautiful. What have you done that\'s different?',
+      speaker: 'GARRY TAN', text: '"Democratizing design." *types* My AI just designed fourteen logos. Three are beautiful. How are you not already obsolete?',
       garry: 'typing', player: 'nervous', vibesDelta: -10,
       choices: [
-        { text: 'We\'re not replacing designers. We\'re enabling the 99% who need a social post, a pitch deck, or a flyer with no design training.', next: 'canva_designers_hate', vibesDelta: 20 },
-        { text: '[Outcome: DEMOCRATIZED INTO IRRELEVANCE]', next: 'lose_canva_dem', isOutcome: true },
+        { text: 'AI generates components. We give non-designers a complete workflow — templates, brand kits, social media sizing presets, team collaboration. AI is a feature in our product. We\'re the product.', next: 'canva_who_hates_you', vibesDelta: 20 },
+        { text: 'Our target user doesn\'t have the design taste to prompt AI well. They need guardrails, not a blank canvas.', next: 'canva_who_hates_you', vibesDelta: 20 },
+        { text: 'We\'re integrating AI into our product.', next: 'lose_canva_integrating', isOutcome: true },
+        { text: 'AI tools are different from what we\'re building.', next: 'lose_canva_different', isOutcome: true },
       ]
     },
-    canva_too_generic: {
-      speaker: 'GARRY TAN', text: 'My daughter uses a drag-and-drop design platform. It\'s called PowerPoint. What\'s the delta?',
+    canva_powerpoint: {
+      speaker: 'GARRY TAN', text: 'My daughter uses a drag-and-drop design tool. She\'s nine. It\'s called PowerPoint. What specifically is the delta?',
       garry: 'normal', player: 'nervous', vibesDelta: -5,
       choices: [
-        { text: 'Templates designed by real designers. Built-in collaboration. Exports for print and web. A free tier that hooks users before they need paid features. And zero training required.', next: 'canva_designers_hate', vibesDelta: 15 },
-        { text: '[Outcome: POWERPOINT HAD YOU BEAT]', next: 'lose_canva_ppt', isOutcome: true },
+        { text: 'Templates from real designers — not clip art. Social media export sizes built-in. Real-time collaboration. And a free tier that hooks individuals before they pull in their whole team.', next: 'canva_who_hates_you', vibesDelta: 20 },
+        { text: 'Our design quality is much higher than PowerPoint\'s default styles.', next: 'canva_who_hates_you', vibesDelta: 10 },
+        { text: 'We\'re cloud-based. PowerPoint is desktop software.', next: 'lose_canva_cloud', isOutcome: true },
+        { text: 'PowerPoint serves a different use case. We\'re for marketing materials and social media.', next: 'canva_who_hates_you', vibesDelta: 15 },
       ]
     },
     canva_hundred_nos: {
-      speaker: 'GARRY TAN', text: '*pauses* ...More than a hundred.',
+      speaker: 'GARRY TAN', text: '*pauses all typing* A hundred NOs. What kept you going?',
       garry: 'normal', player: 'confident', vibesDelta: 5,
       choices: [
-        { text: 'The founder flew from Australia to Silicon Valley. Three years. Over a hundred rejections. She kept building. Designers hate the product. Non-designers love it. The non-designers outnumber them ten thousand to one.', next: 'canva_designers_hate', vibesDelta: 20 },
-        { text: 'The distance made it hard. Timezone calls at 3am. It was rough.', next: 'lose_canva_soft', isOutcome: true },
+        { text: 'The users. 50,000 of them using it before we raised a dollar. When users love you that much, a VC saying no just means they don\'t see it yet.', next: 'canva_who_hates_you', vibesDelta: 25 },
+        { text: 'The founder believed in the mission deeply.', next: 'canva_who_hates_you', vibesDelta: 10 },
+        { text: 'We had no other option. Jobs quit. No way back.', next: 'canva_who_hates_you', vibesDelta: 15 },
+        { text: 'Stubbornness, mainly.', next: 'lose_canva_stubborn', isOutcome: true },
       ]
     },
-    canva_designers_hate: {
+    canva_who_hates_you: {
       speaker: 'GARRY TAN', text: '*claw taps desk slowly* Designers must hate you.',
       garry: 'normal', player: 'confident', vibesDelta: 0,
       choices: [
-        { text: 'Yes. Loudly. Constantly. And the non-designers outnumber them ten thousand to one. Every small business owner, teacher, nonprofit, and social media manager is our customer. Designers were never our market.', next: 'canva_numbers', vibesDelta: 25 },
-        { text: 'We\'re working on a pro tier to win them over—', next: 'lose_canva_pro', isOutcome: true },
+        { text: 'Loudly. Constantly. We welcome it — designers hating us means we\'re reaching the people they\'re not serving. Non-designers outnumber them fifty thousand to one.', next: 'canva_adobe', vibesDelta: 25 },
+        { text: 'Some do. We\'re trying to win them over with a pro tier.', next: 'lose_canva_pro', isOutcome: true },
+        { text: 'It\'s a misconception. We\'re complementary to professional design work.', next: 'lose_canva_complement', isOutcome: true },
+        { text: 'Yes — and that tells us we\'re onto something real.', next: 'canva_adobe', vibesDelta: 15 },
+      ]
+    },
+    canva_adobe: {
+      speaker: 'GARRY TAN', text: '*typing slows* What happens when Adobe releases a simpler version of Photoshop targeting beginners?',
+      garry: 'typing', player: 'pitch', vibesDelta: 0,
+      choices: [
+        { text: 'They tried. Adobe Express has been "coming soon" for four years. Adobe\'s revenue model requires complexity — their sales team sells seats to enterprises who need training. Simplicity would cannibalize them. We profit from simplicity. They can\'t.', next: 'canva_viral', vibesDelta: 25 },
+        { text: 'Adobe\'s brand means "professional." Non-designers don\'t want to think of themselves as using Photoshop.', next: 'canva_viral', vibesDelta: 20 },
+        { text: 'By then our user base is too large and habituated to dislodge.', next: 'canva_viral', vibesDelta: 10 },
+        { text: 'It\'s a real competitive risk we think about.', next: 'lose_canva_risk', isOutcome: true },
+      ]
+    },
+    canva_viral: {
+      speaker: 'GARRY TAN', text: '*Apple Watch pulses orange* Walk me through acquisition. How does someone find you for the first time?',
+      garry: 'normal', player: 'pitch', vibesDelta: 0,
+      choices: [
+        { text: 'A teacher makes a classroom poster and shares the link. The parent sees it, makes a birthday invitation. She shares it to Facebook. Three more moms sign up. Every design exported says "Made with [our tool]." Every design is a marketing impression. Zero ad spend.', next: 'canva_numbers', vibesDelta: 30 },
+        { text: 'Word of mouth. Zero paid acquisition. Every design shared online is a product demo.', next: 'canva_numbers', vibesDelta: 20 },
+        { text: 'SEO from template pages — "Instagram post template," "resume template" — very high intent searches.', next: 'canva_numbers', vibesDelta: 15 },
+        { text: 'We\'re still developing our growth channels.', next: 'lose_canva_growth', isOutcome: true },
       ]
     },
     canva_numbers: {
-      speaker: 'GARRY TAN', text: '*typing on both keyboards* Numbers.',
-      garry: 'typing', player: 'pitch', vibesDelta: 0,
+      speaker: 'GARRY TAN', text: '*both keyboards quiet* Numbers. Give me all of them.',
+      garry: 'normal', player: 'confident', vibesDelta: 0,
       choices: [
-        { text: '750,000 active users. $1.1M MRR. Free users convert to paid at 9% when they hit collaboration or brand kit features. Zero paid acquisition.', next: 'canva_win', vibesDelta: 30 },
-        { text: '200,000 users but still finding the right monetization model.', next: 'lose_canva_mono', isOutcome: true },
+        { text: '750,000 monthly actives. $1.1M MRR. 9% free-to-paid conversion when users hit collaboration. Zero paid acquisition. NPS of 78. Over a hundred VC NOs. The product was always working. The story just needed the right room.', next: 'canva_win', vibesDelta: 35 },
+        { text: '750,000 actives. $1.1M MRR. Strong growth, zero paid acquisition.', next: 'canva_win', vibesDelta: 20 },
+        { text: '200,000 users. Revenue is still developing.', next: 'lose_canva_revenue', isOutcome: true },
+        { text: 'Strong user metrics. Monetization is the next focus area.', next: 'lose_canva_next', isOutcome: true },
       ]
     },
     canva_win: {
-      speaker: 'GARRY TAN', text: '*Apple Watch goes bright orange* *he turns to the window for 4 seconds* *turns back* Nine percent free-to-paid with zero paid acquisition. From Australia. After a hundred NOs. *claw claps once* That\'s the story.',
+      speaker: 'GARRY TAN', text: '*Apple Watch goes bright orange* *he turns to the window for four full seconds* *turns back* 9% free-to-paid with zero paid acquisition. The product markets itself. From Australia. After a hundred NOs. *slow claw clap* They were all wrong.',
       garry: 'triumphant', player: 'confident', vibesDelta: 20,
       choices: [{ text: '[Outcome: CONGRATULATIONS]', next: 'win', isOutcome: true }]
     },
     win: { outcome: 'win', company: 'the design tool for everyone' },
-    lose_canva_dem: { outcome: 'lose', reason: 'The AI had democratized design while you were still defining it. The 14 logos are on ProductHunt. Two are trending.' },
-    lose_canva_ppt: { outcome: 'lose', reason: 'Garry\'s daughter made a beautiful presentation about bees. In PowerPoint. You lost to a 9-year-old\'s school project.' },
-    lose_canva_soft: { outcome: 'lose', reason: '"Timezone calls were rough" is not the founding mythology of a billion-dollar company. Garry writes "tourist" in his notes. You are not on the list.' },
-    lose_canva_pro: { outcome: 'lose', reason: 'Chasing designers who hate you while ignoring millions who love you is a classic mistake. Garry has a slide about it. The slide is made in a tool just like yours.' },
-    lose_canva_mono: { outcome: 'lose', reason: '200,000 users with unclear monetization. Garry funded three of these. Two ran out of money optimizing the free tier. One works at Stripe now.' },
+    lose_canva_integrating: { outcome: 'lose', reason: '"Integrating AI" is what every company is doing. Garry wanted the workflow moat. You handed him your own obsolescence instead.' },
+    lose_canva_different: { outcome: 'lose', reason: 'You said they\'re different without saying how. Garry\'s AI now does both. The difference is unclear to him.' },
+    lose_canva_cloud: { outcome: 'lose', reason: '"Cloud-based" has not been a differentiator since 2012. Garry closed his laptop to look at you while you said it.' },
+    lose_canva_stubborn: { outcome: 'lose', reason: 'Stubbornness without product-market signal is a personality trait. Garry doesn\'t fund personalities. He funds evidence.' },
+    lose_canva_pro: { outcome: 'lose', reason: 'Chasing designers who hate you instead of scaling the people who love you is the classic mistake. Garry has a slide about it.' },
+    lose_canva_complement: { outcome: 'lose', reason: 'Saying you\'re complementary means you\'re not disrupting anything. Disruption requires someone to be unhappy. You just made everyone comfortable.' },
+    lose_canva_risk: { outcome: 'lose', reason: 'You agreed with the competitive threat without refuting it. Garry has now written "admitted moat risk, no counter" in his notes.' },
+    lose_canva_growth: { outcome: 'lose', reason: 'At 50,000 users you have growth data. "Still developing channels" means you haven\'t looked at it. Garry looks at everything.' },
+    lose_canva_revenue: { outcome: 'lose', reason: '200,000 users with "developing" revenue means you\'ve given away value to a stadium of people. Garry invests in businesses, not stadiums.' },
+    lose_canva_next: { outcome: 'lose', reason: '"Monetization is the next focus" is what companies say right before they run out of money focusing on it.' },
   },
 
   gusto: {
@@ -1484,63 +1606,110 @@ const scenarioTrees = {
       speaker: 'GARRY TAN', text: 'What do you do?',
       garry: 'normal', player: 'pitch', vibesDelta: 0,
       choices: [
-        { text: 'We\'re redoing payroll for small businesses.', next: 'gusto_solved', vibesDelta: 10 },
-        { text: 'HR software for companies under 500 people.', next: 'gusto_hr_generic' },
-        { text: '30% of small businesses pay an IRS penalty every year because payroll software assumes you have a payroll professional. We fix that.', next: 'gusto_moat', vibesDelta: 25 },
-        { text: 'We make it so small business owners stop crying every two weeks on payday.', next: 'gusto_cry', vibesDelta: 15 },
-      ]
-    },
-    gusto_solved: {
-      speaker: 'GARRY TAN', text: 'Payroll is solved. ADP has been doing this since 1949.',
-      garry: 'normal', player: 'nervous', vibesDelta: -5,
-      choices: [
-        { text: 'ADP is designed for HR departments, not founders. 30% of small businesses pay IRS penalties every year because the software assumes professional users. Our setup takes 15 minutes with zero training.', next: 'gusto_moat', vibesDelta: 20 },
-        { text: 'ADP is actually our biggest competitive validation—', next: 'lose_gusto_adp', isOutcome: true },
+        { text: 'We do payroll for small businesses. Setup in 15 minutes. No training required.', next: 'gusto_solved', vibesDelta: 15 },
+        { text: '30% of small businesses pay an IRS penalty every year because payroll is genuinely hard to do correctly. We make it trivially easy.', next: 'gusto_why_hard', vibesDelta: 25 },
+        { text: 'HR and payroll software for companies under 500 people.', next: 'gusto_hr_generic' },
+        { text: 'We interviewed 200 small business owners before writing a line of code. Every single one had a payroll horror story.', next: 'gusto_horror_stories', vibesDelta: 20 },
       ]
     },
     gusto_hr_generic: {
-      speaker: 'GARRY TAN', text: '"HR software." *types* I deployed an HR software. It manages conflict, tracks vacation, has 800 users. What specifically do you do?',
+      speaker: 'GARRY TAN', text: '"HR and payroll." I deployed an HR software this morning. 800 users. What specifically do you do that\'s different?',
       garry: 'typing', player: 'nervous', vibesDelta: -10,
       choices: [
-        { text: 'Not HR software — payroll compliance. The thing that gets small businesses fined $500 every quarter because they filed the wrong federal form.', next: 'gusto_moat', vibesDelta: 20 },
-        { text: '[Outcome: GENERIC HR FATALITY]', next: 'lose_gusto_gen', isOutcome: true },
+        { text: 'Not HR broadly — payroll compliance specifically. The thing that gets small businesses fined $500 every quarter for filing the wrong 941 form.', next: 'gusto_why_hard', vibesDelta: 20 },
+        { text: 'We start with payroll — the most critical pain — and expand to benefits and onboarding over time.', next: 'gusto_why_hard', vibesDelta: 15 },
+        { text: 'We cover payroll, benefits, onboarding, and time tracking in one place.', next: 'lose_gusto_broad', isOutcome: true },
+        { text: 'Full-stack HR for small businesses.', next: 'lose_gusto_fullstack', isOutcome: true },
       ]
     },
-    gusto_cry: {
-      speaker: 'GARRY TAN', text: '*slow claw clap* ...You talked to them.',
-      garry: 'normal', player: 'confident', vibesDelta: 10,
+    gusto_solved: {
+      speaker: 'GARRY TAN', text: 'Payroll is solved. ADP has been doing this since 1949. Why does the world need another payroll company?',
+      garry: 'normal', player: 'nervous', vibesDelta: -5,
       choices: [
-        { text: 'We interviewed 200 small business owners before writing a line of code. Every single one had a payroll horror story. Missing direct deposit on a bank holiday. Filing the wrong 941 form. Paying a nanny incorrectly for 3 years.', next: 'gusto_moat', vibesDelta: 15 },
-        { text: '"Crying" is a metaphor — they were mostly stressed, not literally—', next: 'lose_gusto_hedge', isOutcome: true },
+        { text: 'ADP is designed for HR departments. 30% of small businesses pay IRS penalties every year because the software assumes you have a payroll professional. Our setup takes 15 minutes with zero training.', next: 'gusto_why_hard', vibesDelta: 25 },
+        { text: 'ADP targets enterprise. 30 million small businesses can\'t afford them or operate them.', next: 'gusto_why_hard', vibesDelta: 15 },
+        { text: 'ADP has terrible customer service and a very long onboarding process.', next: 'lose_gusto_service', isOutcome: true },
+        { text: 'Our UX is dramatically better than ADP.', next: 'lose_gusto_ux', isOutcome: true },
+      ]
+    },
+    gusto_horror_stories: {
+      speaker: 'GARRY TAN', text: '*claw taps slowly* Tell me one story. Specific.',
+      garry: 'normal', player: 'confident', vibesDelta: 5,
+      choices: [
+        { text: 'A restaurant owner in Austin paid a nanny incorrectly for three years — wrong tax withholding, wrong classification. $14,000 in back taxes and penalties. She found out during an IRS audit. Our product catches it on setup day one.', next: 'gusto_why_hard', vibesDelta: 25 },
+        { text: 'A bakery owner missed direct deposit on a bank holiday. Employees didn\'t get paid on Friday. She found out Monday.', next: 'gusto_why_hard', vibesDelta: 20 },
+        { text: 'A coffee shop filed the wrong quarterly form for two years.', next: 'gusto_why_hard', vibesDelta: 15 },
+        { text: 'General confusion about quarterly 941 filings.', next: 'lose_gusto_general', isOutcome: true },
+      ]
+    },
+    gusto_why_hard: {
+      speaker: 'GARRY TAN', text: '*types on left keyboard* Walk me through why payroll is actually hard. Make me believe ADP hasn\'t solved this.',
+      garry: 'typing', player: 'pitch', vibesDelta: 0,
+      choices: [
+        { text: 'Federal + 50 state tax codes. Quarterly 941s. W-2s. 1099s for contractors. FICA. State unemployment. Local taxes. Benefits deductions. Garnishments. It changes every year. ADP charges $3k/year and requires 2 weeks of onboarding. We charge $39/month and take 15 minutes.', next: 'gusto_moat', vibesDelta: 25 },
+        { text: 'The edge cases are where the complexity lives — contractors, part-time workers, multi-state employees. ADP handles those with an 800 number. We handle them in the product.', next: 'gusto_moat', vibesDelta: 20 },
+        { text: 'Tax compliance varies by state and changes annually. It requires constant maintenance.', next: 'gusto_moat', vibesDelta: 15 },
+        { text: 'It\'s complicated. That\'s why the IRS penalty rate is so high.', next: 'lose_gusto_circular', isOutcome: true },
       ]
     },
     gusto_moat: {
-      speaker: 'GARRY TAN', text: '*stops typing* What happens when ADP copies your UX?',
-      garry: 'normal', player: 'pitch', vibesDelta: 5,
+      speaker: 'GARRY TAN', text: '*both keyboards slow* What happens when ADP releases "ADP Simple" at $29/month?',
+      garry: 'normal', player: 'pitch', vibesDelta: 0,
       choices: [
-        { text: 'ADP can\'t ship a 15-minute setup without firing 80% of their sales team. Their business model requires complexity. Our moat is that we profit from simplicity.', next: 'gusto_numbers', vibesDelta: 20 },
-        { text: 'We\'ll have more users by then. Network effects.', next: 'lose_gusto_network', isOutcome: true },
+        { text: 'ADP can\'t do that without cannibalizing the $3k customers who\'d immediately downgrade. Their business model requires complexity. Ours profits from eliminating it. That\'s a structural constraint, not a marketing problem.', next: 'gusto_churn', vibesDelta: 30 },
+        { text: 'By then we have 2 years of payroll history and tax records per customer. Switching means rebuilding everything manually. The switching cost is enormous.', next: 'gusto_churn', vibesDelta: 20 },
+        { text: 'We\'ll have distribution and brand before that happens.', next: 'gusto_churn', vibesDelta: 10 },
+        { text: 'It\'s a risk. We\'re moving fast to get scale first.', next: 'lose_gusto_adp_risk', isOutcome: true },
+      ]
+    },
+    gusto_churn: {
+      speaker: 'GARRY TAN', text: '*Apple Watch pulses* What\'s your churn? Give me the real number.',
+      garry: 'normal', player: 'pitch', vibesDelta: 0,
+      choices: [
+        { text: '1.8% monthly gross churn. But most of it is business closures — not competitors. When we exclude closed businesses, churn is 0.4%. Switching payroll providers means manually re-entering every employee\'s entire tax history. Nobody does it.', next: 'gusto_expansion', vibesDelta: 30 },
+        { text: 'Very low. The product is embedded in their core operations.', next: 'gusto_expansion', vibesDelta: 15 },
+        { text: '3% monthly. We\'re working on it.', next: 'lose_gusto_churn', isOutcome: true },
+        { text: 'We track annual retention rather than monthly churn.', next: 'lose_gusto_tracking', isOutcome: true },
+      ]
+    },
+    gusto_expansion: {
+      speaker: 'GARRY TAN', text: '*leans forward* Payroll is a wedge. What else do you take from the small business over time?',
+      garry: 'normal', player: 'pitch', vibesDelta: 0,
+      choices: [
+        { text: 'We have the payroll data, the bank connection, and employee records. From there: health insurance, 401k, workers comp — all things businesses currently manage in 3-5 separate systems. We become the HR OS. Every product we add has near-100% attach rates.', next: 'gusto_numbers', vibesDelta: 30 },
+        { text: 'Benefits administration is the natural next product. We\'re already piloting it.', next: 'gusto_numbers', vibesDelta: 20 },
+        { text: 'Time tracking and scheduling are logical expansions.', next: 'gusto_numbers', vibesDelta: 10 },
+        { text: 'We\'re focused on payroll for now. Expansion is future roadmap.', next: 'lose_gusto_focused', isOutcome: true },
       ]
     },
     gusto_numbers: {
-      speaker: 'GARRY TAN', text: '*both keyboards resume at half speed* Numbers.',
-      garry: 'typing', player: 'pitch', vibesDelta: 0,
+      speaker: 'GARRY TAN', text: '*both keyboards pause* Full numbers.',
+      garry: 'typing', player: 'confident', vibesDelta: 0,
       choices: [
-        { text: '1,800 customers. $480k MRR. 2% monthly churn. Customers stay because switching payroll providers means manually re-entering every employee\'s tax info. Deep switching costs — we didn\'t design them, they emerged.', next: 'gusto_win', vibesDelta: 30 },
-        { text: '400 customers, still finding the right price point.', next: 'lose_gusto_price', isOutcome: true },
+        { text: '1,800 customers. $480k MRR. 0.4% real churn. Average revenue per customer growing as they add benefits. We read every IRS payroll publication before building a line of code. That is the moat: domain expertise so deep it\'s structural.', next: 'gusto_win', vibesDelta: 30 },
+        { text: '1,800 customers. $480k MRR. Growing 15% month over month.', next: 'gusto_win', vibesDelta: 20 },
+        { text: '400 customers. $80k MRR. Strong early signal.', next: 'lose_gusto_small', isOutcome: true },
+        { text: 'Revenue is growing. Customer count is still early stage.', next: 'lose_gusto_early', isOutcome: true },
       ]
     },
     gusto_win: {
-      speaker: 'GARRY TAN', text: '*he stops both keyboards* 2% monthly churn on payroll software. *quietly* Do you know what 2% monthly churn means for a product people are legally required to use every two weeks forever?',
+      speaker: 'GARRY TAN', text: '*he stops both keyboards* 0.4% real churn. *quietly* On a product people are legally required to use every two weeks forever. And you become more valuable with every product you add. That is not software. That is gravity.',
       garry: 'triumphant', player: 'confident', vibesDelta: 20,
       choices: [{ text: '[Outcome: CONGRATULATIONS]', next: 'win', isOutcome: true }]
     },
     win: { outcome: 'win', company: 'the payroll tool small businesses actually deserve' },
-    lose_gusto_adp: { outcome: 'lose', reason: 'Garry doesn\'t want to fund the next ADP. He wants to fund the company that makes ADP irrelevant. You treated them as a validator instead of a corpse to walk over.' },
-    lose_gusto_gen: { outcome: 'lose', reason: 'The deployed HR software has 800 users and a 4.8-star rating. It manages conflict beautifully. It is already better than your pitch.' },
-    lose_gusto_hedge: { outcome: 'lose', reason: 'You had a real insight and diluted it. Garry funds founders who commit to the metaphor. The crying was the truth. The hedge was fear.' },
-    lose_gusto_network: { outcome: 'lose', reason: 'Payroll software does not have network effects. You have lock-in through compliance complexity, which is a real moat. You described it incorrectly and lost the thread.' },
-    lose_gusto_price: { outcome: 'lose', reason: '400 customers at the wrong price is a customer development project. Garry funds companies that have found the price.' },
+    lose_gusto_broad: { outcome: 'lose', reason: 'Payroll, benefits, onboarding, time tracking — four products, zero focus. Garry funds laser focus at seed.' },
+    lose_gusto_fullstack: { outcome: 'lose', reason: '"Full-stack HR" is an enterprise pitch. You said "small businesses." These are not the same market.' },
+    lose_gusto_service: { outcome: 'lose', reason: '"Bad customer service" is not a moat. It\'s an annoyance. Garry has funded companies built on better service. Three of them were acquired before scale.' },
+    lose_gusto_ux: { outcome: 'lose', reason: '"Better UX than ADP" is a sentence 600 people have said to Garry. His AI generates it automatically now.' },
+    lose_gusto_general: { outcome: 'lose', reason: '"General confusion" is a category description. Garry wanted the restaurant owner with $14k in penalties. You gave him a vibe.' },
+    lose_gusto_circular: { outcome: 'lose', reason: '"It\'s complicated, that\'s why penalties are high" is circular. You described the symptom twice. Garry wanted the mechanism.' },
+    lose_gusto_adp_risk: { outcome: 'lose', reason: 'You identified the main competitive risk and agreed with it without a structural counter. Garry is now more worried about your business than before the meeting started.' },
+    lose_gusto_churn: { outcome: 'lose', reason: '"We\'re working on it" is a project plan. 3% monthly churn means you lose a third of your customers every year. Garry did the math faster than you did.' },
+    lose_gusto_tracking: { outcome: 'lose', reason: 'You don\'t track monthly churn on a payroll product. Garry tracks monthly churn. He cannot fund a payroll company that manages its own metrics less carefully than he does.' },
+    lose_gusto_focused: { outcome: 'lose', reason: '"Focused on payroll for now" means you haven\'t thought about the business you could become. The wedge is the whole point. You lost the thread.' },
+    lose_gusto_small: { outcome: 'lose', reason: '400 customers and $80k MRR is promising. It is 10x smaller than what would have been interesting. Come back with 1,800 customers.' },
+    lose_gusto_early: { outcome: 'lose', reason: '"Customer count is still early" ends conversations. Garry says it too. He said it to the next founder. That founder had a number.' },
   },
 
   shopify: {
@@ -1548,63 +1717,98 @@ const scenarioTrees = {
       speaker: 'GARRY TAN', text: 'What do you do?',
       garry: 'normal', player: 'pitch', vibesDelta: 0,
       choices: [
-        { text: 'We built an online store for our own snowboard shop, then realized the software was more valuable than the snowboards.', next: 'shopify_pivot', vibesDelta: 25 },
-        { text: 'E-commerce platform for small businesses.', next: 'shopify_generic' },
-        { text: 'Amazon is going to own every merchant who sells on Amazon. We arm the merchants who don\'t want to be owned.', next: 'shopify_amazon', vibesDelta: 20 },
-        { text: 'We\'re building the infrastructure for the long tail of retail.', next: 'shopify_infra' },
+        { text: 'The founder built an online store for his snowboard shop. Couldn\'t find software good enough so he built it himself. 15 other shops asked for the same thing in month one.', next: 'shopify_pivot', vibesDelta: 25 },
+        { text: 'E-commerce platform for merchants who don\'t want to be owned by Amazon.', next: 'shopify_amazon_angle', vibesDelta: 20 },
+        { text: 'We help small businesses sell online. Easy setup, no technical knowledge required.', next: 'shopify_generic' },
+        { text: 'We\'re building the infrastructure for independent commerce.', next: 'shopify_infra_claim' },
       ]
     },
     shopify_generic: {
-      speaker: 'GARRY TAN', text: '"E-commerce platform." *types* I deployed one. It sells artisan candles. 240 users. What\'s your angle?',
+      speaker: 'GARRY TAN', text: '"Sell online, easy setup." I deployed that this morning. 240 candle shops. What specifically makes yours worth funding?',
       garry: 'typing', player: 'nervous', vibesDelta: -10,
       choices: [
-        { text: 'The founder was trying to sell snowboards. He couldn\'t find software good enough so he built it. 15 other shops asked for it. The product found us.', next: 'shopify_pivot', vibesDelta: 20 },
-        { text: '[Outcome: COMMODITY E-COMMERCE FATALITY]', next: 'lose_shopify_gen', isOutcome: true },
+        { text: 'We started as a customer. The founder was trying to sell snowboards and couldn\'t find software worth using. The product came from inside the problem, not outside it.', next: 'shopify_pivot', vibesDelta: 25 },
+        { text: 'Our checkout conversion rate is higher than all competitors.', next: 'lose_shopify_checkout', isOutcome: true },
+        { text: 'We have a much better template library.', next: 'lose_shopify_templates', isOutcome: true },
+        { text: 'We focus on mobile-first commerce. That\'s where it\'s going.', next: 'shopify_amazon_angle', vibesDelta: 10 },
       ]
     },
-    shopify_infra: {
-      speaker: 'GARRY TAN', text: '"Long tail of retail." There are 30 million small businesses in the US. Three companies own the infrastructure. What makes you the fourth?',
-      garry: 'typing', player: 'nervous', vibesDelta: 0,
+    shopify_infra_claim: {
+      speaker: 'GARRY TAN', text: '"Infrastructure for independent commerce." There are three of those already. What makes you the fourth and why does that matter?',
+      garry: 'typing', player: 'nervous', vibesDelta: -5,
       choices: [
-        { text: 'We started as customers. The founder built this to sell snowboards. When 15 other stores wanted the same software, we pivoted. We don\'t build for a merchant persona — we ARE a merchant.', next: 'shopify_pivot', vibesDelta: 20 },
-        { text: '[Outcome: INFRASTRUCTURE PITCH WITHOUT ORIGIN]', next: 'lose_shopify_infra', isOutcome: true },
+        { text: 'Because the existing three were built by engineers who never ran a store. We were built by a founder who ran a store and got frustrated. The insight comes from inside the problem.', next: 'shopify_pivot', vibesDelta: 20 },
+        { text: 'Our platform is more developer-friendly — an ecosystem of apps can be built on top.', next: 'shopify_platform', vibesDelta: 10 },
+        { text: 'Our infrastructure is more scalable and modern.', next: 'lose_shopify_scalable', isOutcome: true },
+        { text: 'The market is large enough that a fourth player is viable.', next: 'lose_shopify_viable', isOutcome: true },
       ]
     },
-    shopify_amazon: {
-      speaker: 'GARRY TAN', text: '...You\'re positioning against Amazon.',
+    shopify_amazon_angle: {
+      speaker: 'GARRY TAN', text: '*claw points* You keep circling Amazon. Say the thing.',
       garry: 'normal', player: 'confident', vibesDelta: 0,
       choices: [
-        { text: 'Not against them — orthogonal. Amazon owns the customer. We arm the merchant. Our merchants keep their brand, their data, their margins. Amazon gives them a box and takes 30%.', next: 'shopify_pivot', vibesDelta: 15 },
-        { text: 'We\'re not exactly against them, it\'s more of a different segment thing—', next: 'lose_shopify_hedge', isOutcome: true },
+        { text: 'Amazon owns the customer relationship. Merchants on Amazon don\'t own their customer data, brand, or margins. We give merchants all three. Amazon gives them a box and takes 30%. The merchants who want to survive long-term can\'t live in Amazon\'s house forever.', next: 'shopify_pivot', vibesDelta: 25 },
+        { text: 'We\'re orthogonal to Amazon. Different merchant motivations — brand ownership vs. distribution volume.', next: 'shopify_pivot', vibesDelta: 15 },
+        { text: 'Amazon is a distribution channel. We\'re the merchants\' home base.', next: 'shopify_pivot', vibesDelta: 20 },
+        { text: 'We don\'t really see Amazon as a direct competitor.', next: 'lose_shopify_amazon', isOutcome: true },
       ]
     },
     shopify_pivot: {
-      speaker: 'GARRY TAN', text: '*both claws still* So the product found you.',
+      speaker: 'GARRY TAN', text: '*both claws rest* The product found you. 15 shops in month one, no cold outreach.',
       garry: 'normal', player: 'confident', vibesDelta: 5,
       choices: [
-        { text: 'The demand found us. 15 stores in the first month. We\'ve never written a cold email. Every new merchant comes from an existing merchant.', next: 'shopify_numbers', vibesDelta: 20 },
-        { text: 'Sort of — we did market research to validate it wasn\'t just a coincidence.', next: 'lose_shopify_research', isOutcome: true },
+        { text: 'Every new merchant since then has come from an existing merchant. We\'ve never written a cold email. Every store built on our platform is proof the tool works — it sells itself.', next: 'shopify_platform', vibesDelta: 25 },
+        { text: 'Word of mouth in the merchant community is tight. Every happy merchant refers three more.', next: 'shopify_platform', vibesDelta: 20 },
+        { text: 'Yes. Organic growth since month one.', next: 'shopify_platform', vibesDelta: 15 },
+        { text: 'The initial traction was strong. Growth has leveled off somewhat recently.', next: 'lose_shopify_slow', isOutcome: true },
+      ]
+    },
+    shopify_platform: {
+      speaker: 'GARRY TAN', text: '*typing resumes* Ten years from now — software company or payments company?',
+      garry: 'typing', player: 'pitch', vibesDelta: 0,
+      choices: [
+        { text: 'Both. Software gets merchants in. Payments is where we make real money — a cut of every transaction. As merchants grow, GMV grows, and our revenue grows automatically without a single additional sales call.', next: 'shopify_moat', vibesDelta: 30 },
+        { text: 'Software first, with payments as a natural expansion when scale justifies it.', next: 'shopify_moat', vibesDelta: 15 },
+        { text: 'We\'re building toward a full commerce operating system.', next: 'shopify_moat', vibesDelta: 20 },
+        { text: 'We haven\'t fully decided on the payments layer yet.', next: 'lose_shopify_payments', isOutcome: true },
+      ]
+    },
+    shopify_moat: {
+      speaker: 'GARRY TAN', text: '*Apple Watch pulses* Squarespace exists. BigCommerce exists. Why do merchants actually stay?',
+      garry: 'normal', player: 'pitch', vibesDelta: 0,
+      choices: [
+        { text: 'The app ecosystem. 1,200 apps built by third-party developers that extend the platform. Merchants build their entire tech stack on top of those apps. Switching platforms means rebuilding everything, not just the storefront. The ecosystem is the moat.', next: 'shopify_numbers', vibesDelta: 30 },
+        { text: 'All their product data, customer data, and transaction history lives with us. Switching cost is enormous.', next: 'shopify_numbers', vibesDelta: 20 },
+        { text: 'Our community and brand. Merchants trust us and recommend us constantly.', next: 'shopify_numbers', vibesDelta: 15 },
+        { text: 'Honestly, switching costs are lower than we\'d like at this stage.', next: 'lose_shopify_switching', isOutcome: true },
       ]
     },
     shopify_numbers: {
-      speaker: 'GARRY TAN', text: '*Apple Watch pulses* Numbers.',
-      garry: 'normal', player: 'pitch', vibesDelta: 0,
+      speaker: 'GARRY TAN', text: '*both keyboards go quiet* Numbers.',
+      garry: 'normal', player: 'confident', vibesDelta: 0,
       choices: [
-        { text: '3,200 merchants. $1.8M GMV last month. $90k MRR. 78% two-year cohort retention. When merchants succeed, they never leave. We take 0.5% of GMV — we grow when they grow.', next: 'shopify_win', vibesDelta: 30 },
-        { text: '800 merchants but exponential growth is starting to materialize in the data.', next: 'lose_shopify_exp', isOutcome: true },
+        { text: '3,200 merchants. $1.8M GMV last month. $90k MRR. 78% two-year cohort retention. 1,200 apps in the ecosystem. Zero cold outreach ever. The snowboard shop that couldn\'t find good software became the software.', next: 'shopify_win', vibesDelta: 35 },
+        { text: '3,200 merchants. $90k MRR. Growing month over month with zero acquisition spend.', next: 'shopify_win', vibesDelta: 20 },
+        { text: '800 merchants. $24k MRR. Strong early traction.', next: 'lose_shopify_small', isOutcome: true },
+        { text: 'Merchant count is strong. MRR is still catching up to the user base.', next: 'lose_shopify_mrr', isOutcome: true },
       ]
     },
     shopify_win: {
-      speaker: 'GARRY TAN', text: '*Garry places both claws flat on the desk* 78% two-year retention tied to merchant success. *slowly* You built the snowboard store. The store said: give this to everyone. You listened.',
+      speaker: 'GARRY TAN', text: '*Garry places both claws flat on the desk* 78% two-year retention. An ecosystem merchants can\'t leave. A founder who started as the customer. *slowly* The snowboard shop couldn\'t find good software. So it built the software. So the software became the company. *one claw clap*',
       garry: 'triumphant', player: 'confident', vibesDelta: 20,
       choices: [{ text: '[Outcome: CONGRATULATIONS]', next: 'win', isOutcome: true }]
     },
     win: { outcome: 'win', company: 'the platform that arms the merchant' },
-    lose_shopify_gen: { outcome: 'lose', reason: 'The candle shop has free shipping and a loyalty program. It launched this morning. Your pitch took longer than its entire founding.' },
-    lose_shopify_infra: { outcome: 'lose', reason: 'You described a market without a story. Garry funds founders who were their own first customer. You described the category instead.' },
-    lose_shopify_hedge: { outcome: 'lose', reason: 'You had the clearest framing of the session — "we arm the merchant" — and then retreated from it. Garry writes: "knows the answer, afraid of it."' },
-    lose_shopify_research: { outcome: 'lose', reason: '15 stores asking in month one is not a coincidence to validate. It is a product-market fit signal to sprint toward. Garry funds sprinters.' },
-    lose_shopify_exp: { outcome: 'lose', reason: '"Starting to materialize in the data" means you are looking at a chart and hoping. Garry invests in companies, not charts that might turn into companies.' },
+    lose_shopify_checkout: { outcome: 'lose', reason: 'Higher checkout conversion is A/B testable by any competitor in 30 days. Garry funds structural advantages, not optimization wins.' },
+    lose_shopify_templates: { outcome: 'lose', reason: 'Template libraries are copyable. The candle shop that launched this morning has 140 templates. You were beaten by a side project.' },
+    lose_shopify_scalable: { outcome: 'lose', reason: '"More scalable infrastructure" is an engineering claim. Every founder says it. Garry wants merchant retention numbers, not architecture.' },
+    lose_shopify_viable: { outcome: 'lose', reason: '"The market is large enough for a fourth" means you\'re describing the opportunity, not why you specifically win it.' },
+    lose_shopify_amazon: { outcome: 'lose', reason: '"We don\'t see Amazon as a competitor" means you haven\'t thought about where your best customers will be in five years. Garry has.' },
+    lose_shopify_slow: { outcome: 'lose', reason: 'You started strong and told Garry the growth slowed. He would rather not have known. But now he does. The meeting ended earlier than it needed to.' },
+    lose_shopify_payments: { outcome: 'lose', reason: 'Every commerce platform becomes a payments company. Not deciding is the same as not seeing it. Garry sees it. He wanted to know if you do.' },
+    lose_shopify_switching: { outcome: 'lose', reason: 'You told Garry the moat is weaker than it should be. He appreciated the honesty and wrote "self-aware but under-defended" in his notes.' },
+    lose_shopify_small: { outcome: 'lose', reason: '800 merchants and $24k MRR is a product, not a platform. The ecosystem, payments, and GMV flywheel don\'t exist yet at that scale.' },
+    lose_shopify_mrr: { outcome: 'lose', reason: '"MRR catching up to user base" means you have free merchants. Free merchants are goodwill. Garry funds businesses.' },
   },
 
   twitch: {
@@ -1612,72 +1816,108 @@ const scenarioTrees = {
       speaker: 'GARRY TAN', text: 'What do you do?',
       garry: 'normal', player: 'pitch', vibesDelta: 0,
       choices: [
-        { text: 'We livestream one guy\'s entire life, 24 hours a day. His name is Justin. He wears a camera on his head.', next: 'twitch_justin', vibesDelta: 10 },
-        { text: 'We\'re a live video platform.', next: 'twitch_generic' },
-        { text: 'We pivoted from one guy\'s life to gaming. 8 million people watch strangers play video games on us every single day.', next: 'twitch_numbers_up', vibesDelta: 25 },
-        { text: 'We found the gaming category by accident and it was 10x bigger than the original idea.', next: 'twitch_insight', vibesDelta: 20 },
+        { text: 'We started by streaming one person\'s entire life 24/7. Found out the gaming channels were growing ten times faster. Pivoted hard. Now 8 million people watch strangers play video games on our platform every day.', next: 'twitch_gaming_insight', vibesDelta: 25 },
+        { text: 'Live video platform for gaming. 8 million daily actives.', next: 'twitch_numbers_lead', vibesDelta: 20 },
+        { text: 'We\'re building the TV network for a generation that doesn\'t watch television.', next: 'twitch_tv_angle', vibesDelta: 20 },
+        { text: 'We livestream everything, but gaming is our fastest-growing category.', next: 'twitch_everything' },
       ]
     },
-    twitch_generic: {
-      speaker: 'GARRY TAN', text: '"Live video platform." *types* I deployed one. It streams artisan cheese aging. 500 viewers. The Curds have a Discord. What\'s your angle?',
+    twitch_everything: {
+      speaker: 'GARRY TAN', text: '"Everything" is not a category. What is your category?',
       garry: 'typing', player: 'nervous', vibesDelta: -10,
       choices: [
-        { text: 'Gaming. 8 million people watch strangers play video games daily. Nobody had built the home for it. We did — by accident.', next: 'twitch_insight', vibesDelta: 20 },
-        { text: '[Outcome: GENERIC VIDEO PLATFORM FATALITY]', next: 'lose_twitch_gen', isOutcome: true },
+        { text: 'Gaming. We started with a man with a camera on his head and found gaming was 10x bigger. We\'re the TV network gaming never had.', next: 'twitch_gaming_insight', vibesDelta: 20 },
+        { text: 'Gaming first, but live talk and music are growing categories too.', next: 'lose_twitch_broad', isOutcome: true },
+        { text: 'We\'re gaming-first. Other categories are secondary and serve the gaming community.', next: 'twitch_gaming_insight', vibesDelta: 15 },
+        { text: 'We\'re letting the community define the categories organically.', next: 'lose_twitch_community_defines', isOutcome: true },
       ]
     },
-    twitch_justin: {
-      speaker: 'GARRY TAN', text: '*one keyboard stops* Justin wears a camera on his head.',
-      garry: 'shocked', player: 'confident', vibesDelta: 0,
+    twitch_numbers_lead: {
+      speaker: 'GARRY TAN', text: '8 million daily. *types* My cheese-aging stream has 500 viewers. How did you get 8 million?',
+      garry: 'normal', player: 'confident', vibesDelta: 5,
       choices: [
-        { text: 'He does. Millions of minutes watched per month. We didn\'t understand why until we noticed the gaming channels growing ten times faster than Justin\'s life.', next: 'twitch_insight', vibesDelta: 20 },
-        { text: 'He does. The camera has excellent stabilization.', next: 'lose_twitch_camera', isOutcome: true },
+        { text: 'Started with one guy wearing a camera. Noticed gaming channels growing 10x faster than everything else. Pivoted completely. Gamers found us because we were the only dedicated home for gaming content, built just for them.', next: 'twitch_gaming_insight', vibesDelta: 20 },
+        { text: 'Organic growth. Gamers found us and told other gamers.', next: 'twitch_gaming_insight', vibesDelta: 10 },
+        { text: 'We were first to the gaming content category.', next: 'twitch_gaming_insight', vibesDelta: 10 },
+        { text: 'The original life-streaming audience migrated to the gaming channels.', next: 'lose_twitch_migrated', isOutcome: true },
       ]
     },
-    twitch_numbers_up: {
-      speaker: 'GARRY TAN', text: '*pauses typing* 8 million daily. Where does the money come from?',
+    twitch_tv_angle: {
+      speaker: 'GARRY TAN', text: '*both claws still* Say more about that.',
+      garry: 'normal', player: 'confident', vibesDelta: 5,
+      choices: [
+        { text: 'Under-35s have abandoned broadcast TV. But they still want live programming and shared viewing. Gaming is the biggest entertainment category for that demographic. We\'re ESPN for gaming — the live sports network that demographic actually watches.', next: 'twitch_gaming_insight', vibesDelta: 25 },
+        { text: 'Young people don\'t watch cable. They watch online. We\'re the live version of that shift.', next: 'twitch_gaming_insight', vibesDelta: 15 },
+        { text: 'TV is a metaphor. We\'re not literally replacing TV.', next: 'lose_twitch_not_tv', isOutcome: true },
+        { text: 'Traditional TV is declining and we\'re capturing that attention share.', next: 'twitch_gaming_insight', vibesDelta: 10 },
+      ]
+    },
+    twitch_gaming_insight: {
+      speaker: 'GARRY TAN', text: '*slowly* People watch strangers play video games. Explain why — like I\'ve never gamed.',
+      garry: 'normal', player: 'confident', vibesDelta: 5,
+      choices: [
+        { text: 'People have always watched games. Arcades. A friend\'s couch. Stands at a stadium. We digitized the couch. Watching someone skilled at a game is the same entertainment as watching a professional athlete. The game is the sport.', next: 'twitch_creator_model', vibesDelta: 25 },
+        { text: 'It\'s part tutorial, part entertainment, part social — like a talk show where the game is the topic and the streamer is the personality.', next: 'twitch_creator_model', vibesDelta: 20 },
+        { text: 'The streamer is the personality. The game is almost incidental — people come for the person.', next: 'twitch_creator_model', vibesDelta: 20 },
+        { text: 'We\'re still studying the psychology honestly. The engagement is clear, the why is still being understood.', next: 'lose_twitch_why', isOutcome: true },
+      ]
+    },
+    twitch_creator_model: {
+      speaker: 'GARRY TAN', text: '*Apple Watch pulses* The streamers make money on your platform. Walk me through the economics.',
       garry: 'normal', player: 'pitch', vibesDelta: 0,
       choices: [
-        { text: 'Subscriptions to streamers, virtual currency, ad revenue. The streamer keeps 50%. They have income. We have a platform. When they grow, we grow.', next: 'twitch_insight', vibesDelta: 15 },
-        { text: 'Right now mostly ads. We\'re exploring the full monetization model.', next: 'lose_twitch_mono', isOutcome: true },
+        { text: 'Subscriptions: $5/month to support a streamer, we split 50/50. Bits: virtual currency thrown during streams, we take 30%. Ad pre-rolls, rev share to the streamer. Top 100 streamers earn $100k+/year. They are not leaving.', next: 'twitch_competition', vibesDelta: 30 },
+        { text: 'Subscriptions and virtual currency primarily. We align our revenue with creator success.', next: 'twitch_competition', vibesDelta: 20 },
+        { text: 'Multiple monetization streams per creator. We designed it so they grow when we grow.', next: 'twitch_competition', vibesDelta: 15 },
+        { text: 'We\'re still developing the full creator monetization model.', next: 'lose_twitch_creator_mono', isOutcome: true },
       ]
     },
-    twitch_insight: {
-      speaker: 'GARRY TAN', text: '*slowly* People watch strangers play video games.',
-      garry: 'normal', player: 'confident', vibesDelta: 0,
-      choices: [
-        { text: 'People have always watched other people play — arcades, a friend\'s couch. We digitized the couch. Gaming is the most watched entertainment for under-35s and had no TV network. We\'re the TV network.', next: 'twitch_moat', vibesDelta: 20 },
-        { text: 'It sounds weird when you say it like that. We\'re still figuring out exactly why—', next: 'lose_twitch_figuring', isOutcome: true },
-      ]
-    },
-    twitch_moat: {
-      speaker: 'GARRY TAN', text: '*both keyboards resume, faster* Why can\'t YouTube just add a gaming tab?',
+    twitch_competition: {
+      speaker: 'GARRY TAN', text: '*typing resumes* YouTube Gaming just launched. Why don\'t streamers just go there?',
       garry: 'typing', player: 'pitch', vibesDelta: 0,
       choices: [
-        { text: 'They will. And they\'ll be late. Streamers are building careers and communities on our platform specifically. Switching means abandoning your audience. The community is the moat, not the technology.', next: 'twitch_numbers', vibesDelta: 25 },
-        { text: 'YouTube\'s infrastructure isn\'t optimized for live. Their latency is higher and—', next: 'lose_twitch_tech', isOutcome: true },
+        { text: 'A streamer\'s audience is on our platform. Moving to YouTube means starting from zero followers. The community is the moat. And YouTube is VOD-first — live is an afterthought for them. For us, live is the entire product.', next: 'twitch_content', vibesDelta: 30 },
+        { text: 'The gaming community formed here. Gaming identity belongs to us, not YouTube.', next: 'twitch_content', vibesDelta: 20 },
+        { text: 'YouTube has more reach, but gaming is our brand. They\'re a general platform.', next: 'twitch_content', vibesDelta: 15 },
+        { text: 'Some streamers will go. We need to keep improving to retain the best ones.', next: 'lose_twitch_some_will', isOutcome: true },
+      ]
+    },
+    twitch_content: {
+      speaker: 'GARRY TAN', text: '*one claw points* Content moderation. 8 million daily users, live video, no delay. How do you not have a disaster every single morning?',
+      garry: 'normal', player: 'nervous', vibesDelta: 0,
+      choices: [
+        { text: 'Community moderators — every channel\'s community polices itself. Platform trust and safety team for escalations. And the creator economics create self-regulation: one ban means losing your income. The streamer has more to lose than we do.', next: 'twitch_numbers', vibesDelta: 25 },
+        { text: 'Community moderation plus automated detection. Streamers have deep economic incentive to stay clean.', next: 'twitch_numbers', vibesDelta: 20 },
+        { text: 'Trust and safety team plus automated flagging. Ongoing investment every quarter.', next: 'twitch_numbers', vibesDelta: 10 },
+        { text: 'Live content moderation is unsolved for everyone. We\'re investing in it.', next: 'lose_twitch_moderation', isOutcome: true },
       ]
     },
     twitch_numbers: {
-      speaker: 'GARRY TAN', text: '*Apple Watch pulses three times* Numbers.',
-      garry: 'typing', player: 'confident', vibesDelta: 0,
+      speaker: 'GARRY TAN', text: '*both keyboards silent* Full numbers.',
+      garry: 'normal', player: 'confident', vibesDelta: 0,
       choices: [
-        { text: '8M daily actives. 45-minute average session. $14M ARR growing 40% month over month. Our top 100 streamers each earn over $100k per year on our platform. They will not leave.', next: 'twitch_win', vibesDelta: 30 },
-        { text: 'Daily actives are strong but ARPU is still low. The monetization thesis is maturing.', next: 'lose_twitch_arpu', isOutcome: true },
+        { text: '8M daily actives. 45-minute average session. $14M ARR growing 40% month over month. Top 100 streamers earn $100k+/year. Zero cold acquisition — streamers promote their own streams and grow our audience for us.', next: 'twitch_win', vibesDelta: 35 },
+        { text: '8M daily actives. $14M ARR. 40% month-over-month.', next: 'twitch_win', vibesDelta: 20 },
+        { text: '2M daily actives. Revenue still developing.', next: 'lose_twitch_two_million', isOutcome: true },
+        { text: 'Strong engagement metrics. Revenue is ramping.', next: 'lose_twitch_coming', isOutcome: true },
       ]
     },
     twitch_win: {
-      speaker: 'GARRY TAN', text: '*Garry stands* *walks to window* You started with a camera strapped to a guy named Justin. You found gaming. You built the television network for a generation that doesn\'t watch television. *turns back* The pivot WAS the insight.',
+      speaker: 'GARRY TAN', text: '*Garry stands* *walks to the window* Started with a camera on a man\'s head. Found gaming by watching the data. Built ESPN for a generation that doesn\'t watch ESPN. 45-minute sessions. Creator economics that lock in the best streamers. *turns back* The pivot was the insight.',
       garry: 'triumphant', player: 'confident', vibesDelta: 20,
       choices: [{ text: '[Outcome: CONGRATULATIONS]', next: 'win', isOutcome: true }]
     },
     win: { outcome: 'win', company: 'the TV network gaming always deserved' },
-    lose_twitch_gen: { outcome: 'lose', reason: 'The cheese-aging stream developed a community. They call themselves the Curds. Garry is moderating their Discord now. He apologizes. He really got into it.' },
-    lose_twitch_camera: { outcome: 'lose', reason: 'Garry does not invest in camera stabilization. He invests in distribution networks for human attention. You missed the insight by three sentences.' },
-    lose_twitch_figuring: { outcome: 'lose', reason: 'You have 8 million daily users and are "still figuring out why." Garry invests in founders who understand their own product. He can\'t give you the insight you already have.' },
-    lose_twitch_mono: { outcome: 'lose', reason: '"Exploring the monetization model" at 8 million daily actives means you\'ve built a utility and don\'t know how to own it.' },
-    lose_twitch_tech: { outcome: 'lose', reason: 'YouTube\'s latency problem is solvable in 6 months. A community moat takes 6 years. You defended the wrong thing.' },
-    lose_twitch_arpu: { outcome: 'lose', reason: '"The monetization thesis is maturing" is a Series B phrase. You are a seed company. Your engagement is excellent. You hid it behind a thesis.' },
+    lose_twitch_broad: { outcome: 'lose', reason: '"Gaming, talk, and music" is YouTube\'s positioning. Garry doesn\'t fund things that are already funded.' },
+    lose_twitch_community_defines: { outcome: 'lose', reason: 'Letting the community define your category means you don\'t have one. Garry invests in founders who chose their category before anyone had to ask.' },
+    lose_twitch_migrated: { outcome: 'lose', reason: 'The life-streaming audience moving to gaming is not a growth story. That is an audience changing channels inside your own house.' },
+    lose_twitch_not_tv: { outcome: 'lose', reason: 'You used the TV metaphor and then disowned it when pressed. Garry writes: "retreats from own framing." You had the best analogy in the room and abandoned it.' },
+    lose_twitch_why: { outcome: 'lose', reason: '8 million people use your product every day and you\'re "still studying why." Garry invests in founders who understand their product better than their users do.' },
+    lose_twitch_creator_mono: { outcome: 'lose', reason: 'You have top streamers earning real money and you\'re "still developing" monetization. The streamers developed it themselves. You weren\'t watching.' },
+    lose_twitch_some_will: { outcome: 'lose', reason: '"Some streamers will go" is not a competitive defense. Garry invests in companies that describe why people stay, not ones that concede why they leave.' },
+    lose_twitch_moderation: { outcome: 'lose', reason: '"Unsolved for everyone" means everyone including you has the problem. Garry\'s question was how YOU solve it specifically. You answered with a category.' },
+    lose_twitch_two_million: { outcome: 'lose', reason: '2 million daily actives and developing revenue is a promising product. The distance to an undeniable platform is exactly 6 million users.' },
+    lose_twitch_coming: { outcome: 'lose', reason: '"Revenue is ramping" has been true for many companies in the months before they ran out of money waiting for it.' },
   },
 
   flexport: {
@@ -1685,63 +1925,107 @@ const scenarioTrees = {
       speaker: 'GARRY TAN', text: 'What do you do?',
       garry: 'normal', player: 'pitch', vibesDelta: 0,
       choices: [
-        { text: 'We\'re a freight forwarder that actually uses software.', next: 'flexport_fax', vibesDelta: 15 },
-        { text: 'Global trade runs on fax machines and Excel. We\'re fixing that.', next: 'flexport_fax', vibesDelta: 20 },
-        { text: 'Logistics software.', next: 'flexport_generic' },
-        { text: 'I worked at a freight forwarding company specifically to learn what\'s broken. I documented 40 manual workflows our software eliminates.', next: 'flexport_insider', vibesDelta: 25 },
+        { text: 'We\'re a freight forwarder — we move goods internationally. Except we do it with software instead of fax machines.', next: 'flexport_fax', vibesDelta: 20 },
+        { text: 'I spent a year working inside a freight forwarding company specifically to learn what was broken. I documented 40 manual workflows. We\'ve automated 38 of them.', next: 'flexport_insider', vibesDelta: 25 },
+        { text: 'Global freight. $9 trillion industry. Zero real software. We\'re fixing that.', next: 'flexport_nine_trillion', vibesDelta: 20 },
+        { text: 'Logistics tech.', next: 'flexport_too_short' },
       ]
     },
-    flexport_generic: {
-      speaker: 'GARRY TAN', text: '"Logistics software." There are 400 logistics software companies. What do you forward?',
+    flexport_too_short: {
+      speaker: 'GARRY TAN', text: '"Logistics tech." 400 companies say that. What specifically do you move, and who\'s in pain?',
       garry: 'typing', player: 'nervous', vibesDelta: -10,
       choices: [
-        { text: 'International freight. The actual boats and planes that move 90% of the world\'s goods. $9 trillion industry. Runs on fax machines. I know because I worked in it.', next: 'flexport_insider', vibesDelta: 20 },
-        { text: '[Outcome: GENERIC LOGISTICS FATALITY]', next: 'lose_flex_gen', isOutcome: true },
+        { text: 'International freight — the boats and planes that carry physical goods. $9 trillion industry. The software is from 1992. I know because I went and worked in it.', next: 'flexport_insider', vibesDelta: 20 },
+        { text: 'Ocean freight primarily, air as a secondary lane. SMB importers and exporters.', next: 'flexport_fax', vibesDelta: 15 },
+        { text: 'Supply chain broadly — warehousing, shipping, customs clearance.', next: 'lose_flexport_broad', isOutcome: true },
+        { text: 'We focus on the mid-market importer/exporter segment.', next: 'flexport_nine_trillion', vibesDelta: 10 },
+      ]
+    },
+    flexport_nine_trillion: {
+      speaker: 'GARRY TAN', text: '$9 trillion, zero software. *types* DHL has a website. FedEx has an app. Why is this still broken?',
+      garry: 'typing', player: 'pitch', vibesDelta: 0,
+      choices: [
+        { text: 'DHL\'s website tracks packages. It does not handle customs documentation, letter of credit financing, port congestion rerouting, or the 40 paper forms required per international shipment. I\'ve seen the actual process. It is fax machines and phone calls.', next: 'flexport_fax', vibesDelta: 25 },
+        { text: 'The incumbents have IT systems but no real-time visibility layer for the shipper. You ship a container and then wait and hope.', next: 'flexport_fax', vibesDelta: 20 },
+        { text: 'The incumbents modernized more than people think — which is proof the demand exists for what we\'re building.', next: 'lose_flexport_incumbents', isOutcome: true },
+        { text: 'They focus on large enterprises. The mid-market is completely underserved.', next: 'flexport_fax', vibesDelta: 15 },
       ]
     },
     flexport_fax: {
-      speaker: 'GARRY TAN', text: '*typing stops* Fax machines. In global trade. In 2024.',
+      speaker: 'GARRY TAN', text: '*typing stops* Fax machines. In international commerce. Right now.',
       garry: 'shocked', player: 'confident', vibesDelta: 5,
       choices: [
-        { text: 'I personally watched a freight forwarder fax a shipment status update. The customer found out their goods were delayed by reading the fax response. In 2023. The $9 trillion industry has worse software than a 1995 dental office.', next: 'flexport_insider', vibesDelta: 20 },
-        { text: 'The industry is ready to digitize and we are positioned to capture—', next: 'lose_flex_ready', isOutcome: true },
+        { text: 'I personally watched a freight forwarder fax a shipment status update. The importer found out their goods were delayed by calling to ask about the fax response. In 2023. I\'m not describing an edge case. I\'m describing Tuesday.', next: 'flexport_insider', vibesDelta: 25 },
+        { text: 'Yes. Bill of lading, commercial invoice, certificate of origin — paper documents, faxed or emailed as PDFs. Every shipment. Every day.', next: 'flexport_insider', vibesDelta: 20 },
+        { text: 'Some have moved to email. But the underlying process is identical.', next: 'lose_flexport_email', isOutcome: true },
+        { text: 'Fax machines and Excel spreadsheets. Customs documentation especially.', next: 'flexport_insider', vibesDelta: 15 },
       ]
     },
     flexport_insider: {
-      speaker: 'GARRY TAN', text: '*slowly* You worked in the industry.',
+      speaker: 'GARRY TAN', text: '*slowly* You worked inside one. On purpose.',
       garry: 'normal', player: 'confident', vibesDelta: 5,
       choices: [
-        { text: 'One year. I took the job specifically to learn every broken process. Every sales call I have, I\'ve already lived the customer\'s pain from the inside.', next: 'flexport_moat', vibesDelta: 25 },
-        { text: 'Briefly. Enough to understand the landscape.', next: 'lose_flex_brief', isOutcome: true },
+        { text: 'One year. Took the job specifically to understand what was broken before writing a line of code. Filed real customs documents. Made the phone calls. Watched what broke and why. Every sales call I have, I\'ve already lived that customer\'s day.', next: 'flexport_complexity', vibesDelta: 30 },
+        { text: 'Six months. I wanted to understand the customer before building for them.', next: 'flexport_complexity', vibesDelta: 20 },
+        { text: 'I had a contact in the industry who helped me understand the landscape.', next: 'lose_flexport_contact', isOutcome: true },
+        { text: 'I worked there and saw enough to know there was a real opportunity.', next: 'flexport_complexity', vibesDelta: 15 },
+      ]
+    },
+    flexport_complexity: {
+      speaker: 'GARRY TAN', text: '*typing resumes* Customs clearance. Walk me through it. Make me understand the complexity.',
+      garry: 'typing', player: 'pitch', vibesDelta: 0,
+      choices: [
+        { text: 'Every international shipment needs: commercial invoice, packing list, bill of lading, certificate of origin — plus up to 40 more documents depending on goods type and destination country. Our software auto-generates every document from the shipment record, files electronically where possible, and flags exceptions before the container arrives at port.', next: 'flexport_moat', vibesDelta: 30 },
+        { text: 'Document generation, customs filing, duty calculation, compliance check — all automated. Most delays happen when paperwork is wrong or late.', next: 'flexport_moat', vibesDelta: 20 },
+        { text: 'We handle the full customs documentation stack and provide real-time status visibility.', next: 'flexport_moat', vibesDelta: 15 },
+        { text: 'We simplify it significantly through automation and better UX.', next: 'lose_flexport_simplify', isOutcome: true },
       ]
     },
     flexport_moat: {
-      speaker: 'GARRY TAN', text: '*typing* What\'s your moat when Maersk builds a portal?',
-      garry: 'typing', player: 'pitch', vibesDelta: 0,
+      speaker: 'GARRY TAN', text: '*Apple Watch pulses* What\'s your moat when a VC funds someone to copy this exact product tomorrow?',
+      garry: 'normal', player: 'pitch', vibesDelta: 0,
       choices: [
-        { text: 'Maersk is one carrier. We connect to 200 carriers, 400 ports, and every customs authority. A single-carrier portal solves 15% of the problem. We solve 100%: booking, customs clearance, real-time tracking, compliance across every lane.', next: 'flexport_numbers', vibesDelta: 25 },
-        { text: 'We\'ll have more integrations by then. We\'re moving fast.', next: 'lose_flex_fast', isOutcome: true },
+        { text: 'Data and relationships. Two years of shipping data makes our routing predictions more accurate. 400 carrier relationships took months to build. And the licensed customs broker designation is a federal regulatory requirement — you need government authority to clear goods. That takes years.', next: 'flexport_customers', vibesDelta: 30 },
+        { text: 'The licensed freight broker designation is a regulatory moat — federal authority you can\'t just build around.', next: 'flexport_customers', vibesDelta: 25 },
+        { text: 'First-mover brand in the space. Reputation is the currency of freight.', next: 'flexport_customers', vibesDelta: 10 },
+        { text: 'Execution speed. We\'re moving fast.', next: 'lose_flexport_speed', isOutcome: true },
+      ]
+    },
+    flexport_customers: {
+      speaker: 'GARRY TAN', text: '*both keyboards pause* Who are your best customers? Name them, describe them.',
+      garry: 'normal', player: 'pitch', vibesDelta: 0,
+      choices: [
+        { text: 'A furniture importer in Los Angeles moving 4 containers a month from Vietnam. A sporting goods brand importing from China and re-exporting to Europe. A food company navigating FDA import alerts. All industries, all trade lanes. The common thread: they had nightmares before us.', next: 'flexport_numbers', vibesDelta: 25 },
+        { text: 'Mid-market importers and exporters, $5M-$100M in revenue. They can\'t afford dedicated logistics staff but are too complex for parcel shipping.', next: 'flexport_numbers', vibesDelta: 20 },
+        { text: 'A diverse mix of industries — consumer goods, electronics, food.', next: 'flexport_numbers', vibesDelta: 10 },
+        { text: 'We\'re still building out the ideal customer profile.', next: 'lose_flexport_icp', isOutcome: true },
       ]
     },
     flexport_numbers: {
-      speaker: 'GARRY TAN', text: '*Apple Watch pulses* Numbers.',
-      garry: 'typing', player: 'pitch', vibesDelta: 0,
+      speaker: 'GARRY TAN', text: '*both keyboards pause fully* Numbers. All of them.',
+      garry: 'typing', player: 'confident', vibesDelta: 0,
       choices: [
-        { text: '$2.4M in freight value moved last month. 60 enterprise customers. 18% month-over-month growth. We take a margin on every shipment — we make money when goods move. Global trade doesn\'t stop.', next: 'flexport_win', vibesDelta: 30 },
-        { text: '20 customers but deal sizes are large and we see a clear path to scale.', next: 'lose_flex_path', isOutcome: true },
+        { text: '$2.4M in freight value moved last month. 60 enterprise customers. 18% month-over-month growth for 8 months. We take a margin on every shipment. Revenue tied to global trade volume, which doesn\'t go to zero. The founder worked inside the industry. He knows every fax machine.', next: 'flexport_win', vibesDelta: 35 },
+        { text: '$2.4M GMV. 60 customers. 18% MoM for 8 months.', next: 'flexport_win', vibesDelta: 20 },
+        { text: '20 customers. Strong early signal.', next: 'lose_flexport_twenty', isOutcome: true },
+        { text: 'Revenue is growing but still early stage.', next: 'lose_flexport_early', isOutcome: true },
       ]
     },
     flexport_win: {
-      speaker: 'GARRY TAN', text: '*both keyboards go silent* $9 trillion industry. 1970s infrastructure. One founder who walked into the industry specifically to learn how to break it. *claw clap* THAT is what "do things that don\'t scale" actually means.',
+      speaker: 'GARRY TAN', text: '*both keyboards go silent* $9 trillion industry. 1970s infrastructure. One founder who walked in specifically to break it. Documented 40 workflows. Automated 38. Federal freight broker license as a moat. *long pause* *claw clap* THAT is what doing the work looks like.',
       garry: 'triumphant', player: 'confident', vibesDelta: 20,
       choices: [{ text: '[Outcome: CONGRATULATIONS]', next: 'win', isOutcome: true }]
     },
     win: { outcome: 'win', company: 'the freight forwarder that actually uses software' },
-    lose_flex_gen: { outcome: 'lose', reason: 'Garry funded three logistics software companies. All built warehouse management systems. None went near international freight. You missed the specific insight.' },
-    lose_flex_ready: { outcome: 'lose', reason: '"The industry is ready to digitize" has been said about freight since 1998. Someone has to force it. You described the market instead of being the force.' },
-    lose_flex_brief: { outcome: 'lose', reason: '"Briefly" means you understood enough to know the words but not enough to know the pain. Garry funds founders who stayed long enough to get angry.' },
-    lose_flex_fast: { outcome: 'lose', reason: '"Moving fast" is not a moat. Every startup is moving fast. Garry asked about structural defensibility. You answered with pace.' },
-    lose_flex_path: { outcome: 'lose', reason: '"A clear path to scale" from 20 customers is a vision statement. Garry invests in evidence of scale, not confidence in it.' },
+    lose_flexport_broad: { outcome: 'lose', reason: 'Warehousing, shipping, customs — three products, zero focus. The fax machine is a specific, defensible insight. "Supply chain broadly" is a TAM slide.' },
+    lose_flexport_incumbents: { outcome: 'lose', reason: 'You said incumbents have modernized, then said that proves demand. Garry heard: "the problem is being solved and I also want to solve it." He needed to hear the problem is NOT being solved.' },
+    lose_flexport_email: { outcome: 'lose', reason: '"Some have moved to email" is the most accurate thing you\'ve said. It also makes your pitch less urgent. The fax machine was your hook. You walked it back.' },
+    lose_flexport_contact: { outcome: 'lose', reason: 'A contact who explained the landscape is market research. A year working inside it is a product. Garry funds founders who did the product.' },
+    lose_flexport_simplify: { outcome: 'lose', reason: '"We simplify it significantly" is how you describe a product you don\'t fully understand. Garry wanted the mechanism. You gave him marketing copy.' },
+    lose_flexport_speed: { outcome: 'lose', reason: '"Moving fast" is not a moat in an industry that moves physical objects across oceans. Garry invests in structural advantages.' },
+    lose_flexport_icp: { outcome: 'lose', reason: 'You\'re building for an industry you worked inside for a year and you\'re still building out the ICP. Your ICP walked into the freight office every day you were there.' },
+    lose_flexport_twenty: { outcome: 'lose', reason: '20 customers in freight is a pilot. Garry needs to see the reorder rate before he can believe the business is real.' },
+    lose_flexport_early: { outcome: 'lose', reason: '"Still early stage" applies to every company that has been funded and every company that hasn\'t. Garry needed a number.' },
   },
 
   wandb: {
@@ -1749,72 +2033,108 @@ const scenarioTrees = {
       speaker: 'GARRY TAN', text: 'What do you do?',
       garry: 'normal', player: 'pitch', vibesDelta: 0,
       choices: [
-        { text: 'We help ML teams track their experiments. Like GitHub but for model training runs.', next: 'wandb_users', vibesDelta: 20 },
-        { text: 'MLOps tooling for enterprise machine learning teams.', next: 'wandb_enterprise' },
-        { text: 'Every ML researcher trains hundreds of models and has no idea which one worked or why. I was that researcher. I built this for myself first.', next: 'wandb_origin', vibesDelta: 25 },
-        { text: 'We\'re building the observability layer for AI.', next: 'wandb_obs' },
+        { text: 'ML experiment tracking. Like GitHub but for model training runs — every hyperparameter, every loss curve, every checkpoint, tracked automatically.', next: 'wandb_origin_prompt', vibesDelta: 20 },
+        { text: 'I was an ML researcher. I trained 400 models over 3 months, lost track of what worked, and deleted the good checkpoint. So I built the tool I needed.', next: 'wandb_origin', vibesDelta: 25 },
+        { text: 'MLOps tooling for enterprise machine learning teams.', next: 'wandb_enterprise_trap' },
+        { text: 'Developer tools for ML engineers. Free for individuals, paid for teams.', next: 'wandb_origin_prompt', vibesDelta: 15 },
       ]
     },
-    wandb_enterprise: {
-      speaker: 'GARRY TAN', text: '"MLOps enterprise tooling." *types* Deployed one. Kubernetes dashboard. Very long sales cycle. What\'s your go-to-market?',
+    wandb_enterprise_trap: {
+      speaker: 'GARRY TAN', text: '"Enterprise MLOps." I deployed that. 14-month sales cycle. $200k ACV. Very slow. What\'s your go-to-market?',
       garry: 'typing', player: 'nervous', vibesDelta: -10,
       choices: [
-        { text: 'We start with individual researchers who adopt us for free. They love us. Then they join companies and pull us in from the inside. We never cold-sell into enterprise — enterprise comes to us.', next: 'wandb_users', vibesDelta: 25 },
-        { text: '[Outcome: ENTERPRISE MLOPS FATALITY]', next: 'lose_wandb_ent', isOutcome: true },
+        { text: 'We don\'t sell to enterprises. We give the tool to individual researchers free. They love it. They get hired at companies. They install it on day one. Enterprise comes to us through researchers we never paid to acquire.', next: 'wandb_origin', vibesDelta: 25 },
+        { text: 'Bottom-up adoption through the developer community, converting to enterprise contracts.', next: 'wandb_origin', vibesDelta: 15 },
+        { text: 'We\'re still refining the go-to-market. The product comes first.', next: 'lose_wandb_gtm', isOutcome: true },
+        { text: 'We\'re building an enterprise sales motion alongside the developer motion.', next: 'lose_wandb_sales', isOutcome: true },
       ]
     },
-    wandb_obs: {
-      speaker: 'GARRY TAN', text: '"Observability layer for AI." *types* Datadog is already doing this.',
-      garry: 'typing', player: 'nervous', vibesDelta: -5,
+    wandb_origin_prompt: {
+      speaker: 'GARRY TAN', text: '*taps claw once* Were you the researcher? Or did you hear about the pain from someone else?',
+      garry: 'normal', player: 'pitch', vibesDelta: 0,
       choices: [
-        { text: 'Datadog monitors infrastructure. We track model training — hyperparameters, loss curves, dataset versions, gradient norms. An ML researcher would no sooner use Datadog to debug a model than a mechanic would use a stethoscope to fix a transmission.', next: 'wandb_origin', vibesDelta: 20 },
-        { text: 'We\'re focused on the ML-specific workflow layer which differentiates from general observability—', next: 'lose_wandb_overlap', isOutcome: true },
+        { text: 'I was the researcher. 400 training runs, 3 months, lost track of which hyperparameters produced the good model. Deleted the checkpoint. Had to start over from nothing. Built this for myself.', next: 'wandb_origin', vibesDelta: 25 },
+        { text: 'I interviewed dozens of ML engineers and validated the pain consistently.', next: 'lose_wandb_interviewed', isOutcome: true },
+        { text: 'I worked adjacent to ML teams and saw it firsthand.', next: 'wandb_origin', vibesDelta: 15 },
+        { text: 'My co-founder was the researcher. I\'m the product and business lead.', next: 'wandb_origin', vibesDelta: 10 },
       ]
     },
     wandb_origin: {
-      speaker: 'GARRY TAN', text: '*both keyboards quiet* You were the researcher.',
+      speaker: 'GARRY TAN', text: '*both keyboards slow* The researcher lost the good checkpoint. And built the tool that would have saved it.',
       garry: 'normal', player: 'confident', vibesDelta: 5,
       choices: [
-        { text: 'I ran 400 training runs over 3 months, lost track of which hyperparameters worked, and accidentally deleted the good checkpoint. I built this tool for myself. Then every ML researcher I showed it to immediately wanted it.', next: 'wandb_users', vibesDelta: 20 },
-        { text: 'We interviewed ML engineers extensively to validate the pain point—', next: 'lose_wandb_interview', isOutcome: true },
+        { text: 'And showed it to 10 other researchers who immediately said "I need this." Not "interesting" — "I need this." That\'s when I knew.', next: 'wandb_adoption', vibesDelta: 25 },
+        { text: 'The problem was personal before it was a market. That\'s how I knew it was real.', next: 'wandb_adoption', vibesDelta: 20 },
+        { text: 'Every ML researcher I\'ve talked to has the same story. The loss is universal.', next: 'wandb_adoption', vibesDelta: 15 },
+        { text: 'Now the tool exists so no one has to lose a checkpoint the way I did.', next: 'wandb_adoption', vibesDelta: 10 },
       ]
     },
-    wandb_users: {
-      speaker: 'GARRY TAN', text: '*claw taps desk* Who are your users right now?',
-      garry: 'normal', player: 'pitch', vibesDelta: 0,
+    wandb_adoption: {
+      speaker: 'GARRY TAN', text: '*typing resumes* Who specifically uses it right now?',
+      garry: 'typing', player: 'pitch', vibesDelta: 0,
       choices: [
-        { text: 'Every top ML research lab. The leading AI labs use us. Most top academic groups. They adopted for free — and now their engineers are at companies buying us.', next: 'wandb_bottoms_up', vibesDelta: 25 },
-        { text: 'Mostly indie ML researchers right now, building toward enterprise.', next: 'lose_wandb_indie', isOutcome: true },
+        { text: 'Every top AI research lab. The leading AI companies use us in their research stacks. Most top academic ML groups. All adopted free — and their researchers are now being hired at companies that need to buy the enterprise tier.', next: 'wandb_cloud_risk', vibesDelta: 25 },
+        { text: 'Thousands of individual ML researchers globally. The academic community adopted us first.', next: 'wandb_cloud_risk', vibesDelta: 15 },
+        { text: 'A broad range of ML practitioners from research to production deployment.', next: 'lose_wandb_segments', isOutcome: true },
+        { text: 'We\'re growing across all ML user segments steadily.', next: 'lose_wandb_segments', isOutcome: true },
       ]
     },
-    wandb_bottoms_up: {
-      speaker: 'GARRY TAN', text: '*Apple Watch pulses* If the top labs use you for free, where does the money come from?',
+    wandb_cloud_risk: {
+      speaker: 'GARRY TAN', text: '*Apple Watch pulses* AWS SageMaker just added experiment tracking. Google Vertex has it. Why don\'t those kill you?',
       garry: 'normal', player: 'pitch', vibesDelta: 0,
       choices: [
-        { text: 'A researcher who loves us at one lab gets hired at a big tech company. They install our tool on day one. That company needs team features, audit logs, SSO — that\'s our enterprise plan. We never sell to enterprises. We get pulled in by the people who build inside them.', next: 'wandb_numbers', vibesDelta: 30 },
-        { text: 'We\'re figuring out enterprise monetization. The researcher love is real and conversion will come.', next: 'lose_wandb_figuring', isOutcome: true },
+        { text: 'SageMaker only works in AWS. Vertex only in GCP. We work everywhere — AWS, GCP, Azure, local GPU cluster, on-prem. A researcher at a company doesn\'t control their cloud vendor. They control their experiment tracker. Cloud-agnostic is a structural advantage hyperscalers can\'t match.', next: 'wandb_open_source', vibesDelta: 30 },
+        { text: 'Cloud vendor tools are lowest-common-denominator by design. They support every ML use case at mediocre depth. We support ML researchers at exceptional depth.', next: 'wandb_open_source', vibesDelta: 20 },
+        { text: 'Our features are deeper and our user experience is much better.', next: 'lose_wandb_features', isOutcome: true },
+        { text: 'It\'s a real risk. We\'re building faster than them right now.', next: 'lose_wandb_cloud_risk', isOutcome: true },
+      ]
+    },
+    wandb_open_source: {
+      speaker: 'GARRY TAN', text: '*both keyboards slow* What stops someone from open-sourcing your core tracking library and eliminating your product moat?',
+      garry: 'typing', player: 'pitch', vibesDelta: 0,
+      choices: [
+        { text: 'We\'d welcome it. Open source grows the market. The enterprise features — team dashboards, access controls, audit logs, artifact storage at scale — aren\'t in an open-source library. They\'re in our paid product. The open source version is our distribution engine.', next: 'wandb_pull_through', vibesDelta: 30 },
+        { text: 'Open source alternatives already exist. Users try them and come back. The managed product is what they actually need.', next: 'wandb_pull_through', vibesDelta: 20 },
+        { text: 'The community and ecosystem are the moat, not the code.', next: 'wandb_pull_through', vibesDelta: 15 },
+        { text: 'It\'s a risk we think about.', next: 'lose_wandb_risk', isOutcome: true },
+      ]
+    },
+    wandb_pull_through: {
+      speaker: 'GARRY TAN', text: '*leans back* Walk me through the exact sequence. Researcher loves you free. Then what happens?',
+      garry: 'normal', player: 'pitch', vibesDelta: 0,
+      choices: [
+        { text: 'Researcher at top lab → gets hired at a tech company → installs free tier on day one → runs an experiment → shows teammates → team adopts it → IT sees it in the environment audit → procurement reaches out to us for enterprise contract. We have never made an outbound sales call. It just happens.', next: 'wandb_numbers', vibesDelta: 30 },
+        { text: 'The researcher is the champion. Team adopts it. Then security and compliance require an enterprise contract. Bottom-up pressure becomes top-down approval.', next: 'wandb_numbers', vibesDelta: 25 },
+        { text: 'Word of mouth inside the company creates an inbound enterprise inquiry.', next: 'wandb_numbers', vibesDelta: 15 },
+        { text: 'We\'re still optimizing this conversion funnel.', next: 'lose_wandb_funnel', isOutcome: true },
       ]
     },
     wandb_numbers: {
-      speaker: 'GARRY TAN', text: '*typing resumes* Numbers.',
-      garry: 'typing', player: 'pitch', vibesDelta: 0,
+      speaker: 'GARRY TAN', text: '*both keyboards fully stopped* Numbers.',
+      garry: 'normal', player: 'confident', vibesDelta: 0,
       choices: [
-        { text: '55,000 individual users — all organic. $1.8M ARR from 110 enterprise teams. Every enterprise team came from a researcher who adopted free at a lab. Zero outbound sales. 22% month-over-month revenue growth.', next: 'wandb_win', vibesDelta: 30 },
-        { text: '12,000 researchers but ARR is still early — under $400k.', next: 'lose_wandb_early', isOutcome: true },
+        { text: '55,000 individual users, all organic. $1.8M ARR from 110 enterprise teams. Every enterprise came from a researcher we never paid to acquire. Zero outbound. 22% month-over-month revenue growth. The product is a virus that travels through the AI talent network.', next: 'wandb_win', vibesDelta: 35 },
+        { text: '55,000 users. $1.8M ARR. 22% MoM revenue growth.', next: 'wandb_win', vibesDelta: 20 },
+        { text: '12,000 users. ARR under $400k.', next: 'lose_wandb_small', isOutcome: true },
+        { text: 'Strong researcher adoption. Enterprise revenue is still ramping.', next: 'lose_wandb_ramping', isOutcome: true },
       ]
     },
     wandb_win: {
-      speaker: 'GARRY TAN', text: '*Garry\'s claws rest flat on the desk* Zero outbound. 55,000 researchers pulling you into enterprises through sheer love. The product spreads like a virus through the AI talent network. *quietly* This is the developer-led growth playbook executed perfectly.',
+      speaker: 'GARRY TAN', text: '*Garry\'s claws rest flat on the desk* Zero outbound. 55,000 researchers pulling enterprise contracts in without a single cold call. The product spreads through the AI talent network like a virus. *quietly* This is developer-led growth done right.',
       garry: 'triumphant', player: 'confident', vibesDelta: 20,
       choices: [{ text: '[Outcome: CONGRATULATIONS]', next: 'win', isOutcome: true }]
     },
     win: { outcome: 'win', company: 'the experiment tracker every ML team deserves' },
-    lose_wandb_ent: { outcome: 'lose', reason: 'The Kubernetes dashboard company has a 14-month sales cycle. By closing time, three researchers at the prospect will have installed your tool themselves.' },
-    lose_wandb_overlap: { outcome: 'lose', reason: 'You tried to differentiate from Datadog by describing what you\'re not. Garry wants to hear what you uniquely are. The answer was in your first sentence and you abandoned it.' },
-    lose_wandb_interview: { outcome: 'lose', reason: '"We interviewed ML engineers" is how consultants build products. Garry funds founders who WERE the user. You were one sentence away from the real answer.' },
-    lose_wandb_indie: { outcome: 'lose', reason: '"Building toward enterprise" from indie researchers is a two-year journey with no guarantee. You needed one sentence about the pull-through mechanism.' },
-    lose_wandb_figuring: { outcome: 'lose', reason: 'Researcher love with fuzzy monetization is a research project. You needed one more sentence about how love converts to revenue.' },
-    lose_wandb_early: { outcome: 'lose', reason: '12,000 researchers and $400k ARR means incredible adoption and weak conversion. Garry invests in the conversion. Come back when the enterprise pull-through is showing in numbers.' },
+    lose_wandb_gtm: { outcome: 'lose', reason: '"Product comes first" while the go-to-market is undefined means you have something loved and are not capturing the value. Garry funds the combination.' },
+    lose_wandb_sales: { outcome: 'lose', reason: 'An enterprise sales motion "alongside" the developer motion is two motions with no clear winner. Garry needed to hear the motion that was already working without anyone selling.' },
+    lose_wandb_interviewed: { outcome: 'lose', reason: '"I interviewed dozens" is research. Garry funds founders who WERE the user. You were one sentence away from the real answer.' },
+    lose_wandb_segments: { outcome: 'lose', reason: '"Growing across all segments" is how a product manager describes their OKRs. Garry wanted a specific researcher at a specific lab who cannot live without your product.' },
+    lose_wandb_features: { outcome: 'lose', reason: '"Deeper features and better UX" is what every challenger says about every large incumbent. Garry needed the structural answer. You gave him marketing copy.' },
+    lose_wandb_cloud_risk: { outcome: 'lose', reason: '"Building faster" is a six-month moat. AWS has thousands of engineers. You will have been caught up before the Series A closes.' },
+    lose_wandb_risk: { outcome: 'lose', reason: 'You agreed with the open source risk without a counter. Garry now has two risks with no structural response. The meeting did not end well.' },
+    lose_wandb_funnel: { outcome: 'lose', reason: '"Still optimizing the conversion funnel" means you don\'t have one. The researcher pull-through IS the business model. If it\'s being optimized, the business model is hypothetical.' },
+    lose_wandb_small: { outcome: 'lose', reason: '12,000 researchers and $400k ARR is a beloved product. It is not yet a business Garry can fund at a price that makes sense. Come back at $1.5M ARR.' },
+    lose_wandb_ramping: { outcome: 'lose', reason: '"Still ramping" is the answer Garry hears before the call where he has to pass. He knows what comes after it.' },
   },
 
   recursion: {
@@ -1822,72 +2142,118 @@ const scenarioTrees = {
       speaker: 'GARRY TAN', text: 'What do you do?',
       garry: 'normal', player: 'pitch', vibesDelta: 0,
       choices: [
-        { text: 'We use robotics and ML to run drug discovery experiments 1,000 times faster than traditional pharma.', next: 'recursion_speed', vibesDelta: 20 },
-        { text: 'AI for drug discovery.', next: 'recursion_generic' },
-        { text: 'It takes $2 billion and 15 years to bring a drug to market. The bottleneck is experiment throughput, not biology. We built a robot to fix it.', next: 'recursion_thesis', vibesDelta: 25 },
-        { text: 'We\'re a pharma company.', next: 'recursion_pharma' },
+        { text: 'Drug discovery with robotics and ML. We run 2 million experiments a week. Traditional pharma runs maybe 5,000. We find things they will never find.', next: 'recursion_thesis', vibesDelta: 25 },
+        { text: 'AI for drug discovery.', next: 'recursion_ai_generic' },
+        { text: 'The bottleneck in drug discovery is not biology — it\'s the ability to ask biology questions at scale. We built a robot to remove that bottleneck.', next: 'recursion_thesis', vibesDelta: 25 },
+        { text: 'We\'re a biotech using machine learning to find drugs faster.', next: 'recursion_biotech_framing' },
       ]
     },
-    recursion_generic: {
-      speaker: 'GARRY TAN', text: '"AI drug discovery." *types* Deployed one. Biology PhD on team. Landing page. What\'s your specific mechanism?',
+    recursion_ai_generic: {
+      speaker: 'GARRY TAN', text: '"AI drug discovery." I deployed one. Biology PhD, landing page, promising pitch deck. What specifically is your mechanism?',
       garry: 'typing', player: 'nervous', vibesDelta: -10,
       choices: [
-        { text: 'We\'re not mining biology literature — we\'re building robots that run experiments at industrial scale and using ML to find patterns in the data. Experimental throughput, not language models.', next: 'recursion_thesis', vibesDelta: 20 },
-        { text: '[Outcome: GENERIC AI PHARMA FATALITY]', next: 'lose_rec_gen', isOutcome: true },
+        { text: 'We\'re not mining literature or building protein models. We run physical experiments at industrial scale — 2 million per week — and use ML to find patterns in the resulting data. Experimental throughput, not computational inference.', next: 'recursion_thesis', vibesDelta: 25 },
+        { text: 'We use computer vision on cell images to identify drug candidates at scale.', next: 'recursion_thesis', vibesDelta: 20 },
+        { text: 'We combine ML prediction with wet lab validation in a tight loop.', next: 'recursion_thesis', vibesDelta: 15 },
+        { text: 'Our ML models outperform the industry standard on prediction accuracy.', next: 'lose_recursion_models', isOutcome: true },
       ]
     },
-    recursion_pharma: {
-      speaker: 'GARRY TAN', text: '"A pharma company." *long pause* Pharma companies take 15 years and $2 billion per drug. I have 10 minutes.',
-      garry: 'typing', player: 'nervous', vibesDelta: -15,
+    recursion_biotech_framing: {
+      speaker: 'GARRY TAN', text: '"Biotech." Biotech takes 15 years and $2 billion. I have 10 minutes.',
+      garry: 'typing', player: 'nervous', vibesDelta: -10,
       choices: [
-        { text: 'We\'re not a traditional pharma company. We\'re the experiment-running infrastructure layer. We run 2 million experiments a week with robots. We\'re closer to AWS than Pfizer.', next: 'recursion_speed', vibesDelta: 25 },
-        { text: '[Outcome: WRONG CATEGORY FATALITY]', next: 'lose_rec_pharma', isOutcome: true },
-      ]
-    },
-    recursion_speed: {
-      speaker: 'GARRY TAN', text: '*claw taps slowly* 1,000 times faster. Where does the speed come from?',
-      garry: 'normal', player: 'pitch', vibesDelta: 0,
-      choices: [
-        { text: 'Humans run maybe 10 experiments a day per researcher. Our robots run 2.2 million per week. Every result trains the ML model, which designs the next experiments. It\'s a flywheel — more experiments generate better models generate smarter experiments.', next: 'recursion_thesis', vibesDelta: 20 },
-        { text: 'Better automation and more efficient wet lab processes reduce cycle time significantly across the discovery workflow.', next: 'lose_rec_vague', isOutcome: true },
+        { text: 'We\'re not traditional biotech. We\'re the experiment-running infrastructure layer of drug discovery. We\'re closer to AWS than to Pfizer. Our experiments are our compute.', next: 'recursion_thesis', vibesDelta: 25 },
+        { text: 'We compress the discovery phase significantly. The 15 years is mostly regulatory and clinical — we work upstream of that.', next: 'recursion_thesis', vibesDelta: 20 },
+        { text: 'We accelerate the front end of the pipeline. Discovery is where we play.', next: 'recursion_thesis', vibesDelta: 15 },
+        { text: 'We have a path to faster development through our unique approach.', next: 'lose_recursion_path', isOutcome: true },
       ]
     },
     recursion_thesis: {
-      speaker: 'GARRY TAN', text: '*both keyboards slow down* The bottleneck is experiment throughput, not biology.',
+      speaker: 'GARRY TAN', text: '*both keyboards slow* "The bottleneck is experiment throughput." That\'s a specific claim. Most people say the bottleneck is biology. Why are you right and they\'re wrong?',
       garry: 'normal', player: 'confident', vibesDelta: 5,
       choices: [
-        { text: 'Traditional pharma asks 10,000 biological questions a year. We ask 100 million. At that scale, you find things they\'ll never find by rational design alone. The biology was never the problem.', next: 'recursion_data', vibesDelta: 25 },
-        { text: 'We believe that\'s where the constraint is, yes. Though there are obviously multiple factors in drug development timelines.', next: 'lose_rec_hedge', isOutcome: true },
+        { text: 'A biologist can design maybe 10 experiments a day. Each runs 24-48 hours. You can\'t know which question is the right one until you\'ve asked a thousand wrong ones. At a million questions, the pattern emerges. The biology knows the answer. You just have to ask enough times.', next: 'recursion_flywheel', vibesDelta: 30 },
+        { text: 'The hypothesis-driven approach requires guessing which question to ask before you have data. At scale, you let the data tell you which questions are worth asking.', next: 'recursion_flywheel', vibesDelta: 25 },
+        { text: 'Traditional drug discovery is limited by human throughput. Our robots are not.', next: 'recursion_flywheel', vibesDelta: 15 },
+        { text: 'The data supports it. We\'ve found candidates in areas previously considered intractable.', next: 'recursion_flywheel', vibesDelta: 20 },
       ]
     },
-    recursion_data: {
+    recursion_flywheel: {
+      speaker: 'GARRY TAN', text: '*claw taps twice* Walk me through the flywheel.',
+      garry: 'normal', player: 'pitch', vibesDelta: 0,
+      choices: [
+        { text: 'More experiments → more data → better ML models → smarter experiment design → more efficient experiments → cheaper cost per experiment → we run more per dollar → more data. Every experiment makes the next one smarter. The system compounds indefinitely.', next: 'recursion_data_asset', vibesDelta: 30 },
+        { text: 'Experimental data trains the model. The model guides the next experiment. The result feeds back. Each cycle is faster and cheaper than the last.', next: 'recursion_data_asset', vibesDelta: 25 },
+        { text: 'We generate data, improve our models, which generate better experiment designs.', next: 'recursion_data_asset', vibesDelta: 15 },
+        { text: 'The flywheel is still in early stages — we\'re validating the model improvement rate.', next: 'lose_recursion_early_flywheel', isOutcome: true },
+      ]
+    },
+    recursion_data_asset: {
       speaker: 'GARRY TAN', text: '*Apple Watch pulses twice* You\'re building a data asset.',
       garry: 'normal', player: 'confident', vibesDelta: 10,
       choices: [
-        { text: 'The largest proprietary cell imaging dataset in the world. Every experiment makes it more valuable. No pharma company can replicate years of robot runtime. The data is the moat — the robots are just how we generate it.', next: 'recursion_biz', vibesDelta: 25 },
-        { text: 'The core IP is in the ML models trained on the data.', next: 'lose_rec_model', isOutcome: true },
+        { text: 'The largest proprietary cell imaging dataset in the world. Every experiment makes it more valuable. No pharma company can replicate years of robot runtime — they\'d have to run every experiment we\'ve already run. The data is the moat. The robots are how we generate it.', next: 'recursion_validation', vibesDelta: 30 },
+        { text: 'Two years of our data is structurally irreproducible by any competitor starting today.', next: 'recursion_validation', vibesDelta: 25 },
+        { text: 'The dataset is large and compounding. It\'s a significant strategic asset.', next: 'recursion_validation', vibesDelta: 15 },
+        { text: 'The real moat is our ML models trained on that data.', next: 'lose_recursion_model_moat', isOutcome: true },
+      ]
+    },
+    recursion_validation: {
+      speaker: 'GARRY TAN', text: '*typing resumes* How do you know this actually works? Running experiments is not the same as finding drugs.',
+      garry: 'typing', player: 'pitch', vibesDelta: 0,
+      choices: [
+        { text: 'We have two wholly-owned drug programs in preclinical. We found both candidates using our platform in areas where traditional pharma failed with hypothesis-driven approaches. The candidates are real. The question is FDA timeline, not scientific validity.', next: 'recursion_biz', vibesDelta: 30 },
+        { text: 'We\'ve published on our methodology. The cell biology signal is independently validated. Two preclinical programs in progress.', next: 'recursion_biz', vibesDelta: 20 },
+        { text: 'Validation is ongoing. We have strong signal but not yet IND-stage data.', next: 'lose_recursion_ongoing', isOutcome: true },
+        { text: 'The platform finds patterns. Whether those correlate to viable drugs requires clinical validation.', next: 'lose_recursion_patterns', isOutcome: true },
       ]
     },
     recursion_biz: {
-      speaker: 'GARRY TAN', text: '*typing resumes* The business model. How do you make money before a drug takes 15 years to approve?',
+      speaker: 'GARRY TAN', text: '*both keyboards pause* You\'re not making money for 10 years if you only own your own drug programs. What\'s the near-term business model?',
       garry: 'typing', player: 'pitch', vibesDelta: 0,
       choices: [
-        { text: 'Two ways: we license experimental capacity to pharma companies who pay per experiment. And we run our own programs — we own the IP on anything we find. $4M ARR from services, two wholly-owned programs in preclinical.', next: 'recursion_win', vibesDelta: 30 },
-        { text: 'The business model evolves as we de-risk programs and find partners. Still developing.', next: 'lose_rec_biz', isOutcome: true },
+        { text: 'We license our experimental capacity to pharma companies. They pay per experiment to run their own discovery programs on our platform. $4M ARR today from three pharma partnerships. That revenue funds the robots and the flywheel while our own programs develop. We make money while building the asset.', next: 'recursion_team', vibesDelta: 30 },
+        { text: 'Pharma partnerships — they pay to use the platform. We also own programs we\'ll license at preclinical milestones.', next: 'recursion_team', vibesDelta: 20 },
+        { text: 'Service revenue from the platform funds the pipeline. Two separate business lines.', next: 'recursion_team', vibesDelta: 15 },
+        { text: 'We\'re focused on platform value first. Monetization evolves as science validates.', next: 'lose_recursion_evolves', isOutcome: true },
+      ]
+    },
+    recursion_team: {
+      speaker: 'GARRY TAN', text: '*leans back* Who actually runs the robots? Biology companies and software companies usually fight. What does your org look like?',
+      garry: 'normal', player: 'pitch', vibesDelta: 0,
+      choices: [
+        { text: 'We designed the org around that tension intentionally. Biologists define the experiments. Engineers build the automation. ML engineers analyze the output. All share a single metric: cost per validated candidate. The tension became the culture.', next: 'recursion_numbers', vibesDelta: 30 },
+        { text: 'The cofounders are a PhD biologist and a machine learning engineer who\'ve worked together since grad school. They built the org to mirror that partnership.', next: 'recursion_numbers', vibesDelta: 20 },
+        { text: 'We hire people who can bridge the disciplines. Hybrid bioinformatics and ML backgrounds.', next: 'recursion_numbers', vibesDelta: 10 },
+        { text: 'It\'s an ongoing challenge. We\'re figuring out the culture as we scale.', next: 'lose_recursion_culture', isOutcome: true },
+      ]
+    },
+    recursion_numbers: {
+      speaker: 'GARRY TAN', text: '*both keyboards go quiet* Numbers.',
+      garry: 'normal', player: 'confident', vibesDelta: 0,
+      choices: [
+        { text: '$4M ARR from pharma service contracts. 2.2 million experiments per week. Two wholly-owned preclinical programs. The largest proprietary cell imaging dataset in the world. One team that made biology and engineering work together on purpose.', next: 'recursion_win', vibesDelta: 35 },
+        { text: '$4M ARR. 2.2M weekly experiments. Two preclinical programs in progress.', next: 'recursion_win', vibesDelta: 20 },
+        { text: '$800k ARR. Early pharma partnerships.', next: 'lose_recursion_small', isOutcome: true },
+        { text: 'ARR is developing. The real value is the data asset and the pipeline.', next: 'lose_recursion_real_value', isOutcome: true },
       ]
     },
     recursion_win: {
-      speaker: 'GARRY TAN', text: '*Garry stands* *both MacBooks remain open* You\'re building a data flywheel that compounds with every experiment. Pharma companies pay you to use it while you quietly build the asset that makes them obsolete. *quiet claw clap* That\'s the long game.',
+      speaker: 'GARRY TAN', text: '*Garry stands* *both MacBooks open, both glowing* You built a data flywheel inside a regulated industry. Pharma pays you to generate the data that makes your own programs better. Service revenue funds the robot that builds the moat. *quiet claw clap* That is the long game played correctly.',
       garry: 'triumphant', player: 'confident', vibesDelta: 20,
       choices: [{ text: '[Outcome: CONGRATULATIONS]', next: 'win', isOutcome: true }]
     },
     win: { outcome: 'win', company: 'the robot that finds the drugs nobody else is looking for' },
-    lose_rec_gen: { outcome: 'lose', reason: 'The landing page says "AI + Biology = the future." Garry agrees with the sentiment. He cannot fund a sentiment.' },
-    lose_rec_pharma: { outcome: 'lose', reason: 'You walked into a 10-minute meeting and described a 15-year business. Garry admires the ambition. He cannot fund the timeline without the bridge.' },
-    lose_rec_vague: { outcome: 'lose', reason: '"Efficient wet lab processes" could describe a faster centrifuge. You were standing next to the flywheel insight and described the equipment instead.' },
-    lose_rec_hedge: { outcome: 'lose', reason: 'You had a contrarian thesis — throughput, not biology — and then walked it back. Garry funds founders who believe their contrarian thesis hard enough to build a robot around it.' },
-    lose_rec_model: { outcome: 'lose', reason: 'Models can be rebuilt. A dataset of 100 million proprietary cell images cannot. You described the smaller moat and abandoned the larger one.' },
-    lose_rec_biz: { outcome: 'lose', reason: '"Still developing" means you haven\'t closed the loop between science and dollars. Garry invests at the intersection of both.' },
+    lose_recursion_models: { outcome: 'lose', reason: '"More accurate ML models" is a claim every AI pharma company makes. Garry has heard it 40 times this month. The experiment throughput thesis was the insight. You had it and didn\'t say it.' },
+    lose_recursion_path: { outcome: 'lose', reason: '"A path to faster development" without a mechanism is a vision statement. Garry invests in founders who have already started walking the path, not ones describing where it leads.' },
+    lose_recursion_early_flywheel: { outcome: 'lose', reason: 'You\'re running 2 million experiments a week and the flywheel is "still early." Garry thinks the flywheel is already running and you don\'t know it yet.' },
+    lose_recursion_model_moat: { outcome: 'lose', reason: 'Models can be rebuilt in 12 months by a well-funded competitor. A dataset of 100 million proprietary cell images cannot. You described the smaller moat and abandoned the larger one.' },
+    lose_recursion_ongoing: { outcome: 'lose', reason: '"Validation is ongoing" in pharma means the hard part is still hard. Garry funds companies that have passed through the hard part.' },
+    lose_recursion_patterns: { outcome: 'lose', reason: 'You described your product as a pattern-finder with unknown clinical relevance. Without the preclinical proof, you\'re selling a very expensive microscope.' },
+    lose_recursion_evolves: { outcome: 'lose', reason: '"Monetization evolves as science validates" takes 15 years to complete. You had $4M ARR from existing contracts. You had it. You didn\'t say it.' },
+    lose_recursion_culture: { outcome: 'lose', reason: '"Figuring out the culture" at a company requiring biologists and engineers to collaborate perfectly is the answer Garry was hoping not to hear. The culture IS the technical risk.' },
+    lose_recursion_small: { outcome: 'lose', reason: '$800k ARR at 2.2M weekly experiments means you\'re significantly undercharging for experimental capacity. Come back after repricing.' },
+    lose_recursion_real_value: { outcome: 'lose', reason: '"The real value is the data asset" without revenue is how an analyst describes a company. Garry invests in operators. Show him the operating business.' },
   },
 
 };
