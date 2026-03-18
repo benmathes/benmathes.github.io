@@ -1318,7 +1318,7 @@ const scenarioTrees = {
       speaker: 'GARRY TAN', text: '*pauses typing* ...Twice.',
       garry: 'normal', player: 'nervous', vibesDelta: 0,
       choices: [
-        { text: 'We ran out of money in 2015. Ivan and Simon moved to Kyoto, cut every expense, and rebuilt the entire architecture from scratch. Notion 2.0 shipped 18 months later.', next: 'notion_explain', vibesDelta: 25 },
+        { text: 'We ran out of money in 2015. The two cofounders moved to Kyoto, cut every expense, and rebuilt the entire architecture from scratch. Version 2.0 shipped 18 months later.', next: 'notion_explain', vibesDelta: 25 },
         { text: '"Bankruptcy" is a strong word. More like very discouraging bank statements.', next: 'lose_notion_hedge', isOutcome: true },
       ]
     },
@@ -1339,13 +1339,13 @@ const scenarioTrees = {
       ]
     },
     notion_win: {
-      speaker: 'GARRY TAN', text: '*Garry turns both screens toward you. Left: a Notion page. It says "Promising." Right: his calendar. A block labeled "Notion follow-up" has been added.* NPS of 72 means your users are selling this for you. They rebuilt from scratch in Kyoto. I respect Kyoto.',
+      speaker: 'GARRY TAN', text: '*Garry turns both screens toward you. Left: a doc page. It says "Promising." Right: his calendar. A block labeled "follow-up" has been added.* NPS of 72 means your users are selling this for you. They rebuilt from scratch in Kyoto. I respect Kyoto.',
       garry: 'triumphant', player: 'confident', vibesDelta: 20,
       choices: [{ text: '[Outcome: CONGRATULATIONS]', next: 'win', isOutcome: true }]
     },
-    win: { outcome: 'win', company: 'Notion' },
+    win: { outcome: 'win', company: 'a docs-database hybrid' },
     lose_notion_word: { outcome: 'lose', reason: 'WordMax shipped while you were explaining. It has dark mode. Your product does not.' },
-    lose_notion_vague: { outcome: 'lose', reason: 'Garry has a spreadsheet of productivity software companies. He added you to it. The spreadsheet is managed in Notion.' },
+    lose_notion_vague: { outcome: 'lose', reason: 'Garry has a spreadsheet of productivity software companies. He added you to it. The spreadsheet is managed in a tool just like yours.' },
     lose_notion_hedge: { outcome: 'lose', reason: 'Discouraging bank statements are not the same as near-death and resurrection. Garry funds founders who survived real winters, not bad months.' },
     lose_notion_onboarding: { outcome: 'lose', reason: 'You identified the hardest problem in your product and said you\'re "still working on it." Garry wrote: "infinite canvas, finite founder." You are not on the list.' },
     lose_notion_love: { outcome: 'lose', reason: 'User love without a monetization theory is a hobby. Garry funds businesses. He added you to the "good product, fuzzy founder" spreadsheet.' },
@@ -1407,7 +1407,7 @@ const scenarioTrees = {
       garry: 'triumphant', player: 'confident', vibesDelta: 20,
       choices: [{ text: '[Outcome: CONGRATULATIONS]', next: 'win', isOutcome: true }]
     },
-    win: { outcome: 'win', company: 'Plaid' },
+    win: { outcome: 'win', company: 'the banking API layer' },
     lose_plaid_shrink: { outcome: 'lose', reason: 'You apologized for your product. Garry has a rule: if you can\'t defend the pitch in two sentences, you haven\'t found it yet.' },
     lose_plaid_buzz: { outcome: 'lose', reason: 'Garry\'s AI generates "financial infrastructure for the internet" in 0.3 seconds. You needed something it couldn\'t.' },
     lose_plaid_short: { outcome: 'lose', reason: 'Two words. Garry can vibe-code an entire company description in two words. He used his. You used yours. They were different words.' },
@@ -1422,7 +1422,7 @@ const scenarioTrees = {
       choices: [
         { text: 'Graphic design for people who can\'t use Photoshop. Which is most people.', next: 'canva_designers_hate', vibesDelta: 20 },
         { text: 'We\'re democratizing design.', next: 'canva_democratize' },
-        { text: 'We started as a school yearbook company in Perth, Australia. Got rejected by over a hundred VCs. Kept building. 50,000 users before anyone called back.', next: 'canva_hundred_nos', vibesDelta: 20 },
+        { text: 'We started as a school yearbook company in Perth, Australia. Got rejected by over a hundred VCs. Kept building anyway. 50,000 users before anyone called back.', next: 'canva_hundred_nos', vibesDelta: 20 },
         { text: 'Drag-and-drop design platform.', next: 'canva_too_generic' },
       ]
     },
@@ -1446,7 +1446,7 @@ const scenarioTrees = {
       speaker: 'GARRY TAN', text: '*pauses* ...More than a hundred.',
       garry: 'normal', player: 'confident', vibesDelta: 5,
       choices: [
-        { text: 'Melanie flew from Australia to Silicon Valley. Three years. Over a hundred rejections. She kept building. Designers hate the product. Non-designers love it. The non-designers outnumber them ten thousand to one.', next: 'canva_designers_hate', vibesDelta: 20 },
+        { text: 'The founder flew from Australia to Silicon Valley. Three years. Over a hundred rejections. She kept building. Designers hate the product. Non-designers love it. The non-designers outnumber them ten thousand to one.', next: 'canva_designers_hate', vibesDelta: 20 },
         { text: 'The distance made it hard. Timezone calls at 3am. It was rough.', next: 'lose_canva_soft', isOutcome: true },
       ]
     },
@@ -1471,11 +1471,11 @@ const scenarioTrees = {
       garry: 'triumphant', player: 'confident', vibesDelta: 20,
       choices: [{ text: '[Outcome: CONGRATULATIONS]', next: 'win', isOutcome: true }]
     },
-    win: { outcome: 'win', company: 'Canva' },
+    win: { outcome: 'win', company: 'the design tool for everyone' },
     lose_canva_dem: { outcome: 'lose', reason: 'The AI had democratized design while you were still defining it. The 14 logos are on ProductHunt. Two are trending.' },
     lose_canva_ppt: { outcome: 'lose', reason: 'Garry\'s daughter made a beautiful presentation about bees. In PowerPoint. You lost to a 9-year-old\'s school project.' },
     lose_canva_soft: { outcome: 'lose', reason: '"Timezone calls were rough" is not the founding mythology of a billion-dollar company. Garry writes "tourist" in his notes. You are not on the list.' },
-    lose_canva_pro: { outcome: 'lose', reason: 'Chasing designers who hate you while ignoring millions who love you is a classic mistake. Garry has a slide about it. The slide is made in Canva.' },
+    lose_canva_pro: { outcome: 'lose', reason: 'Chasing designers who hate you while ignoring millions who love you is a classic mistake. Garry has a slide about it. The slide is made in a tool just like yours.' },
     lose_canva_mono: { outcome: 'lose', reason: '200,000 users with unclear monetization. Garry funded three of these. Two ran out of money optimizing the free tier. One works at Stripe now.' },
   },
 
@@ -1535,7 +1535,7 @@ const scenarioTrees = {
       garry: 'triumphant', player: 'confident', vibesDelta: 20,
       choices: [{ text: '[Outcome: CONGRATULATIONS]', next: 'win', isOutcome: true }]
     },
-    win: { outcome: 'win', company: 'Gusto' },
+    win: { outcome: 'win', company: 'the payroll tool small businesses actually deserve' },
     lose_gusto_adp: { outcome: 'lose', reason: 'Garry doesn\'t want to fund the next ADP. He wants to fund the company that makes ADP irrelevant. You treated them as a validator instead of a corpse to walk over.' },
     lose_gusto_gen: { outcome: 'lose', reason: 'The deployed HR software has 800 users and a 4.8-star rating. It manages conflict beautifully. It is already better than your pitch.' },
     lose_gusto_hedge: { outcome: 'lose', reason: 'You had a real insight and diluted it. Garry funds founders who commit to the metaphor. The crying was the truth. The hedge was fear.' },
@@ -1548,7 +1548,7 @@ const scenarioTrees = {
       speaker: 'GARRY TAN', text: 'What do you do?',
       garry: 'normal', player: 'pitch', vibesDelta: 0,
       choices: [
-        { text: 'We built an online store for our snowboard shop, then realized the software was more valuable than the snowboards.', next: 'shopify_pivot', vibesDelta: 25 },
+        { text: 'We built an online store for our own snowboard shop, then realized the software was more valuable than the snowboards.', next: 'shopify_pivot', vibesDelta: 25 },
         { text: 'E-commerce platform for small businesses.', next: 'shopify_generic' },
         { text: 'Amazon is going to own every merchant who sells on Amazon. We arm the merchants who don\'t want to be owned.', next: 'shopify_amazon', vibesDelta: 20 },
         { text: 'We\'re building the infrastructure for the long tail of retail.', next: 'shopify_infra' },
@@ -1558,7 +1558,7 @@ const scenarioTrees = {
       speaker: 'GARRY TAN', text: '"E-commerce platform." *types* I deployed one. It sells artisan candles. 240 users. What\'s your angle?',
       garry: 'typing', player: 'nervous', vibesDelta: -10,
       choices: [
-        { text: 'Tobi was trying to sell snowboards. He couldn\'t find software good enough so he built it. 15 other shops asked for it. The product found us.', next: 'shopify_pivot', vibesDelta: 20 },
+        { text: 'The founder was trying to sell snowboards. He couldn\'t find software good enough so he built it. 15 other shops asked for it. The product found us.', next: 'shopify_pivot', vibesDelta: 20 },
         { text: '[Outcome: COMMODITY E-COMMERCE FATALITY]', next: 'lose_shopify_gen', isOutcome: true },
       ]
     },
@@ -1566,7 +1566,7 @@ const scenarioTrees = {
       speaker: 'GARRY TAN', text: '"Long tail of retail." There are 30 million small businesses in the US. Three companies own the infrastructure. What makes you the fourth?',
       garry: 'typing', player: 'nervous', vibesDelta: 0,
       choices: [
-        { text: 'We started as customers. Tobi built this to sell snowboards. When 15 other stores wanted the same software, we pivoted. We don\'t build for a merchant persona — we ARE a merchant.', next: 'shopify_pivot', vibesDelta: 20 },
+        { text: 'We started as customers. The founder built this to sell snowboards. When 15 other stores wanted the same software, we pivoted. We don\'t build for a merchant persona — we ARE a merchant.', next: 'shopify_pivot', vibesDelta: 20 },
         { text: '[Outcome: INFRASTRUCTURE PITCH WITHOUT ORIGIN]', next: 'lose_shopify_infra', isOutcome: true },
       ]
     },
@@ -1574,7 +1574,7 @@ const scenarioTrees = {
       speaker: 'GARRY TAN', text: '...You\'re positioning against Amazon.',
       garry: 'normal', player: 'confident', vibesDelta: 0,
       choices: [
-        { text: 'Not against them — orthogonal. Amazon owns the customer. We arm the merchant. Shopify merchants keep their brand, their data, their margins. Amazon gives them a box and takes 30%.', next: 'shopify_pivot', vibesDelta: 15 },
+        { text: 'Not against them — orthogonal. Amazon owns the customer. We arm the merchant. Our merchants keep their brand, their data, their margins. Amazon gives them a box and takes 30%.', next: 'shopify_pivot', vibesDelta: 15 },
         { text: 'We\'re not exactly against them, it\'s more of a different segment thing—', next: 'lose_shopify_hedge', isOutcome: true },
       ]
     },
@@ -1599,7 +1599,7 @@ const scenarioTrees = {
       garry: 'triumphant', player: 'confident', vibesDelta: 20,
       choices: [{ text: '[Outcome: CONGRATULATIONS]', next: 'win', isOutcome: true }]
     },
-    win: { outcome: 'win', company: 'Shopify' },
+    win: { outcome: 'win', company: 'the platform that arms the merchant' },
     lose_shopify_gen: { outcome: 'lose', reason: 'The candle shop has free shipping and a loyalty program. It launched this morning. Your pitch took longer than its entire founding.' },
     lose_shopify_infra: { outcome: 'lose', reason: 'You described a market without a story. Garry funds founders who were their own first customer. You described the category instead.' },
     lose_shopify_hedge: { outcome: 'lose', reason: 'You had the clearest framing of the session — "we arm the merchant" — and then retreated from it. Garry writes: "knows the answer, afraid of it."' },
@@ -1654,7 +1654,7 @@ const scenarioTrees = {
       speaker: 'GARRY TAN', text: '*both keyboards resume, faster* Why can\'t YouTube just add a gaming tab?',
       garry: 'typing', player: 'pitch', vibesDelta: 0,
       choices: [
-        { text: 'They will. And they\'ll be late. Streamers are building careers and communities on Twitch specifically. Switching means abandoning your audience. The community is the moat, not the technology.', next: 'twitch_numbers', vibesDelta: 25 },
+        { text: 'They will. And they\'ll be late. Streamers are building careers and communities on our platform specifically. Switching means abandoning your audience. The community is the moat, not the technology.', next: 'twitch_numbers', vibesDelta: 25 },
         { text: 'YouTube\'s infrastructure isn\'t optimized for live. Their latency is higher and—', next: 'lose_twitch_tech', isOutcome: true },
       ]
     },
@@ -1671,7 +1671,7 @@ const scenarioTrees = {
       garry: 'triumphant', player: 'confident', vibesDelta: 20,
       choices: [{ text: '[Outcome: CONGRATULATIONS]', next: 'win', isOutcome: true }]
     },
-    win: { outcome: 'win', company: 'Twitch' },
+    win: { outcome: 'win', company: 'the TV network gaming always deserved' },
     lose_twitch_gen: { outcome: 'lose', reason: 'The cheese-aging stream developed a community. They call themselves the Curds. Garry is moderating their Discord now. He apologizes. He really got into it.' },
     lose_twitch_camera: { outcome: 'lose', reason: 'Garry does not invest in camera stabilization. He invests in distribution networks for human attention. You missed the insight by three sentences.' },
     lose_twitch_figuring: { outcome: 'lose', reason: 'You have 8 million daily users and are "still figuring out why." Garry invests in founders who understand their own product. He can\'t give you the insight you already have.' },
@@ -1736,7 +1736,7 @@ const scenarioTrees = {
       garry: 'triumphant', player: 'confident', vibesDelta: 20,
       choices: [{ text: '[Outcome: CONGRATULATIONS]', next: 'win', isOutcome: true }]
     },
-    win: { outcome: 'win', company: 'Flexport' },
+    win: { outcome: 'win', company: 'the freight forwarder that actually uses software' },
     lose_flex_gen: { outcome: 'lose', reason: 'Garry funded three logistics software companies. All built warehouse management systems. None went near international freight. You missed the specific insight.' },
     lose_flex_ready: { outcome: 'lose', reason: '"The industry is ready to digitize" has been said about freight since 1998. Someone has to force it. You described the market instead of being the force.' },
     lose_flex_brief: { outcome: 'lose', reason: '"Briefly" means you understood enough to know the words but not enough to know the pain. Garry funds founders who stayed long enough to get angry.' },
@@ -1783,7 +1783,7 @@ const scenarioTrees = {
       speaker: 'GARRY TAN', text: '*claw taps desk* Who are your users right now?',
       garry: 'normal', player: 'pitch', vibesDelta: 0,
       choices: [
-        { text: 'Every top ML research lab. OpenAI uses us. DeepMind uses us. Most leading academic AI groups. They adopted for free — and now their engineers are at companies buying us.', next: 'wandb_bottoms_up', vibesDelta: 25 },
+        { text: 'Every top ML research lab. The leading AI labs use us. Most top academic groups. They adopted for free — and now their engineers are at companies buying us.', next: 'wandb_bottoms_up', vibesDelta: 25 },
         { text: 'Mostly indie ML researchers right now, building toward enterprise.', next: 'lose_wandb_indie', isOutcome: true },
       ]
     },
@@ -1791,7 +1791,7 @@ const scenarioTrees = {
       speaker: 'GARRY TAN', text: '*Apple Watch pulses* If the top labs use you for free, where does the money come from?',
       garry: 'normal', player: 'pitch', vibesDelta: 0,
       choices: [
-        { text: 'The researcher who loves us at OpenAI gets hired at Waymo. They install W&B on day one. Waymo needs team features, audit logs, SSO — that\'s the enterprise plan. We never sell to enterprises. We get pulled in by the people who build inside them.', next: 'wandb_numbers', vibesDelta: 30 },
+        { text: 'A researcher who loves us at one lab gets hired at a big tech company. They install our tool on day one. That company needs team features, audit logs, SSO — that\'s our enterprise plan. We never sell to enterprises. We get pulled in by the people who build inside them.', next: 'wandb_numbers', vibesDelta: 30 },
         { text: 'We\'re figuring out enterprise monetization. The researcher love is real and conversion will come.', next: 'lose_wandb_figuring', isOutcome: true },
       ]
     },
@@ -1808,8 +1808,8 @@ const scenarioTrees = {
       garry: 'triumphant', player: 'confident', vibesDelta: 20,
       choices: [{ text: '[Outcome: CONGRATULATIONS]', next: 'win', isOutcome: true }]
     },
-    win: { outcome: 'win', company: 'Weights & Biases' },
-    lose_wandb_ent: { outcome: 'lose', reason: 'The Kubernetes dashboard company has a 14-month sales cycle. By closing time, three researchers at the prospect will have installed W&B themselves.' },
+    win: { outcome: 'win', company: 'the experiment tracker every ML team deserves' },
+    lose_wandb_ent: { outcome: 'lose', reason: 'The Kubernetes dashboard company has a 14-month sales cycle. By closing time, three researchers at the prospect will have installed your tool themselves.' },
     lose_wandb_overlap: { outcome: 'lose', reason: 'You tried to differentiate from Datadog by describing what you\'re not. Garry wants to hear what you uniquely are. The answer was in your first sentence and you abandoned it.' },
     lose_wandb_interview: { outcome: 'lose', reason: '"We interviewed ML engineers" is how consultants build products. Garry funds founders who WERE the user. You were one sentence away from the real answer.' },
     lose_wandb_indie: { outcome: 'lose', reason: '"Building toward enterprise" from indie researchers is a two-year journey with no guarantee. You needed one sentence about the pull-through mechanism.' },
@@ -1881,7 +1881,7 @@ const scenarioTrees = {
       garry: 'triumphant', player: 'confident', vibesDelta: 20,
       choices: [{ text: '[Outcome: CONGRATULATIONS]', next: 'win', isOutcome: true }]
     },
-    win: { outcome: 'win', company: 'Recursion Pharmaceuticals' },
+    win: { outcome: 'win', company: 'the robot that finds the drugs nobody else is looking for' },
     lose_rec_gen: { outcome: 'lose', reason: 'The landing page says "AI + Biology = the future." Garry agrees with the sentiment. He cannot fund a sentiment.' },
     lose_rec_pharma: { outcome: 'lose', reason: 'You walked into a 10-minute meeting and described a 15-year business. Garry admires the ambition. He cannot fund the timeline without the bridge.' },
     lose_rec_vague: { outcome: 'lose', reason: '"Efficient wet lab processes" could describe a faster centrifuge. You were standing next to the flywheel insight and described the equipment instead.' },
@@ -1895,15 +1895,15 @@ const scenarioTrees = {
 // ─── SCENARIO METADATA ────────────────────────────────────────────────────────
 const scenarioMeta = [
   { key: 'original',   label: 'Restaurant Inventory', subtitle: 'The original. $8k MRR. Lucia\'s Tacos.', emoji: '🦞' },
-  { key: 'notion',     label: 'Notion',                subtitle: 'Docs + databases. Rebuilt in Kyoto.',    emoji: '📋' },
-  { key: 'plaid',      label: 'Plaid',                 subtitle: 'Banking API. Invisible plumbing.',       emoji: '🏦' },
-  { key: 'canva',      label: 'Canva',                 subtitle: 'Design for non-designers. 100+ NOs.',    emoji: '🎨' },
-  { key: 'gusto',      label: 'Gusto',                 subtitle: 'Payroll. ADP is solved. Or is it?',      emoji: '💸' },
-  { key: 'shopify',    label: 'Shopify',               subtitle: 'Snowboard software finds its market.',   emoji: '🏂' },
-  { key: 'twitch',     label: 'Twitch',                subtitle: 'Justin.tv → gaming. The pivot was it.',  emoji: '🎮' },
-  { key: 'flexport',   label: 'Flexport',              subtitle: 'Freight on fax machines. $9T market.',   emoji: '🚢' },
-  { key: 'wandb',      label: 'Weights & Biases',      subtitle: 'Dev tools for ML. Bottoms-up growth.',   emoji: '🤖' },
-  { key: 'recursion',  label: 'Recursion Pharma',      subtitle: '2M experiments/week. Data flywheel.',    emoji: '🧬' },
+  { key: 'notion',     label: 'A Docs-Database Tool',  subtitle: 'Everything is everything. Rebuilt in Kyoto.', emoji: '📋' },
+  { key: 'plaid',      label: 'A Banking API',         subtitle: 'Invisible plumbing. $9T of apps need it.', emoji: '🏦' },
+  { key: 'canva',      label: 'A Design Tool',         subtitle: 'For non-designers. 100+ NOs from VCs.',  emoji: '🎨' },
+  { key: 'gusto',      label: 'A Payroll Startup',     subtitle: 'Payroll is solved. Or is it?',           emoji: '💸' },
+  { key: 'shopify',    label: 'An E-Commerce Platform',subtitle: 'Snowboard software finds its market.',   emoji: '🏂' },
+  { key: 'twitch',     label: 'A Livestream Platform', subtitle: 'One guy with a camera → gaming empire.', emoji: '🎮' },
+  { key: 'flexport',   label: 'A Freight Forwarder',   subtitle: 'Fax machines. $9T market. No software.', emoji: '🚢' },
+  { key: 'wandb',      label: 'An ML Experiment Tool', subtitle: 'Dev tools for ML. Bottoms-up growth.',   emoji: '🤖' },
+  { key: 'recursion',  label: 'A Drug Discovery Co.',  subtitle: '2M experiments/week. Data flywheel.',    emoji: '🧬' },
 ];
 
 let activeTree = tree; // default to original
