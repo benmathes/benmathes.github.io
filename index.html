@@ -16,6 +16,17 @@
             --accent: #0066cc;
             --accent-hover: #0052a3;
             --border: #e0e0e0;
+
+            --tag-game: #e8533f;
+            --tag-game-bg: #fef2f0;
+            --tag-simulator: #2563eb;
+            --tag-simulator-bg: #eff4ff;
+            --tag-explainer: #0d9488;
+            --tag-explainer-bg: #f0fdfa;
+            --tag-tool: #7c3aed;
+            --tag-tool-bg: #f5f0ff;
+            --tag-writing: #b45309;
+            --tag-writing-bg: #fefce8;
         }
 
         @media (prefers-color-scheme: dark) {
@@ -27,6 +38,17 @@
                 --accent: #4da6ff;
                 --accent-hover: #80c0ff;
                 --border: #333;
+
+                --tag-game: #f87171;
+                --tag-game-bg: #2a1515;
+                --tag-simulator: #60a5fa;
+                --tag-simulator-bg: #151e2e;
+                --tag-explainer: #2dd4bf;
+                --tag-explainer-bg: #0f2320;
+                --tag-tool: #a78bfa;
+                --tag-tool-bg: #1e152e;
+                --tag-writing: #fbbf24;
+                --tag-writing-bg: #261e0a;
             }
         }
 
@@ -136,6 +158,42 @@
             background: var(--border);
         }
 
+        /* Filter bar */
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+
+        .filter-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            user-select: none;
+            transition: color 0.15s ease;
+        }
+
+        .filter-label:hover {
+            color: var(--text);
+        }
+
+        .filter-label input[type="checkbox"] {
+            accent-color: var(--text-muted);
+            width: 14px;
+            height: 14px;
+            cursor: pointer;
+        }
+
+        .filter-label[data-tag="game"] input { accent-color: var(--tag-game); }
+        .filter-label[data-tag="simulator"] input { accent-color: var(--tag-simulator); }
+        .filter-label[data-tag="explainer"] input { accent-color: var(--tag-explainer); }
+        .filter-label[data-tag="tool"] input { accent-color: var(--tag-tool); }
+        .filter-label[data-tag="writing"] input { accent-color: var(--tag-writing); }
+
         /* Project list */
         .projects {
             list-style: none;
@@ -143,20 +201,15 @@
 
         .projects li {
             border-bottom: 1px solid var(--border);
-        }
-
-        .projects a {
-            display: block;
-            padding: 16px 0;
-            color: var(--text);
-            text-decoration: none;
-            font-size: 1.125rem;
-            font-weight: 400;
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            padding: 14px 0;
+            transition: padding-left 0.2s ease;
             position: relative;
-            transition: padding-left 0.2s ease, color 0.2s ease;
         }
 
-        .projects a::before {
+        .projects li::before {
             content: '\2192';
             position: absolute;
             left: -20px;
@@ -165,15 +218,53 @@
             color: var(--accent);
         }
 
-        .projects a:hover {
+        .projects li:hover {
             padding-left: 24px;
-            color: var(--accent);
         }
 
-        .projects a:hover::before {
+        .projects li:hover::before {
             left: 0;
             opacity: 1;
         }
+
+        .projects li.hidden {
+            display: none;
+        }
+
+        .item-tags {
+            display: flex;
+            gap: 6px;
+            flex-shrink: 0;
+            margin-left: auto;
+        }
+
+        .projects a {
+            color: var(--text);
+            text-decoration: none;
+            font-size: 1.125rem;
+            font-weight: 400;
+            transition: color 0.2s ease;
+        }
+
+        .projects li:hover a {
+            color: var(--accent);
+        }
+
+        .tag {
+            display: inline-block;
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            padding: 2px 8px;
+            border-radius: 100px;
+        }
+
+        .tag-game { color: var(--tag-game); background: var(--tag-game-bg); }
+        .tag-simulator { color: var(--tag-simulator); background: var(--tag-simulator-bg); }
+        .tag-explainer { color: var(--tag-explainer); background: var(--tag-explainer-bg); }
+        .tag-tool { color: var(--tag-tool); background: var(--tag-tool-bg); }
+        .tag-writing { color: var(--tag-writing); background: var(--tag-writing-bg); }
 
         /* Links section */
         .links {
@@ -243,41 +334,125 @@
         </header>
 
         <section>
-            <div class="section-label">Projects</div>
-            <ul class="projects">
-                <li><a href="/clear/index.html">CLEAR: Clear Letter on Equity and Remuneration</a></li>
-                <li><a href="/tech-oblique-strategies/index.html">Oblique Strategies for Tech</a></li>
-                <li><a href="/musical-scratchpad/index.html">Musical Looper Scratchpad</a></li>
-                <li><a href="/exercise-journal/index.html">Exercise Journal</a></li>
-            </ul>
-        </section>
+            <div class="section-label">Things I've Made</div>
 
-        <section>
-            <div class="section-label">Explorable Explanations</div>
+            <div class="filters">
+                <label class="filter-label" data-tag="game"><input type="checkbox" checked>Game</label>
+                <label class="filter-label" data-tag="simulator"><input type="checkbox" checked>Simulator</label>
+                <label class="filter-label" data-tag="explainer"><input type="checkbox" checked>Explainer</label>
+                <label class="filter-label" data-tag="tool"><input type="checkbox" checked>Tool</label>
+                <label class="filter-label" data-tag="writing"><input type="checkbox" checked>Writing</label>
+            </div>
+
             <ul class="projects">
-                <li><a href="/hormuz-minesweeper/index.html">Strait of Hormuz Minesweeper</a></li>
-                <li><a href="/complexity-tax/index.html">Complexity Tax Calculator</a></li>
-                <li><a href="/keynes-quotes/index.html">Keynes Quote Killer</a></li>
-                <li><a href="/agent-quiz/index.html">Librarian or Butler? AI Agent Explorer</a></li>
-                <li><a href="/sticky-starter/index.html">The Sticky Starter: Anchoring Effect</a></li>
-                <li><a href="/goodharts-gambler/index.html">Goodhart's Gambler: When Metrics Become Targets</a></li>
-                <li><a href="/bias-cascade/index.html">Bias Cascade: Hiring Funnel Simulator</a></li>
-                <li><a href="/technical-debt/index.html">Technical Debt: The Compounding Interest</a></li>
-                <li><a href="/survivorship-bias/index.html">Survivorship Bias: The Hidden Failures</a></li>
-                <li><a href="/feedback-loops/index.html">Feedback Loops: Reinforcing vs Balancing</a></li>
-                <li><a href="/simpsons-paradox/index.html">Simpson's Paradox: When Aggregation Lies</a></li>
-                <li><a href="/viral-coefficient/index.html">Viral Coefficient: The Growth Equation</a></li>
-                <li><a href="/principal-agent/index.html">Principal-Agent: The Alignment Problem</a></li>
-                <li><a href="/chestertons-fence/index.html">Chesterton's Fence: Why It's There</a></li>
-                <li><a href="/sustainable-pace/index.html">Sustainable Pace: The Burnout Equation</a></li>
-                <li><a href="/semantic-drift/index.html">Semantic Drift: The Accidental Semiotics Shuffle</a></li>
-                <li><a href="/rulebook-sandbox/index.html">Rulebook vs Sandbox: Learning Morality</a></li>
-                <li><a href="/do-be-understand/index.html">Do / Be / Understand: Life Impulse Triangle</a></li>
-                <li><a href="/trilemma/index.html">Trilemmas and Tradeoffs</a></li>
-                <li><a href="/agentic-workflow/index.html">The Agentic Workflow Paradox</a></li>
-                <li><a href="/xkcd-standards/index.html">The Standards Proliferation Machine</a></li>
-                <li><a href="/legibility-game/index.html">The Legibility Game: Governance &amp; Trust</a></li>
-                <li><a href="/lobster-pitch/index.html">Lobster Pitch: A YC Adventure</a></li>
+                <li data-tags="simulator explainer">
+                    <a href="/bias-cascade/index.html">Bias Cascade: Hiring Funnel Simulator</a>
+                    <div class="item-tags"><span class="tag tag-simulator">simulator</span><span class="tag tag-explainer">explainer</span></div>
+                </li>
+                <li data-tags="explainer">
+                    <a href="/chestertons-fence/index.html">Chesterton's Fence: Why It's There</a>
+                    <div class="item-tags"><span class="tag tag-explainer">explainer</span></div>
+                </li>
+                <li data-tags="tool">
+                    <a href="/clear/index.html">CLEAR: Clear Letter on Equity and Remuneration</a>
+                    <div class="item-tags"><span class="tag tag-tool">tool</span></div>
+                </li>
+                <li data-tags="simulator tool">
+                    <a href="/complexity-tax/index.html">Complexity Tax Calculator</a>
+                    <div class="item-tags"><span class="tag tag-simulator">simulator</span><span class="tag tag-tool">tool</span></div>
+                </li>
+                <li data-tags="explainer">
+                    <a href="/do-be-understand/index.html">Do / Be / Understand: Life Impulse Triangle</a>
+                    <div class="item-tags"><span class="tag tag-explainer">explainer</span></div>
+                </li>
+                <li data-tags="writing">
+                    <a href="/exercise-journal/index.html">Exercise Journal</a>
+                    <div class="item-tags"><span class="tag tag-writing">writing</span></div>
+                </li>
+                <li data-tags="simulator explainer">
+                    <a href="/feedback-loops/index.html">Feedback Loops: Reinforcing vs Balancing</a>
+                    <div class="item-tags"><span class="tag tag-simulator">simulator</span><span class="tag tag-explainer">explainer</span></div>
+                </li>
+                <li data-tags="game explainer">
+                    <a href="/goodharts-gambler/index.html">Goodhart's Gambler: When Metrics Become Targets</a>
+                    <div class="item-tags"><span class="tag tag-game">game</span><span class="tag tag-explainer">explainer</span></div>
+                </li>
+                <li data-tags="explainer">
+                    <a href="/keynes-quotes/index.html">Keynes Quote Killer</a>
+                    <div class="item-tags"><span class="tag tag-explainer">explainer</span></div>
+                </li>
+                <li data-tags="explainer tool">
+                    <a href="/agent-quiz/index.html">Librarian or Butler? AI Agent Explorer</a>
+                    <div class="item-tags"><span class="tag tag-explainer">explainer</span><span class="tag tag-tool">tool</span></div>
+                </li>
+                <li data-tags="game">
+                    <a href="/lobster-pitch/index.html">Lobster Pitch: A YC Adventure</a>
+                    <div class="item-tags"><span class="tag tag-game">game</span></div>
+                </li>
+                <li data-tags="tool">
+                    <a href="/musical-scratchpad/index.html">Musical Looper Scratchpad</a>
+                    <div class="item-tags"><span class="tag tag-tool">tool</span></div>
+                </li>
+                <li data-tags="tool">
+                    <a href="/tech-oblique-strategies/index.html">Oblique Strategies for Tech</a>
+                    <div class="item-tags"><span class="tag tag-tool">tool</span></div>
+                </li>
+                <li data-tags="game explainer">
+                    <a href="/principal-agent/index.html">Principal-Agent: The Alignment Problem</a>
+                    <div class="item-tags"><span class="tag tag-game">game</span><span class="tag tag-explainer">explainer</span></div>
+                </li>
+                <li data-tags="game explainer">
+                    <a href="/rulebook-sandbox/index.html">Rulebook vs Sandbox: Learning Morality</a>
+                    <div class="item-tags"><span class="tag tag-game">game</span><span class="tag tag-explainer">explainer</span></div>
+                </li>
+                <li data-tags="explainer">
+                    <a href="/semantic-drift/index.html">Semantic Drift: The Accidental Semiotics Shuffle</a>
+                    <div class="item-tags"><span class="tag tag-explainer">explainer</span></div>
+                </li>
+                <li data-tags="explainer simulator">
+                    <a href="/simpsons-paradox/index.html">Simpson's Paradox: When Aggregation Lies</a>
+                    <div class="item-tags"><span class="tag tag-explainer">explainer</span><span class="tag tag-simulator">simulator</span></div>
+                </li>
+                <li data-tags="game">
+                    <a href="/hormuz-minesweeper/index.html">Strait of Hormuz Minesweeper</a>
+                    <div class="item-tags"><span class="tag tag-game">game</span></div>
+                </li>
+                <li data-tags="simulator explainer">
+                    <a href="/sustainable-pace/index.html">Sustainable Pace: The Burnout Equation</a>
+                    <div class="item-tags"><span class="tag tag-simulator">simulator</span><span class="tag tag-explainer">explainer</span></div>
+                </li>
+                <li data-tags="simulator explainer">
+                    <a href="/survivorship-bias/index.html">Survivorship Bias: The Hidden Failures</a>
+                    <div class="item-tags"><span class="tag tag-simulator">simulator</span><span class="tag tag-explainer">explainer</span></div>
+                </li>
+                <li data-tags="simulator explainer">
+                    <a href="/sticky-starter/index.html">The Sticky Starter: Anchoring Effect</a>
+                    <div class="item-tags"><span class="tag tag-simulator">simulator</span><span class="tag tag-explainer">explainer</span></div>
+                </li>
+                <li data-tags="explainer">
+                    <a href="/agentic-workflow/index.html">The Agentic Workflow Paradox</a>
+                    <div class="item-tags"><span class="tag tag-explainer">explainer</span></div>
+                </li>
+                <li data-tags="game explainer">
+                    <a href="/legibility-game/index.html">The Legibility Game: Governance &amp; Trust</a>
+                    <div class="item-tags"><span class="tag tag-game">game</span><span class="tag tag-explainer">explainer</span></div>
+                </li>
+                <li data-tags="explainer simulator">
+                    <a href="/xkcd-standards/index.html">The Standards Proliferation Machine</a>
+                    <div class="item-tags"><span class="tag tag-explainer">explainer</span><span class="tag tag-simulator">simulator</span></div>
+                </li>
+                <li data-tags="simulator explainer">
+                    <a href="/technical-debt/index.html">Technical Debt: The Compounding Interest</a>
+                    <div class="item-tags"><span class="tag tag-simulator">simulator</span><span class="tag tag-explainer">explainer</span></div>
+                </li>
+                <li data-tags="explainer">
+                    <a href="/trilemma/index.html">Trilemmas and Tradeoffs</a>
+                    <div class="item-tags"><span class="tag tag-explainer">explainer</span></div>
+                </li>
+                <li data-tags="simulator explainer">
+                    <a href="/viral-coefficient/index.html">Viral Coefficient: The Growth Equation</a>
+                    <div class="item-tags"><span class="tag tag-simulator">simulator</span><span class="tag tag-explainer">explainer</span></div>
+                </li>
             </ul>
         </section>
 
@@ -299,5 +474,25 @@
             </div>
         </footer>
     </div>
+
+    <script>
+        const filters = document.querySelectorAll('.filter-label');
+        const items = document.querySelectorAll('.projects li');
+
+        filters.forEach(label => {
+            label.querySelector('input').addEventListener('change', applyFilters);
+        });
+
+        function applyFilters() {
+            const activeTags = new Set(
+                [...filters].filter(l => l.querySelector('input').checked).map(l => l.dataset.tag)
+            );
+            items.forEach(li => {
+                const itemTags = li.dataset.tags.split(' ');
+                const visible = itemTags.some(t => activeTags.has(t));
+                li.classList.toggle('hidden', !visible);
+            });
+        }
+    </script>
 </body>
 </html>
