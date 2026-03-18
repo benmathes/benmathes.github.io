@@ -300,16 +300,15 @@
             },
 
             calculateHarmonicPool() {
-                const uniqueMidiNotes = new Set();
+                // Always start with the full default scale so pitch mapping
+                // covers the entire canvas range. Add any extra notes from
+                // saved loops on top of it.
+                const uniqueMidiNotes = new Set(DEFAULT_SCALE_MIDI);
                 this.savedLoops.forEach(loop => {
                     loop.notes.forEach(noteInfo => {
                         uniqueMidiNotes.add(Tone.Midi(noteInfo.note).toMidi());
                     });
                 });
-
-                if (uniqueMidiNotes.size === 0) {
-                    DEFAULT_SCALE_MIDI.forEach(midi => uniqueMidiNotes.add(midi));
-                }
                 this.harmonicPool = Array.from(uniqueMidiNotes).sort((a, b) => a - b);
             },
 
