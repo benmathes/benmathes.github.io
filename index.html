@@ -162,52 +162,37 @@
         .filters {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 10px;
             margin-bottom: 24px;
         }
 
-        .filter-btn {
+        .filter-label {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 6px 14px;
-            border: 1px solid var(--border);
-            border-radius: 100px;
-            background: transparent;
-            color: var(--text-muted);
-            font-family: inherit;
-            font-size: 0.8rem;
-            font-weight: 400;
             cursor: pointer;
-            transition: all 0.15s ease;
+            font-size: 0.8rem;
+            color: var(--text-muted);
             user-select: none;
+            transition: color 0.15s ease;
         }
 
-        .filter-btn:hover {
-            border-color: var(--text-muted);
-        }
-
-        .filter-btn .dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-        }
-
-        .filter-btn[data-tag="game"] .dot { background: var(--tag-game); }
-        .filter-btn[data-tag="simulator"] .dot { background: var(--tag-simulator); }
-        .filter-btn[data-tag="explainer"] .dot { background: var(--tag-explainer); }
-        .filter-btn[data-tag="tool"] .dot { background: var(--tag-tool); }
-        .filter-btn[data-tag="writing"] .dot { background: var(--tag-writing); }
-
-        .filter-btn.active {
-            font-weight: 700;
+        .filter-label:hover {
             color: var(--text);
         }
-        .filter-btn.active[data-tag="game"] { border-color: var(--tag-game); background: var(--tag-game-bg); }
-        .filter-btn.active[data-tag="simulator"] { border-color: var(--tag-simulator); background: var(--tag-simulator-bg); }
-        .filter-btn.active[data-tag="explainer"] { border-color: var(--tag-explainer); background: var(--tag-explainer-bg); }
-        .filter-btn.active[data-tag="tool"] { border-color: var(--tag-tool); background: var(--tag-tool-bg); }
-        .filter-btn.active[data-tag="writing"] { border-color: var(--tag-writing); background: var(--tag-writing-bg); }
+
+        .filter-label input[type="checkbox"] {
+            accent-color: var(--text-muted);
+            width: 14px;
+            height: 14px;
+            cursor: pointer;
+        }
+
+        .filter-label[data-tag="game"] input { accent-color: var(--tag-game); }
+        .filter-label[data-tag="simulator"] input { accent-color: var(--tag-simulator); }
+        .filter-label[data-tag="explainer"] input { accent-color: var(--tag-explainer); }
+        .filter-label[data-tag="tool"] input { accent-color: var(--tag-tool); }
+        .filter-label[data-tag="writing"] input { accent-color: var(--tag-writing); }
 
         /* Project list */
         .projects {
@@ -352,11 +337,11 @@
             <div class="section-label">Things I've Made</div>
 
             <div class="filters">
-                <button class="filter-btn active" data-tag="game"><span class="dot"></span>Game</button>
-                <button class="filter-btn active" data-tag="simulator"><span class="dot"></span>Simulator</button>
-                <button class="filter-btn active" data-tag="explainer"><span class="dot"></span>Explainer</button>
-                <button class="filter-btn active" data-tag="tool"><span class="dot"></span>Tool</button>
-                <button class="filter-btn active" data-tag="writing"><span class="dot"></span>Writing</button>
+                <label class="filter-label" data-tag="game"><input type="checkbox" checked>Game</label>
+                <label class="filter-label" data-tag="simulator"><input type="checkbox" checked>Simulator</label>
+                <label class="filter-label" data-tag="explainer"><input type="checkbox" checked>Explainer</label>
+                <label class="filter-label" data-tag="tool"><input type="checkbox" checked>Tool</label>
+                <label class="filter-label" data-tag="writing"><input type="checkbox" checked>Writing</label>
             </div>
 
             <ul class="projects">
@@ -491,19 +476,16 @@
     </div>
 
     <script>
-        const filters = document.querySelectorAll('.filter-btn');
+        const filters = document.querySelectorAll('.filter-label');
         const items = document.querySelectorAll('.projects li');
 
-        filters.forEach(btn => {
-            btn.addEventListener('click', () => {
-                btn.classList.toggle('active');
-                applyFilters();
-            });
+        filters.forEach(label => {
+            label.querySelector('input').addEventListener('change', applyFilters);
         });
 
         function applyFilters() {
             const activeTags = new Set(
-                [...filters].filter(b => b.classList.contains('active')).map(b => b.dataset.tag)
+                [...filters].filter(l => l.querySelector('input').checked).map(l => l.dataset.tag)
             );
             items.forEach(li => {
                 const itemTags = li.dataset.tags.split(' ');
