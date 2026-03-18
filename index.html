@@ -222,6 +222,12 @@
             display: none;
         }
 
+        .item-tags {
+            display: flex;
+            gap: 6px;
+            padding-bottom: 10px;
+        }
+
         .projects a {
             display: block;
             padding: 14px 0 4px;
@@ -260,7 +266,6 @@
             letter-spacing: 0.06em;
             padding: 2px 8px;
             border-radius: 100px;
-            margin-bottom: 10px;
         }
 
         .tag-game { color: var(--tag-game); background: var(--tag-game-bg); }
@@ -348,113 +353,113 @@
             </div>
 
             <ul class="projects">
-                <li data-tag="game">
-                    <a href="/hormuz-minesweeper/index.html">Strait of Hormuz Minesweeper</a>
-                    <span class="tag tag-game">game</span>
-                </li>
-                <li data-tag="game">
-                    <a href="/goodharts-gambler/index.html">Goodhart's Gambler: When Metrics Become Targets</a>
-                    <span class="tag tag-game">game</span>
-                </li>
-                <li data-tag="game">
-                    <a href="/principal-agent/index.html">Principal-Agent: The Alignment Problem</a>
-                    <span class="tag tag-game">game</span>
-                </li>
-                <li data-tag="game">
-                    <a href="/rulebook-sandbox/index.html">Rulebook vs Sandbox: Learning Morality</a>
-                    <span class="tag tag-game">game</span>
-                </li>
-                <li data-tag="game">
-                    <a href="/legibility-game/index.html">The Legibility Game: Governance &amp; Trust</a>
-                    <span class="tag tag-game">game</span>
-                </li>
-                <li data-tag="game">
-                    <a href="/lobster-pitch/index.html">Lobster Pitch: A YC Adventure</a>
-                    <span class="tag tag-game">game</span>
-                </li>
-                <li data-tag="simulator">
-                    <a href="/complexity-tax/index.html">Complexity Tax Calculator</a>
-                    <span class="tag tag-simulator">simulator</span>
-                </li>
-                <li data-tag="simulator">
-                    <a href="/sticky-starter/index.html">The Sticky Starter: Anchoring Effect</a>
-                    <span class="tag tag-simulator">simulator</span>
-                </li>
-                <li data-tag="simulator">
+                <li data-tags="simulator explainer">
                     <a href="/bias-cascade/index.html">Bias Cascade: Hiring Funnel Simulator</a>
-                    <span class="tag tag-simulator">simulator</span>
+                    <div class="item-tags"><span class="tag tag-simulator">simulator</span><span class="tag tag-explainer">explainer</span></div>
                 </li>
-                <li data-tag="simulator">
-                    <a href="/technical-debt/index.html">Technical Debt: The Compounding Interest</a>
-                    <span class="tag tag-simulator">simulator</span>
-                </li>
-                <li data-tag="simulator">
-                    <a href="/survivorship-bias/index.html">Survivorship Bias: The Hidden Failures</a>
-                    <span class="tag tag-simulator">simulator</span>
-                </li>
-                <li data-tag="simulator">
-                    <a href="/feedback-loops/index.html">Feedback Loops: Reinforcing vs Balancing</a>
-                    <span class="tag tag-simulator">simulator</span>
-                </li>
-                <li data-tag="simulator">
-                    <a href="/viral-coefficient/index.html">Viral Coefficient: The Growth Equation</a>
-                    <span class="tag tag-simulator">simulator</span>
-                </li>
-                <li data-tag="simulator">
-                    <a href="/sustainable-pace/index.html">Sustainable Pace: The Burnout Equation</a>
-                    <span class="tag tag-simulator">simulator</span>
-                </li>
-                <li data-tag="explainer">
-                    <a href="/keynes-quotes/index.html">Keynes Quote Killer</a>
-                    <span class="tag tag-explainer">explainer</span>
-                </li>
-                <li data-tag="explainer">
-                    <a href="/agent-quiz/index.html">Librarian or Butler? AI Agent Explorer</a>
-                    <span class="tag tag-explainer">explainer</span>
-                </li>
-                <li data-tag="explainer">
-                    <a href="/simpsons-paradox/index.html">Simpson's Paradox: When Aggregation Lies</a>
-                    <span class="tag tag-explainer">explainer</span>
-                </li>
-                <li data-tag="explainer">
+                <li data-tags="explainer">
                     <a href="/chestertons-fence/index.html">Chesterton's Fence: Why It's There</a>
-                    <span class="tag tag-explainer">explainer</span>
+                    <div class="item-tags"><span class="tag tag-explainer">explainer</span></div>
                 </li>
-                <li data-tag="explainer">
-                    <a href="/semantic-drift/index.html">Semantic Drift: The Accidental Semiotics Shuffle</a>
-                    <span class="tag tag-explainer">explainer</span>
-                </li>
-                <li data-tag="explainer">
-                    <a href="/do-be-understand/index.html">Do / Be / Understand: Life Impulse Triangle</a>
-                    <span class="tag tag-explainer">explainer</span>
-                </li>
-                <li data-tag="explainer">
-                    <a href="/trilemma/index.html">Trilemmas and Tradeoffs</a>
-                    <span class="tag tag-explainer">explainer</span>
-                </li>
-                <li data-tag="explainer">
-                    <a href="/agentic-workflow/index.html">The Agentic Workflow Paradox</a>
-                    <span class="tag tag-explainer">explainer</span>
-                </li>
-                <li data-tag="explainer">
-                    <a href="/xkcd-standards/index.html">The Standards Proliferation Machine</a>
-                    <span class="tag tag-explainer">explainer</span>
-                </li>
-                <li data-tag="tool">
-                    <a href="/tech-oblique-strategies/index.html">Oblique Strategies for Tech</a>
-                    <span class="tag tag-tool">tool</span>
-                </li>
-                <li data-tag="tool">
-                    <a href="/musical-scratchpad/index.html">Musical Looper Scratchpad</a>
-                    <span class="tag tag-tool">tool</span>
-                </li>
-                <li data-tag="tool">
+                <li data-tags="tool">
                     <a href="/clear/index.html">CLEAR: Clear Letter on Equity and Remuneration</a>
-                    <span class="tag tag-tool">tool</span>
+                    <div class="item-tags"><span class="tag tag-tool">tool</span></div>
                 </li>
-                <li data-tag="writing">
+                <li data-tags="simulator tool">
+                    <a href="/complexity-tax/index.html">Complexity Tax Calculator</a>
+                    <div class="item-tags"><span class="tag tag-simulator">simulator</span><span class="tag tag-tool">tool</span></div>
+                </li>
+                <li data-tags="explainer">
+                    <a href="/do-be-understand/index.html">Do / Be / Understand: Life Impulse Triangle</a>
+                    <div class="item-tags"><span class="tag tag-explainer">explainer</span></div>
+                </li>
+                <li data-tags="writing">
                     <a href="/exercise-journal/index.html">Exercise Journal</a>
-                    <span class="tag tag-writing">writing</span>
+                    <div class="item-tags"><span class="tag tag-writing">writing</span></div>
+                </li>
+                <li data-tags="simulator explainer">
+                    <a href="/feedback-loops/index.html">Feedback Loops: Reinforcing vs Balancing</a>
+                    <div class="item-tags"><span class="tag tag-simulator">simulator</span><span class="tag tag-explainer">explainer</span></div>
+                </li>
+                <li data-tags="game explainer">
+                    <a href="/goodharts-gambler/index.html">Goodhart's Gambler: When Metrics Become Targets</a>
+                    <div class="item-tags"><span class="tag tag-game">game</span><span class="tag tag-explainer">explainer</span></div>
+                </li>
+                <li data-tags="explainer">
+                    <a href="/keynes-quotes/index.html">Keynes Quote Killer</a>
+                    <div class="item-tags"><span class="tag tag-explainer">explainer</span></div>
+                </li>
+                <li data-tags="explainer tool">
+                    <a href="/agent-quiz/index.html">Librarian or Butler? AI Agent Explorer</a>
+                    <div class="item-tags"><span class="tag tag-explainer">explainer</span><span class="tag tag-tool">tool</span></div>
+                </li>
+                <li data-tags="game">
+                    <a href="/lobster-pitch/index.html">Lobster Pitch: A YC Adventure</a>
+                    <div class="item-tags"><span class="tag tag-game">game</span></div>
+                </li>
+                <li data-tags="tool">
+                    <a href="/musical-scratchpad/index.html">Musical Looper Scratchpad</a>
+                    <div class="item-tags"><span class="tag tag-tool">tool</span></div>
+                </li>
+                <li data-tags="tool">
+                    <a href="/tech-oblique-strategies/index.html">Oblique Strategies for Tech</a>
+                    <div class="item-tags"><span class="tag tag-tool">tool</span></div>
+                </li>
+                <li data-tags="game explainer">
+                    <a href="/principal-agent/index.html">Principal-Agent: The Alignment Problem</a>
+                    <div class="item-tags"><span class="tag tag-game">game</span><span class="tag tag-explainer">explainer</span></div>
+                </li>
+                <li data-tags="game explainer">
+                    <a href="/rulebook-sandbox/index.html">Rulebook vs Sandbox: Learning Morality</a>
+                    <div class="item-tags"><span class="tag tag-game">game</span><span class="tag tag-explainer">explainer</span></div>
+                </li>
+                <li data-tags="explainer">
+                    <a href="/semantic-drift/index.html">Semantic Drift: The Accidental Semiotics Shuffle</a>
+                    <div class="item-tags"><span class="tag tag-explainer">explainer</span></div>
+                </li>
+                <li data-tags="explainer simulator">
+                    <a href="/simpsons-paradox/index.html">Simpson's Paradox: When Aggregation Lies</a>
+                    <div class="item-tags"><span class="tag tag-explainer">explainer</span><span class="tag tag-simulator">simulator</span></div>
+                </li>
+                <li data-tags="game">
+                    <a href="/hormuz-minesweeper/index.html">Strait of Hormuz Minesweeper</a>
+                    <div class="item-tags"><span class="tag tag-game">game</span></div>
+                </li>
+                <li data-tags="simulator explainer">
+                    <a href="/sustainable-pace/index.html">Sustainable Pace: The Burnout Equation</a>
+                    <div class="item-tags"><span class="tag tag-simulator">simulator</span><span class="tag tag-explainer">explainer</span></div>
+                </li>
+                <li data-tags="simulator explainer">
+                    <a href="/survivorship-bias/index.html">Survivorship Bias: The Hidden Failures</a>
+                    <div class="item-tags"><span class="tag tag-simulator">simulator</span><span class="tag tag-explainer">explainer</span></div>
+                </li>
+                <li data-tags="simulator explainer">
+                    <a href="/sticky-starter/index.html">The Sticky Starter: Anchoring Effect</a>
+                    <div class="item-tags"><span class="tag tag-simulator">simulator</span><span class="tag tag-explainer">explainer</span></div>
+                </li>
+                <li data-tags="explainer">
+                    <a href="/agentic-workflow/index.html">The Agentic Workflow Paradox</a>
+                    <div class="item-tags"><span class="tag tag-explainer">explainer</span></div>
+                </li>
+                <li data-tags="game explainer">
+                    <a href="/legibility-game/index.html">The Legibility Game: Governance &amp; Trust</a>
+                    <div class="item-tags"><span class="tag tag-game">game</span><span class="tag tag-explainer">explainer</span></div>
+                </li>
+                <li data-tags="explainer simulator">
+                    <a href="/xkcd-standards/index.html">The Standards Proliferation Machine</a>
+                    <div class="item-tags"><span class="tag tag-explainer">explainer</span><span class="tag tag-simulator">simulator</span></div>
+                </li>
+                <li data-tags="simulator explainer">
+                    <a href="/technical-debt/index.html">Technical Debt: The Compounding Interest</a>
+                    <div class="item-tags"><span class="tag tag-simulator">simulator</span><span class="tag tag-explainer">explainer</span></div>
+                </li>
+                <li data-tags="explainer">
+                    <a href="/trilemma/index.html">Trilemmas and Tradeoffs</a>
+                    <div class="item-tags"><span class="tag tag-explainer">explainer</span></div>
+                </li>
+                <li data-tags="simulator explainer">
+                    <a href="/viral-coefficient/index.html">Viral Coefficient: The Growth Equation</a>
+                    <div class="item-tags"><span class="tag tag-simulator">simulator</span><span class="tag tag-explainer">explainer</span></div>
                 </li>
             </ul>
         </section>
@@ -494,7 +499,9 @@
                 [...filters].filter(b => b.classList.contains('active')).map(b => b.dataset.tag)
             );
             items.forEach(li => {
-                li.classList.toggle('hidden', !activeTags.has(li.dataset.tag));
+                const itemTags = li.dataset.tags.split(' ');
+                const visible = itemTags.some(t => activeTags.has(t));
+                li.classList.toggle('hidden', !visible);
             });
         }
     </script>
