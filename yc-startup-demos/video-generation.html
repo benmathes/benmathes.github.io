@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Video Generation</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f8f8;
+  --surface: #ffffff;
+  --text: #1a1a1a;
+  --text-secondary: #666;
+  --border: #e0e0e0;
+  --accent: #ff6600;
+  --accent-light: rgba(255, 102, 0, 0.15);
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --text: #e8e8e8;
+    --text-secondary: #999;
+    --border: #333;
+    --accent-light: rgba(255, 102, 0, 0.2);
+    --shadow: 0 2px 12px rgba(0,0,0,0.3);
+  }
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Space Grotesk', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+.back-link { display: inline-block; padding: 16px 24px; color: var(--accent); text-decoration: none; font-weight: 500; font-size: 14px; transition: opacity 0.2s; }
+.back-link:hover { opacity: 0.7; }
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px 48px; }
+h1 { font-size: 32px; font-weight: 700; margin-bottom: 8px; }
+.subtitle { color: var(--text-secondary); font-size: 16px; margin-bottom: 32px; }
+.badge { display: inline-block; background: var(--accent-light); color: var(--accent); padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; margin-bottom: 12px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; box-shadow: var(--shadow); margin-bottom: 24px; }
+.card h2 { font-size: 18px; margin-bottom: 16px; font-weight: 600; }
+
+select, input[type="text"], input[type="range"], textarea {
+  font-family: 'Space Grotesk', sans-serif; font-size: 14px;
+  border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text);
+  padding: 10px 14px; width: 100%;
+}
+textarea { resize: vertical; min-height: 60px; }
+select { cursor: pointer; }
+button {
+  font-family: 'Space Grotesk', sans-serif; font-size: 14px;
+  border-radius: 8px; border: none;
+  background: var(--accent); color: #fff;
+  padding: 10px 20px; font-weight: 600; cursor: pointer;
+  transition: opacity 0.2s;
+}
+button:hover { opacity: 0.85; }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+button.secondary { background: var(--border); color: var(--text); }
+label { font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px; color: var(--text-secondary); }
+
+/* Timeline */
+.timeline-track {
+  display: flex; gap: 12px; padding: 16px; overflow-x: auto;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  min-height: 120px; align-items: stretch; margin-bottom: 24px;
+}
+.scene-slot {
+  min-width: 140px; max-width: 180px; flex-shrink: 0;
+  border: 2px dashed var(--border); border-radius: 10px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.2s; padding: 12px; position: relative;
+  user-select: none;
+}
+.scene-slot:hover { border-color: var(--accent); }
+.scene-slot.filled { border-style: solid; }
+.scene-slot.selected { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+.scene-slot.dragging { opacity: 0.4; }
+.scene-slot.drag-over { border-color: var(--accent); background: var(--accent-light); }
+.scene-slot .scene-num { font-weight: 700; font-size: 20px; color: var(--accent); }
+.scene-slot .scene-style { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+.scene-slot .scene-desc { font-size: 12px; margin-top: 6px; text-align: center; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.scene-slot .scene-dur { font-size: 11px; color: var(--accent); font-weight: 600; margin-top: 4px; }
+.scene-slot .remove-btn {
+  position: absolute; top: 4px; right: 6px; background: none; border: none;
+  color: var(--text-secondary); font-size: 16px; padding: 2px; cursor: pointer; line-height: 1;
+}
+
+.add-slot {
+  min-width: 60px; border: 2px dashed var(--border); border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 28px; color: var(--text-secondary); flex-shrink: 0;
+  transition: all 0.2s;
+}
+.add-slot:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Editor */
+.editor-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+@media (max-width: 768px) { .editor-grid { grid-template-columns: 1fr; } }
+.editor-section { display: flex; flex-direction: column; gap: 14px; }
+
+/* Progress */
+.render-bar-outer { width: 100%; height: 18px; border-radius: 9px; background: var(--border); overflow: hidden; margin: 8px 0; }
+.render-bar-inner { height: 100%; border-radius: 9px; background: linear-gradient(90deg, var(--accent), #22c55e); transition: width 0.15s; }
+
+/* Preview */
+.preview-area {
+  width: 100%; aspect-ratio: 16/9; border-radius: 12px;
+  background: #000; display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden; margin-bottom: 12px;
+}
+.preview-area .slide {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; padding: 32px; text-align: center;
+  opacity: 0; transition: opacity 0.6s;
+}
+.preview-area .slide.active { opacity: 1; }
+.preview-area .slide .slide-style { font-size: 14px; opacity: 0.7; margin-bottom: 8px; }
+.preview-area .slide .slide-desc { font-size: 22px; font-weight: 600; }
+.preview-area .slide .slide-dur { font-size: 13px; opacity: 0.6; margin-top: 12px; }
+.preview-placeholder { color: #666; font-size: 15px; }
+.playback-bar { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
+.playback-bar .pb-track { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.playback-bar .pb-fill { height: 100%; background: var(--accent); transition: width 0.2s; }
+.playback-bar .pb-time { font-size: 12px; color: var(--text-secondary); min-width: 60px; }
+
+/* Cost */
+.cost-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+@media (max-width: 600px) { .cost-grid { grid-template-columns: 1fr; } }
+.cost-card { padding: 20px; border-radius: 10px; text-align: center; }
+.cost-card.traditional { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); }
+.cost-card.ai { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); }
+.cost-card .cost-label { font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; }
+.cost-card .cost-value { font-size: 28px; font-weight: 700; }
+.cost-card.traditional .cost-value { color: #ef4444; }
+.cost-card.ai .cost-value { color: #22c55e; }
+.cost-card .cost-detail { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+
+.style-colors { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.style-chip {
+  padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+  cursor: pointer; border: 2px solid transparent; transition: all 0.2s;
+}
+.style-chip.active { border-color: #fff; transform: scale(1.05); }
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">← Back to all demos</a>
+<div class="container">
+  <span class="badge">Fall 2025</span>
+  <h1>Video Generation</h1>
+  <p class="subtitle">Build AI-generated video storyboards scene by scene, preview as a slideshow, and compare costs.</p>
+
+  <!-- Timeline -->
+  <div class="card">
+    <h2>Scene Timeline <span style="font-weight:400; font-size:13px; color:var(--text-secondary);">— drag to reorder</span></h2>
+    <div class="timeline-track" id="timeline">
+      <div class="add-slot" id="addScene" title="Add scene">+</div>
+    </div>
+    <div style="display:flex; gap:12px; flex-wrap:wrap;">
+      <button id="playBtn" disabled>▶ Play Slideshow</button>
+      <button id="stopBtn" class="secondary" disabled>■ Stop</button>
+      <span id="totalDuration" style="display:flex; align-items:center; font-size:13px; color:var(--text-secondary);"></span>
+    </div>
+  </div>
+
+  <!-- Editor + Preview -->
+  <div class="editor-grid">
+    <div class="card" id="editorCard">
+      <h2>Scene Editor</h2>
+      <div id="editorContent" class="editor-section">
+        <p style="color:var(--text-secondary); font-size:14px;">Click a scene or "+" to start editing.</p>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Preview</h2>
+      <div class="preview-area" id="previewArea">
+        <span class="preview-placeholder">Add scenes to preview</span>
+      </div>
+      <div class="playback-bar" id="playbackBar" style="display:none;">
+        <span class="pb-time" id="pbTime">0:00 / 0:00</span>
+        <div class="pb-track"><div class="pb-fill" id="pbFill" style="width:0%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cost comparison -->
+  <div class="card">
+    <h2>Cost Comparison: Per Minute of Video</h2>
+    <div class="cost-grid">
+      <div class="cost-card traditional">
+        <div class="cost-label">Traditional Production</div>
+        <div class="cost-value">$5,000+</div>
+        <div class="cost-detail">Crew, equipment, talent, post-production<br>Timeline: 2-4 weeks</div>
+      </div>
+      <div class="cost-card ai">
+        <div class="cost-label">AI Generation</div>
+        <div class="cost-value" id="aiCost">$0.12</div>
+        <div class="cost-detail">Compute cost only, instant generation<br>Timeline: 2-10 minutes</div>
+      </div>
+    </div>
+    <p style="text-align:center; margin-top:16px; font-size:14px; color:var(--accent); font-weight:600;" id="costSavings">~41,000x cost reduction with AI video generation</p>
+  </div>
+</div>
+
+<script>
+const STYLE_PALETTE = {
+  photorealistic: { bg: 'linear-gradient(135deg, #1a1a2e, #16213e)', color: '#a8d8ea', label: 'Photorealistic' },
+  anime: { bg: 'linear-gradient(135deg, #ff6b9d, #c44dff)', color: '#fff', label: 'Anime' },
+  cinematic: { bg: 'linear-gradient(135deg, #0d0d0d, #434343)', color: '#f5c518', label: 'Cinematic' },
+  documentary: { bg: 'linear-gradient(135deg, #2d4a3e, #1a3a2a)', color: '#b8e6c8', label: 'Documentary' }
+};
+
+let scenes = [];
+let selectedSceneIdx = null;
+let playing = false;
+let playTimer = null;
+let dragIdx = null;
+
+function renderTimeline() {
+  const tl = document.getElementById('timeline');
+  tl.innerHTML = '';
+  scenes.forEach((s, i) => {
+    const slot = document.createElement('div');
+    slot.className = 'scene-slot filled' + (selectedSceneIdx === i ? ' selected' : '');
+    slot.draggable = true;
+    slot.dataset.idx = i;
+    const palette = STYLE_PALETTE[s.style];
+    slot.style.background = palette.bg;
+    slot.style.color = palette.color;
+    slot.innerHTML = `
+      <button class="remove-btn" data-remove="${i}" title="Remove">×</button>
+      <div class="scene-num">${i + 1}</div>
+      <div class="scene-style">${palette.label}</div>
+      <div class="scene-desc">${s.description || '(no description)'}</div>
+      <div class="scene-dur">${s.duration}s</div>
+    `;
+    slot.addEventListener('click', (e) => {
+      if (e.target.dataset.remove !== undefined) return;
+      selectedSceneIdx = i;
+      renderTimeline();
+      renderEditor();
+    });
+    slot.querySelector('.remove-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      scenes.splice(i, 1);
+      if (selectedSceneIdx >= scenes.length) selectedSceneIdx = scenes.length ? scenes.length - 1 : null;
+      renderTimeline(); renderEditor(); updatePreview(); updateTotalDuration();
+    });
+
+    // Drag events
+    slot.addEventListener('dragstart', (e) => {
+      dragIdx = i;
+      slot.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    slot.addEventListener('dragend', () => { slot.classList.remove('dragging'); dragIdx = null; });
+    slot.addEventListener('dragover', (e) => { e.preventDefault(); slot.classList.add('drag-over'); });
+    slot.addEventListener('dragleave', () => slot.classList.remove('drag-over'));
+    slot.addEventListener('drop', (e) => {
+      e.preventDefault();
+      slot.classList.remove('drag-over');
+      if (dragIdx === null || dragIdx === i) return;
+      const [moved] = scenes.splice(dragIdx, 1);
+      scenes.splice(i, 0, moved);
+      if (selectedSceneIdx === dragIdx) selectedSceneIdx = i;
+      else if (selectedSceneIdx !== null) {
+        if (dragIdx < selectedSceneIdx && i >= selectedSceneIdx) selectedSceneIdx--;
+        else if (dragIdx > selectedSceneIdx && i <= selectedSceneIdx) selectedSceneIdx++;
+      }
+      dragIdx = null;
+      renderTimeline(); renderEditor(); updatePreview();
+    });
+
+    tl.appendChild(slot);
+  });
+
+  const addBtn = document.createElement('div');
+  addBtn.className = 'add-slot';
+  addBtn.textContent = '+';
+  addBtn.title = 'Add scene';
+  addBtn.addEventListener('click', () => {
+    scenes.push({ style: 'cinematic', description: '', duration: 5, rendered: false });
+    selectedSceneIdx = scenes.length - 1;
+    renderTimeline(); renderEditor(); updateTotalDuration();
+  });
+  tl.appendChild(addBtn);
+
+  document.getElementById('playBtn').disabled = scenes.length === 0;
+  updateTotalDuration();
+}
+
+function renderEditor() {
+  const content = document.getElementById('editorContent');
+  if (selectedSceneIdx === null || !scenes[selectedSceneIdx]) {
+    content.innerHTML = '<p style="color:var(--text-secondary); font-size:14px;">Click a scene or "+" to start editing.</p>';
+    return;
+  }
+  const s = scenes[selectedSceneIdx];
+  content.innerHTML = `
+    <label>Style</label>
+    <div class="style-colors" id="styleChips">
+      ${Object.entries(STYLE_PALETTE).map(([k, v]) =>
+        `<span class="style-chip ${s.style === k ? 'active' : ''}" data-style="${k}" style="background:${v.bg}; color:${v.color};">${v.label}</span>`
+      ).join('')}
+    </div>
+    <label>Scene Description</label>
+    <textarea id="sceneDesc" placeholder="Describe this scene...">${s.description}</textarea>
+    <label>Duration: <span id="durLabel">${s.duration}s</span></label>
+    <input type="range" id="sceneDur" min="2" max="10" value="${s.duration}">
+    <div style="display:flex; gap:12px;">
+      <button id="renderBtn">${s.rendered ? '✓ Re-render' : 'Render Scene'}</button>
+    </div>
+    ${s.rendered ? '' : '<div id="renderProgress" style="display:none;"><div class="render-bar-outer"><div class="render-bar-inner" id="renderFill" style="width:0%"></div></div><span style="font-size:12px; color:var(--text-secondary);" id="renderStatus">Rendering...</span></div>'}
+  `;
+
+  content.querySelectorAll('.style-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      s.style = chip.dataset.style;
+      renderEditor(); renderTimeline();
+    });
+  });
+  document.getElementById('sceneDesc').addEventListener('input', (e) => { s.description = e.target.value; s.rendered = false; renderTimeline(); });
+  document.getElementById('sceneDur').addEventListener('input', (e) => {
+    s.duration = parseInt(e.target.value);
+    document.getElementById('durLabel').textContent = s.duration + 's';
+    renderTimeline(); updateTotalDuration();
+  });
+  document.getElementById('renderBtn').addEventListener('click', () => {
+    const prog = document.getElementById('renderProgress');
+    if (prog) prog.style.display = 'block';
+    const fill = document.getElementById('renderFill');
+    const status = document.getElementById('renderStatus');
+    let pct = 0;
+    const btn = document.getElementById('renderBtn');
+    btn.disabled = true;
+    const iv = setInterval(() => {
+      pct += Math.random() * 8 + 2;
+      if (pct >= 100) pct = 100;
+      if (fill) fill.style.width = pct + '%';
+      if (status) {
+        const stages = ['Analyzing prompt...', 'Generating frames...', 'Applying style...', 'Compositing...', 'Finalizing...'];
+        status.textContent = stages[Math.min(Math.floor(pct / 20), 4)] + ' ' + Math.round(pct) + '%';
+      }
+      if (pct >= 100) {
+        clearInterval(iv);
+        s.rendered = true;
+        renderEditor(); renderTimeline(); updatePreview();
+      }
+    }, 100);
+  });
+}
+
+function updateTotalDuration() {
+  const total = scenes.reduce((a, s) => a + s.duration, 0);
+  document.getElementById('totalDuration').textContent = total ? `Total: ${total}s (${(total / 60).toFixed(1)} min)` : '';
+  const aiCostPerSec = 0.002;
+  document.getElementById('aiCost').textContent = total ? '$' + (total * aiCostPerSec).toFixed(2) : '$0.12';
+  const tradCost = total ? Math.round(total / 60 * 5000) : 5000;
+  const ratio = total ? Math.round(tradCost / (total * aiCostPerSec)) : 41000;
+  document.getElementById('costSavings').textContent = `~${ratio.toLocaleString()}x cost reduction with AI video generation`;
+}
+
+function updatePreview() {
+  const area = document.getElementById('previewArea');
+  const rendered = scenes.filter(s => s.rendered);
+  if (!rendered.length) {
+    area.innerHTML = '<span class="preview-placeholder">Render scenes to preview</span>';
+    return;
+  }
+  area.innerHTML = rendered.map((s, i) => {
+    const p = STYLE_PALETTE[s.style];
+    return `<div class="slide ${i === 0 ? 'active' : ''}" style="background:${p.bg}; color:${p.color};" data-slide="${i}">
+      <div class="slide-style">${p.label}</div>
+      <div class="slide-desc">${s.description || '(no description)'}</div>
+      <div class="slide-dur">${s.duration}s</div>
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('playBtn').addEventListener('click', () => {
+  const rendered = scenes.filter(s => s.rendered);
+  if (!rendered.length) return;
+  playing = true;
+  document.getElementById('playBtn').disabled = true;
+  document.getElementById('stopBtn').disabled = false;
+  document.getElementById('playbackBar').style.display = 'flex';
+
+  const totalDur = rendered.reduce((a, s) => a + s.duration, 0);
+  let elapsed = 0;
+  let currentSlide = 0;
+  const slides = document.querySelectorAll('#previewArea .slide');
+  slides.forEach(s => s.classList.remove('active'));
+  if (slides[0]) slides[0].classList.add('active');
+
+  let sceneElapsed = 0;
+  playTimer = setInterval(() => {
+    elapsed += 0.1;
+    sceneElapsed += 0.1;
+    const pct = Math.min(elapsed / totalDur * 100, 100);
+    document.getElementById('pbFill').style.width = pct + '%';
+    document.getElementById('pbTime').textContent = `${elapsed.toFixed(1)}s / ${totalDur}s`;
+
+    if (sceneElapsed >= rendered[currentSlide].duration) {
+      sceneElapsed = 0;
+      currentSlide++;
+      if (currentSlide >= rendered.length) {
+        stopPlayback();
+        return;
+      }
+      slides.forEach(s => s.classList.remove('active'));
+      if (slides[currentSlide]) slides[currentSlide].classList.add('active');
+    }
+
+    if (elapsed >= totalDur) stopPlayback();
+  }, 100);
+});
+
+function stopPlayback() {
+  playing = false;
+  if (playTimer) clearInterval(playTimer);
+  playTimer = null;
+  document.getElementById('playBtn').disabled = scenes.length === 0;
+  document.getElementById('stopBtn').disabled = true;
+}
+
+document.getElementById('stopBtn').addEventListener('click', stopPlayback);
+document.getElementById('addScene').addEventListener('click', () => {
+  scenes.push({ style: 'cinematic', description: '', duration: 5, rendered: false });
+  selectedSceneIdx = scenes.length - 1;
+  renderTimeline(); renderEditor(); updateTotalDuration();
+});
+
+renderTimeline();
+</script>
+</body>
+</html>

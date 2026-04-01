@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Multi-Agent System Infrastructure</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f8f8;
+  --surface: #ffffff;
+  --text: #1a1a1a;
+  --text-secondary: #666;
+  --border: #e0e0e0;
+  --accent: #ff6600;
+  --accent-light: rgba(255, 102, 0, 0.15);
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --canvas-bg: #fafafa;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --text: #e8e8e8;
+    --text-secondary: #999;
+    --border: #333;
+    --accent-light: rgba(255, 102, 0, 0.2);
+    --shadow: 0 2px 12px rgba(0,0,0,0.3);
+    --canvas-bg: #111;
+  }
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Space Grotesk', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+.back-link { display: inline-block; padding: 16px 24px; color: var(--accent); text-decoration: none; font-weight: 500; font-size: 14px; transition: opacity 0.2s; }
+.back-link:hover { opacity: 0.7; }
+.container { max-width: 1200px; margin: 0 auto; padding: 0 24px 48px; }
+h1 { font-size: 32px; font-weight: 700; margin-bottom: 8px; }
+.subtitle { color: var(--text-secondary); font-size: 16px; margin-bottom: 24px; }
+.badge { display: inline-block; background: var(--accent-light); color: var(--accent); padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; margin-bottom: 12px; }
+
+.top-bar { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
+.top-bar input[type="text"] {
+  flex: 1; min-width: 240px; font-family: 'Space Grotesk', sans-serif;
+  font-size: 14px; padding: 10px 16px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text);
+}
+button {
+  font-family: 'Space Grotesk', sans-serif; font-size: 14px;
+  border-radius: 8px; border: none; background: var(--accent);
+  color: #fff; padding: 10px 20px; font-weight: 600; cursor: pointer;
+  transition: opacity 0.2s;
+}
+button:hover { opacity: 0.85; }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+button.secondary { background: var(--border); color: var(--text); }
+
+.main-grid { display: grid; grid-template-columns: 1fr 320px; gap: 20px; }
+@media (max-width: 900px) { .main-grid { grid-template-columns: 1fr; } }
+
+.canvas-wrap {
+  background: var(--canvas-bg); border: 1px solid var(--border);
+  border-radius: 12px; overflow: hidden; position: relative;
+}
+canvas { display: block; width: 100%; height: 500px; }
+
+.sidebar { display: flex; flex-direction: column; gap: 16px; }
+.panel {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px; box-shadow: var(--shadow);
+}
+.panel h3 { font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+
+.message-bus {
+  max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;
+}
+.msg {
+  font-size: 12px; padding: 6px 10px; border-radius: 6px;
+  background: var(--accent-light); line-height: 1.4; animation: msgIn 0.3s ease;
+}
+@keyframes msgIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.msg .msg-from { font-weight: 700; color: var(--accent); }
+.msg .msg-to { color: var(--text-secondary); }
+
+.metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.metric {
+  text-align: center; padding: 10px; border-radius: 8px;
+  background: var(--accent-light);
+}
+.metric .metric-val { font-size: 22px; font-weight: 700; color: var(--accent); }
+.metric .metric-label { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+
+.agent-legend { display: flex; flex-wrap: wrap; gap: 8px; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+.legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+
+.phase-indicator { font-size: 13px; color: var(--text-secondary); margin-top: 8px; }
+.phase-indicator strong { color: var(--accent); }
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">← Back to all demos</a>
+<div class="container">
+  <span class="badge">Fall 2025</span>
+  <h1>Multi-Agent System Infrastructure</h1>
+  <p class="subtitle">Watch AI agents collaborate on complex tasks with real-time communication and orchestration.</p>
+
+  <div class="top-bar">
+    <input type="text" id="taskInput" placeholder="Enter a task, e.g. 'Build a landing page'" value="Build a landing page">
+    <button id="runBtn">Run Agent Swarm</button>
+    <button id="resetBtn" class="secondary">Reset</button>
+  </div>
+
+  <div class="main-grid">
+    <div class="canvas-wrap">
+      <canvas id="agentCanvas"></canvas>
+      <div class="phase-indicator" id="phaseIndicator" style="padding: 12px;">Phase: <strong>Idle</strong></div>
+    </div>
+    <div class="sidebar">
+      <div class="panel">
+        <h3>Agent Legend</h3>
+        <div class="agent-legend" id="agentLegend"></div>
+      </div>
+      <div class="panel">
+        <h3>Message Bus</h3>
+        <div class="message-bus" id="messageBus">
+          <p style="color:var(--text-secondary); font-size:12px;">No messages yet. Run a task to begin.</p>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Metrics</h3>
+        <div class="metrics-grid">
+          <div class="metric"><div class="metric-val" id="metTasks">0</div><div class="metric-label">Tasks Done</div></div>
+          <div class="metric"><div class="metric-val" id="metUtil">0%</div><div class="metric-label">Utilization</div></div>
+          <div class="metric"><div class="metric-val" id="metMsgs">0</div><div class="metric-label">Messages</div></div>
+          <div class="metric"><div class="metric-val" id="metOverhead">0ms</div><div class="metric-label">Comm. Overhead</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const AGENTS = [
+  { id: 'researcher', label: 'Researcher', color: '#3b82f6', emoji: '🔍' },
+  { id: 'writer', label: 'Writer', color: '#8b5cf6', emoji: '✍️' },
+  { id: 'coder', label: 'Coder', color: '#22c55e', emoji: '💻' },
+  { id: 'reviewer', label: 'Reviewer', color: '#f59e0b', emoji: '🔎' },
+  { id: 'deployer', label: 'Deployer', color: '#ef4444', emoji: '🚀' }
+];
+
+const DATA_SOURCES = [
+  { label: 'API Docs', x: 0.15, y: 0.15 },
+  { label: 'Design DB', x: 0.85, y: 0.15 },
+  { label: 'Style Guide', x: 0.15, y: 0.85 },
+  { label: 'Analytics', x: 0.85, y: 0.85 },
+];
+
+const PHASES = [
+  { name: 'Research', active: 'researcher', messages: [
+    { from: 'researcher', to: 'writer', text: 'Gathering requirements from API docs...' },
+    { from: 'researcher', to: 'coder', text: 'Found design system specs' },
+    { from: 'researcher', to: 'reviewer', text: 'Compiled style guide references' },
+  ]},
+  { name: 'Writing', active: 'writer', messages: [
+    { from: 'writer', to: 'coder', text: 'Drafting copy for hero section...' },
+    { from: 'writer', to: 'reviewer', text: 'Content draft ready for review' },
+    { from: 'writer', to: 'researcher', text: 'Need pricing data — can you verify?' },
+  ]},
+  { name: 'Coding', active: 'coder', messages: [
+    { from: 'coder', to: 'reviewer', text: 'Building responsive layout components...' },
+    { from: 'coder', to: 'writer', text: 'Integrating copy into template' },
+    { from: 'coder', to: 'deployer', text: 'Preparing build artifacts' },
+  ]},
+  { name: 'Review', active: 'reviewer', messages: [
+    { from: 'reviewer', to: 'coder', text: 'Found 2 accessibility issues' },
+    { from: 'reviewer', to: 'writer', text: 'Typo on pricing section' },
+    { from: 'coder', to: 'reviewer', text: 'Fixes applied, re-check?' },
+    { from: 'reviewer', to: 'deployer', text: 'Approved — ready to ship' },
+  ]},
+  { name: 'Deploy', active: 'deployer', messages: [
+    { from: 'deployer', to: 'coder', text: 'Running CI/CD pipeline...' },
+    { from: 'deployer', to: 'reviewer', text: 'Smoke tests passing' },
+    { from: 'deployer', to: 'researcher', text: 'Deployed to production!' },
+  ]}
+];
+
+let canvas, ctx;
+let agents = [];
+let connections = [];
+let particles = [];
+let running = false;
+let currentPhase = -1;
+let phaseTimer = null;
+let msgCount = 0;
+let tasksCompleted = 0;
+let animFrame;
+let isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+function initCanvas() {
+  canvas = document.getElementById('agentCanvas');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+}
+
+function getW() { return canvas.getBoundingClientRect().width; }
+function getH() { return canvas.getBoundingClientRect().height; }
+
+function initAgents() {
+  const w = getW(), h = getH();
+  const cx = w / 2, cy = h / 2;
+  const r = Math.min(w, h) * 0.3;
+  agents = AGENTS.map((a, i) => {
+    const angle = -Math.PI / 2 + (Math.PI * 2 / AGENTS.length) * i;
+    return {
+      ...a,
+      x: cx + Math.cos(angle) * r,
+      y: cy + Math.sin(angle) * r,
+      homeX: cx + Math.cos(angle) * r,
+      homeY: cy + Math.sin(angle) * r,
+      targetX: cx + Math.cos(angle) * r,
+      targetY: cy + Math.sin(angle) * r,
+      radius: 28,
+      active: false,
+      pulse: 0,
+      workText: ''
+    };
+  });
+}
+
+function renderLegend() {
+  const el = document.getElementById('agentLegend');
+  el.innerHTML = AGENTS.map(a =>
+    `<div class="legend-item"><div class="legend-dot" style="background:${a.color}"></div>${a.emoji} ${a.label}</div>`
+  ).join('');
+}
+
+function addMessage(from, to, text) {
+  const bus = document.getElementById('messageBus');
+  if (msgCount === 0) bus.innerHTML = '';
+  msgCount++;
+  const div = document.createElement('div');
+  div.className = 'msg';
+  div.innerHTML = `<span class="msg-from">${from}</span> → <span class="msg-to">${to}</span>: ${text}`;
+  bus.appendChild(div);
+  bus.scrollTop = bus.scrollHeight;
+  document.getElementById('metMsgs').textContent = msgCount;
+  document.getElementById('metOverhead').textContent = (msgCount * 12) + 'ms';
+}
+
+function addConnection(fromIdx, toIdx) {
+  connections.push({ from: fromIdx, to: toIdx, alpha: 1, life: 60 });
+}
+
+function addParticle(fromIdx, toIdx) {
+  const a = agents[fromIdx], b = agents[toIdx];
+  particles.push({ x: a.x, y: a.y, tx: b.x, ty: b.y, t: 0, color: a.color });
+}
+
+function draw() {
+  const w = getW(), h = getH();
+  ctx.clearRect(0, 0, w, h);
+
+  // Data sources
+  const textCol = isDark ? '#666' : '#bbb';
+  ctx.font = '11px Space Grotesk, sans-serif';
+  ctx.textAlign = 'center';
+  DATA_SOURCES.forEach(ds => {
+    const sx = ds.x * w, sy = ds.y * h;
+    ctx.beginPath();
+    ctx.arc(sx, sy, 8, 0, Math.PI * 2);
+    ctx.fillStyle = isDark ? '#222' : '#eee';
+    ctx.fill();
+    ctx.strokeStyle = isDark ? '#444' : '#ccc';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = textCol;
+    ctx.fillText(ds.label, sx, sy + 22);
+  });
+
+  // Connections
+  connections = connections.filter(c => {
+    c.life--;
+    c.alpha = c.life / 60;
+    if (c.life <= 0) return false;
+    const a = agents[c.from], b = agents[c.to];
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.strokeStyle = a.color + Math.round(c.alpha * 80).toString(16).padStart(2, '0');
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    return true;
+  });
+
+  // Particles
+  particles = particles.filter(p => {
+    p.t += 0.03;
+    if (p.t >= 1) return false;
+    p.x = p.x + (p.tx - p.x) * 0.03;
+    p.y = p.y + (p.ty - p.y) * 0.03;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = p.color;
+    ctx.fill();
+    return true;
+  });
+
+  // Agents
+  agents.forEach(a => {
+    // Move toward target
+    a.x += (a.targetX - a.x) * 0.06;
+    a.y += (a.targetY - a.y) * 0.06;
+
+    // Pulse
+    if (a.active) a.pulse = (a.pulse + 0.05) % (Math.PI * 2);
+    else a.pulse *= 0.9;
+    const pr = a.active ? a.radius + Math.sin(a.pulse) * 6 : a.radius;
+
+    // Glow
+    if (a.active) {
+      ctx.beginPath();
+      ctx.arc(a.x, a.y, pr + 12, 0, Math.PI * 2);
+      ctx.fillStyle = a.color + '22';
+      ctx.fill();
+    }
+
+    // Circle
+    ctx.beginPath();
+    ctx.arc(a.x, a.y, pr, 0, Math.PI * 2);
+    ctx.fillStyle = a.color;
+    ctx.fill();
+    ctx.strokeStyle = isDark ? '#fff' : '#000';
+    ctx.lineWidth = a.active ? 3 : 1;
+    ctx.globalAlpha = a.active ? 0.6 : 0.15;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    // Emoji
+    ctx.font = '18px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(a.emoji, a.x, a.y);
+
+    // Label
+    ctx.font = '12px Space Grotesk, sans-serif';
+    ctx.fillStyle = isDark ? '#e8e8e8' : '#1a1a1a';
+    ctx.textBaseline = 'top';
+    ctx.fillText(a.label, a.x, a.y + pr + 6);
+
+    // Work text
+    if (a.workText) {
+      ctx.font = '10px Space Grotesk, sans-serif';
+      ctx.fillStyle = a.color;
+      ctx.fillText(a.workText, a.x, a.y + pr + 22);
+    }
+  });
+
+  animFrame = requestAnimationFrame(draw);
+}
+
+function startPhase(phaseIdx) {
+  if (phaseIdx >= PHASES.length) {
+    // Done
+    agents.forEach(a => { a.active = false; a.targetX = a.homeX; a.targetY = a.homeY; a.workText = ''; });
+    tasksCompleted++;
+    document.getElementById('metTasks').textContent = tasksCompleted;
+    document.getElementById('metUtil').textContent = '100%';
+    document.getElementById('phaseIndicator').innerHTML = 'Phase: <strong style="color:#22c55e;">Complete!</strong>';
+    running = false;
+    document.getElementById('runBtn').disabled = false;
+    return;
+  }
+
+  currentPhase = phaseIdx;
+  const phase = PHASES[phaseIdx];
+  document.getElementById('phaseIndicator').innerHTML = `Phase: <strong>${phase.name}</strong> (${phaseIdx + 1}/${PHASES.length})`;
+
+  const activeIdx = agents.findIndex(a => a.id === phase.active);
+  const w = getW(), h = getH();
+
+  agents.forEach((a, i) => {
+    a.active = (a.id === phase.active);
+    if (a.active) {
+      a.workText = phase.name + '...';
+      // Move to data source if researcher
+      if (a.id === 'researcher') {
+        const ds = DATA_SOURCES[phaseIdx % DATA_SOURCES.length];
+        a.targetX = ds.x * w;
+        a.targetY = ds.y * h;
+      }
+    } else {
+      a.workText = '';
+      a.targetX = a.homeX;
+      a.targetY = a.homeY;
+    }
+  });
+
+  const util = Math.round(((phaseIdx + 1) / PHASES.length) * 100);
+  document.getElementById('metUtil').textContent = util + '%';
+
+  // Drip messages
+  let msgIdx = 0;
+  const msgInterval = setInterval(() => {
+    if (msgIdx >= phase.messages.length) {
+      clearInterval(msgInterval);
+      // Connect agents
+      phase.messages.forEach(m => {
+        const fi = agents.findIndex(a => a.id === m.from);
+        const ti = agents.findIndex(a => a.id === m.to);
+        if (fi >= 0 && ti >= 0) { addConnection(fi, ti); addParticle(fi, ti); }
+      });
+      setTimeout(() => startPhase(phaseIdx + 1), 2000);
+      return;
+    }
+    const m = phase.messages[msgIdx];
+    addMessage(m.from, m.to, m.text);
+    const fi = agents.findIndex(a => a.id === m.from);
+    const ti = agents.findIndex(a => a.id === m.to);
+    if (fi >= 0 && ti >= 0) { addConnection(fi, ti); addParticle(fi, ti); }
+    msgIdx++;
+  }, 600);
+}
+
+document.getElementById('runBtn').addEventListener('click', () => {
+  if (running) return;
+  running = true;
+  document.getElementById('runBtn').disabled = true;
+  msgCount = 0;
+  document.getElementById('messageBus').innerHTML = '';
+  document.getElementById('metMsgs').textContent = '0';
+  document.getElementById('metOverhead').textContent = '0ms';
+  connections = [];
+  particles = [];
+  agents.forEach(a => { a.targetX = a.homeX; a.targetY = a.homeY; a.active = false; a.workText = ''; });
+  startPhase(0);
+});
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  running = false;
+  currentPhase = -1;
+  msgCount = 0;
+  connections = [];
+  particles = [];
+  document.getElementById('messageBus').innerHTML = '<p style="color:var(--text-secondary); font-size:12px;">No messages yet. Run a task to begin.</p>';
+  document.getElementById('metTasks').textContent = '0';
+  document.getElementById('metUtil').textContent = '0%';
+  document.getElementById('metMsgs').textContent = '0';
+  document.getElementById('metOverhead').textContent = '0ms';
+  document.getElementById('phaseIndicator').innerHTML = 'Phase: <strong>Idle</strong>';
+  document.getElementById('runBtn').disabled = false;
+  tasksCompleted = 0;
+  agents.forEach(a => { a.targetX = a.homeX; a.targetY = a.homeY; a.active = false; a.workText = ''; });
+});
+
+window.addEventListener('resize', () => {
+  initCanvas();
+  const w = getW(), h = getH();
+  const cx = w / 2, cy = h / 2;
+  const r = Math.min(w, h) * 0.3;
+  agents.forEach((a, i) => {
+    const angle = -Math.PI / 2 + (Math.PI * 2 / AGENTS.length) * i;
+    a.homeX = cx + Math.cos(angle) * r;
+    a.homeY = cy + Math.sin(angle) * r;
+    if (!a.active) { a.targetX = a.homeX; a.targetY = a.homeY; }
+  });
+});
+
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => { isDark = e.matches; });
+
+initCanvas();
+initAgents();
+renderLegend();
+draw();
+</script>
+</body>
+</html>
