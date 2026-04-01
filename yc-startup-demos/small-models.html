@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Small Fine-Tuned Models vs Giant Generic Ones</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fafafa;--surface:#fff;--text:#1a1a2e;--text2:#555;--border:#e0e0e0;--accent:#ff6600;--card:#fff;--bg2:#f0f0f5;--green:#2ecc71;}
+@media(prefers-color-scheme:dark){:root{--bg:#0f0f1a;--surface:#1a1a2e;--text:#e8e8f0;--text2:#aaa;--border:#2a2a3e;--card:#1e1e32;--bg2:#16162a;}}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+a{color:var(--accent);text-decoration:none;}a:hover{text-decoration:underline;}
+.back{display:inline-block;padding:16px 24px;font-size:14px;font-weight:500;}
+header{text-align:center;padding:10px 20px 24px;}
+header h1{font-size:2rem;font-weight:700;margin-bottom:8px;}
+header p{color:var(--text2);max-width:650px;margin:0 auto;font-size:1rem;}
+.container{max-width:1100px;margin:0 auto;padding:0 20px 40px;}
+.domain-tabs{display:flex;gap:8px;justify-content:center;margin-bottom:24px;flex-wrap:wrap;}
+.domain-tab{padding:10px 20px;border-radius:10px;border:2px solid var(--border);background:var(--surface);font-family:inherit;font-size:0.9rem;font-weight:500;cursor:pointer;transition:all 0.2s;}
+.domain-tab:hover{border-color:var(--accent);}
+.domain-tab.active{border-color:var(--accent);background:var(--accent);color:#fff;}
+.chart-panel{background:var(--surface);border-radius:16px;border:1px solid var(--border);padding:24px;margin-bottom:20px;}
+.chart-panel h2{font-size:1.1rem;margin-bottom:16px;}
+canvas{width:100%;height:400px;display:block;}
+.table-panel{background:var(--surface);border-radius:16px;border:1px solid var(--border);padding:24px;overflow-x:auto;}
+.table-panel h2{font-size:1.1rem;margin-bottom:16px;}
+table{width:100%;border-collapse:collapse;font-size:0.85rem;}
+th{text-align:left;padding:10px 12px;border-bottom:2px solid var(--border);color:var(--text2);font-weight:600;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.5px;}
+td{padding:10px 12px;border-bottom:1px solid var(--border);}
+tr.highlight{background:rgba(255,102,0,0.08);}
+tr.highlight td{font-weight:600;}
+.badge{display:inline-block;padding:3px 8px;border-radius:6px;font-size:0.75rem;font-weight:600;}
+.badge-green{background:#2ecc7122;color:#2ecc71;}
+.badge-orange{background:#ff660022;color:#ff6600;}
+.badge-red{background:#e74c3c22;color:#e74c3c;}
+.badge-blue{background:#3498db22;color:#3498db;}
+.insight{margin-top:20px;padding:16px;background:var(--bg2);border-radius:12px;border-left:4px solid var(--accent);}
+.insight p{font-size:0.9rem;line-height:1.5;}
+.insight strong{color:var(--accent);}
+.star{color:var(--accent);}
+</style>
+</head>
+<body>
+<a class="back" href="index.html">← Back to all demos</a>
+<header>
+<h1>Small Fine-Tuned Models vs Giant Generic Ones</h1>
+<p>See how domain-specific fine-tuned models outperform much larger general-purpose models at a fraction of the cost.</p>
+</header>
+<div class="container">
+<div class="domain-tabs" id="domainTabs"></div>
+<div class="chart-panel">
+<h2>Model Size vs Accuracy by Domain</h2>
+<canvas id="scatterCanvas"></canvas>
+</div>
+<div class="table-panel">
+<h2>Detailed Comparison</h2>
+<table id="compTable">
+<thead>
+<tr><th>Model</th><th>Parameters</th><th>Accuracy</th><th>Cost/1K Queries</th><th>Latency (ms)</th><th>Rating</th></tr>
+</thead>
+<tbody id="compBody"></tbody>
+</table>
+<div class="insight" id="insight"></div>
+</div>
+</div>
+<script>
+const domains = ['General','Legal','Medical','Code','Customer Support'];
+const models = [
+  {name:'GPT-4 Class',params:1800,baseAcc:92,color:'#9b59b6',size:18,cost:3.00,latency:1200,generic:true},
+  {name:'GPT-3.5 Class',params:175,baseAcc:82,color:'#3498db',size:14,cost:0.50,latency:400,generic:true},
+  {name:'Llama 70B',params:70,baseAcc:79,color:'#e67e22',size:12,cost:0.25,latency:300,generic:true},
+  {name:'Llama 7B',params:7,baseAcc:65,color:'#f39c12',size:10,cost:0.04,latency:80,generic:true},
+  {name:'Fine-tuned 3B',params:3,baseAcc:58,color:'#2ecc71',size:11,cost:0.02,latency:45,generic:false},
+  {name:'Fine-tuned 1B',params:1,baseAcc:52,color:'#ff6600',size:10,cost:0.008,latency:25,generic:false},
+  {name:'Fine-tuned 350M',params:0.35,baseAcc:45,color:'#e74c3c',size:9,cost:0.003,latency:12,generic:false},
+];
+
+const domainBoosts = {
+  'General':    {generic:0, finetuned:0},
+  'Legal':      {generic:2, finetuned:28},
+  'Medical':    {generic:1, finetuned:30},
+  'Code':       {generic:3, finetuned:25},
+  'Customer Support': {generic:2, finetuned:32},
+};
+
+let currentDomain = 'General';
+let animatedAccuracies = models.map(m => m.baseAcc);
+let targetAccuracies = [...animatedAccuracies];
+
+const canvas = document.getElementById('scatterCanvas');
+const ctx = canvas.getContext('2d');
+const isDark = () => window.matchMedia('(prefers-color-scheme:dark)').matches;
+
+function resize(){
+  const r = canvas.getBoundingClientRect();
+  canvas.width = r.width * devicePixelRatio;
+  canvas.height = r.height * devicePixelRatio;
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+}
+resize();
+window.addEventListener('resize', resize);
+
+// Domain tabs
+const tabsEl = document.getElementById('domainTabs');
+domains.forEach(d => {
+  const btn = document.createElement('button');
+  btn.className = 'domain-tab' + (d === currentDomain ? ' active' : '');
+  btn.textContent = d;
+  btn.addEventListener('click', () => {
+    currentDomain = d;
+    document.querySelectorAll('.domain-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    updateTargets();
+    updateTable();
+  });
+  tabsEl.appendChild(btn);
+});
+
+function getAccuracy(model, domain){
+  const boost = domainBoosts[domain];
+  const b = model.generic ? boost.generic : boost.finetuned;
+  return Math.min(98, model.baseAcc + b);
+}
+
+function updateTargets(){
+  targetAccuracies = models.map(m => getAccuracy(m, currentDomain));
+}
+
+function updateTable(){
+  const tbody = document.getElementById('compBody');
+  tbody.innerHTML = '';
+  const rows = models.map((m,i) => {
+    const acc = getAccuracy(m, currentDomain);
+    return {...m, acc, idx:i};
+  }).sort((a,b) => b.acc - a.acc);
+
+  // Find sweet spot: best accuracy/cost ratio among fine-tuned
+  let bestRatio = 0, sweetSpot = '';
+  rows.forEach(r => {
+    if(!r.generic){
+      const ratio = r.acc / r.cost;
+      if(ratio > bestRatio){ bestRatio = ratio; sweetSpot = r.name; }
+    }
+  });
+
+  rows.forEach((r, rank) => {
+    const isSweet = r.name === sweetSpot;
+    const tr = document.createElement('tr');
+    if(isSweet) tr.className = 'highlight';
+    const ratingBadge = r.acc >= 90 ? 'badge-green' : r.acc >= 75 ? 'badge-blue' : r.acc >= 60 ? 'badge-orange' : 'badge-red';
+    const rating = r.acc >= 90 ? 'Excellent' : r.acc >= 75 ? 'Good' : r.acc >= 60 ? 'Fair' : 'Poor';
+    tr.innerHTML = `
+      <td>${isSweet ? '<span class="star">★</span> ' : ''}${r.name}${r.generic ? '' : ' <span style="font-size:0.7rem;color:var(--accent)">[fine-tuned]</span>'}</td>
+      <td>${r.params >= 1 ? r.params+'B' : (r.params*1000)+'M'}</td>
+      <td style="font-weight:700;color:${r.acc>=85?'#2ecc71':r.acc>=70?'var(--accent)':'#e74c3c'}">${r.acc.toFixed(1)}%</td>
+      <td>$${r.cost.toFixed(3)}</td>
+      <td>${r.latency}ms</td>
+      <td><span class="badge ${ratingBadge}">${rating}</span></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  const insight = document.getElementById('insight');
+  if(currentDomain === 'General'){
+    insight.innerHTML = '<p>In <strong>General</strong> tasks, larger models lead. But switch to a specific domain to see fine-tuned models shine.</p>';
+  } else {
+    const best = rows[0];
+    const ftBest = rows.find(r => !r.generic);
+    const gBest = rows.find(r => r.generic);
+    insight.innerHTML = `<p>For <strong>${currentDomain}</strong>: The <strong>${sweetSpot}</strong> achieves ${ftBest.acc.toFixed(1)}% accuracy at just <strong>$${ftBest.cost.toFixed(3)}/1K queries</strong> and <strong>${ftBest.latency}ms</strong> latency — compared to ${gBest.name} at $${gBest.cost.toFixed(2)}/1K queries. That is a <strong>${Math.round(gBest.cost/ftBest.cost)}x cost reduction</strong> with competitive accuracy.</p>`;
+  }
+}
+
+function drawChart(){
+  const w = canvas.getBoundingClientRect().width, h = canvas.getBoundingClientRect().height;
+  const dark = isDark();
+  ctx.clearRect(0,0,w,h);
+
+  const pad = {l:60, r:30, t:20, b:50};
+  const pw = w - pad.l - pad.r, ph = h - pad.t - pad.b;
+
+  // Animate
+  animatedAccuracies = animatedAccuracies.map((a,i) => a + (targetAccuracies[i] - a) * 0.08);
+
+  // Axes
+  ctx.strokeStyle = dark ? '#333' : '#ddd';
+  ctx.lineWidth = 1;
+
+  // X axis (log scale: 0.1B to 2000B)
+  const logMin = Math.log10(0.2), logMax = Math.log10(2500);
+  const xTicks = [0.35, 1, 3, 7, 70, 175, 1800];
+  xTicks.forEach(v => {
+    const x = pad.l + ((Math.log10(v) - logMin) / (logMax - logMin)) * pw;
+    ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, h - pad.b); ctx.stroke();
+    ctx.fillStyle = dark ? '#666' : '#999';
+    ctx.font = "11px 'Space Grotesk'";
+    ctx.textAlign = 'center';
+    ctx.fillText(v >= 1 ? v+'B' : (v*1000)+'M', x, h - pad.b + 20);
+  });
+
+  // Y axis
+  for(let acc = 40; acc <= 100; acc += 10){
+    const y = pad.t + (1 - (acc - 30) / 70) * ph;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(w - pad.r, y); ctx.stroke();
+    ctx.fillStyle = dark ? '#666' : '#999';
+    ctx.font = "11px 'Space Grotesk'";
+    ctx.textAlign = 'right';
+    ctx.fillText(acc + '%', pad.l - 10, y + 4);
+  }
+
+  // Axis labels
+  ctx.fillStyle = dark ? '#888' : '#777';
+  ctx.font = "12px 'Space Grotesk'";
+  ctx.textAlign = 'center';
+  ctx.fillText('Model Size (parameters, log scale)', pad.l + pw/2, h - 5);
+  ctx.save();
+  ctx.translate(15, pad.t + ph/2);
+  ctx.rotate(-Math.PI/2);
+  ctx.fillText('Accuracy (%)', 0, 0);
+  ctx.restore();
+
+  // Sweet spot region
+  if(currentDomain !== 'General'){
+    const x1 = pad.l + ((Math.log10(0.2) - logMin) / (logMax - logMin)) * pw;
+    const x2 = pad.l + ((Math.log10(5) - logMin) / (logMax - logMin)) * pw;
+    ctx.fillStyle = 'rgba(255,102,0,0.06)';
+    ctx.fillRect(x1, pad.t, x2-x1, ph);
+    ctx.fillStyle = 'rgba(255,102,0,0.4)';
+    ctx.font = "bold 11px 'Space Grotesk'";
+    ctx.textAlign = 'center';
+    ctx.fillText('EFFICIENCY SWEET SPOT', (x1+x2)/2, pad.t + 16);
+  }
+
+  // Plot points
+  models.forEach((m, i) => {
+    const x = pad.l + ((Math.log10(m.params) - logMin) / (logMax - logMin)) * pw;
+    const acc = animatedAccuracies[i];
+    const y = pad.t + (1 - (acc - 30) / 70) * ph;
+
+    // Glow
+    ctx.beginPath();
+    ctx.arc(x, y, m.size + 4, 0, Math.PI*2);
+    ctx.fillStyle = m.color + '33';
+    ctx.fill();
+
+    // Point
+    ctx.beginPath();
+    ctx.arc(x, y, m.size, 0, Math.PI*2);
+    ctx.fillStyle = m.color;
+    ctx.fill();
+    ctx.strokeStyle = dark ? '#0f0f1a' : '#fff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Label
+    ctx.fillStyle = dark ? '#ddd' : '#333';
+    ctx.font = "600 11px 'Space Grotesk'";
+    ctx.textAlign = 'center';
+    const labelY = y - m.size - 8;
+    ctx.fillText(m.name, x, labelY);
+    ctx.font = "10px 'Space Grotesk'";
+    ctx.fillStyle = m.color;
+    ctx.fillText(acc.toFixed(1) + '%', x, labelY + 13 + m.size*2 + 4);
+  });
+
+  requestAnimationFrame(drawChart);
+}
+
+updateTargets();
+updateTable();
+drawChart();
+</script>
+</body>
+</html>

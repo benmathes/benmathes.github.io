@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Modern Metal Mills</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f8f8f8;--surface:#fff;--text:#1a1a1a;--text-secondary:#666;--border:#e0e0e0;--accent:#ff6600;--accent-light:rgba(255,102,0,.12);--green:#22c55e;--red:#ef4444;--blue:#3b82f6;--shadow:0 2px 12px rgba(0,0,0,.08)}
+@media(prefers-color-scheme:dark){:root{--bg:#0f0f0f;--surface:#1a1a1a;--text:#e8e8e8;--text-secondary:#999;--border:#333;--accent-light:rgba(255,102,0,.2);--shadow:0 2px 12px rgba(0,0,0,.3)}}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.back-link{display:inline-block;padding:16px 24px;color:var(--accent);text-decoration:none;font-weight:500;font-size:14px}
+.back-link:hover{opacity:.7}
+.container{max-width:1100px;margin:0 auto;padding:0 24px 48px}
+h1{font-size:28px;font-weight:700;margin-bottom:4px}
+.subtitle{color:var(--text-secondary);font-size:15px;margin-bottom:24px}
+.badge{display:inline-block;background:var(--accent);color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;margin-left:8px;vertical-align:middle}
+
+.pipeline{display:flex;gap:0;align-items:center;margin-bottom:28px;overflow-x:auto;padding:10px 0}
+.stage{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;min-width:160px;text-align:center;position:relative}
+.stage h3{font-size:14px;font-weight:600;margin-bottom:4px}
+.stage .icon{font-size:28px;margin-bottom:6px}
+.stage .temp{font-size:12px;color:var(--accent);font-weight:600}
+.arrow{font-size:24px;color:var(--accent);padding:0 8px;flex-shrink:0}
+
+.controls-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:28px}
+.control-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px}
+.control-card h4{font-size:13px;font-weight:600;margin-bottom:4px}
+.control-card .stage-label{font-size:11px;color:var(--text-secondary);margin-bottom:8px}
+.slider-row{display:flex;align-items:center;gap:8px}
+.slider-row input[type=range]{flex:1;accent-color:var(--accent)}
+.slider-row .val{font-size:13px;font-weight:600;color:var(--accent);min-width:50px;text-align:right}
+
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center}
+.metric .value{font-size:32px;font-weight:700}
+.metric .label{font-size:13px;color:var(--text-secondary);margin-top:2px}
+.metric .bar{height:6px;background:var(--bg);border-radius:3px;margin-top:10px;overflow:hidden}
+.metric .bar-fill{height:100%;border-radius:3px;transition:width .5s}
+
+.btn-optimize{background:var(--accent);color:#fff;border:none;padding:14px 28px;border-radius:10px;font-family:inherit;font-weight:700;font-size:15px;cursor:pointer;display:block;margin:0 auto 28px;transition:transform .15s,box-shadow .15s}
+.btn-optimize:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(255,102,0,.3)}
+.btn-optimize:disabled{opacity:.5;transform:none;box-shadow:none}
+
+.comparison{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;display:none}
+.comparison h3{font-size:16px;font-weight:600;margin-bottom:16px;text-align:center}
+.comp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.comp-item{text-align:center}
+.comp-item .comp-label{font-size:12px;color:var(--text-secondary);margin-bottom:6px}
+.comp-item .comp-values{display:flex;justify-content:center;gap:16px}
+.comp-item .comp-old{font-size:18px;font-weight:600;color:var(--text-secondary);text-decoration:line-through}
+.comp-item .comp-new{font-size:18px;font-weight:700;color:var(--green)}
+.comp-item .comp-delta{font-size:14px;font-weight:600;color:var(--green);margin-top:4px}
+
+@media(max-width:700px){.metrics{grid-template-columns:1fr}.comp-grid{grid-template-columns:1fr}.pipeline{flex-direction:column}.arrow{transform:rotate(90deg)}}
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">← Back to all demos</a>
+<div class="container">
+<h1>Modern Metal Mills <span class="badge">Spring 2026</span></h1>
+<p class="subtitle">AI-optimized steel production: maximize quality, minimize energy, increase throughput.</p>
+
+<div class="pipeline">
+  <div class="stage"><div class="icon">⛏️</div><h3>Raw Material</h3><div class="temp" id="pipeTemp0">Alloy Mix</div></div>
+  <div class="arrow">→</div>
+  <div class="stage"><div class="icon">🔥</div><h3>Melt</h3><div class="temp" id="pipeTemp1">1550°C</div></div>
+  <div class="arrow">→</div>
+  <div class="stage"><div class="icon">🧊</div><h3>Cast</h3><div class="temp" id="pipeTemp2">Cooling</div></div>
+  <div class="arrow">→</div>
+  <div class="stage"><div class="icon">🔄</div><h3>Roll</h3><div class="temp" id="pipeTemp3">Speed</div></div>
+  <div class="arrow">→</div>
+  <div class="stage"><div class="icon">✨</div><h3>Finish</h3><div class="temp" id="pipeTemp4">Coating</div></div>
+</div>
+
+<div class="controls-grid" id="controls"></div>
+
+<div class="metrics">
+  <div class="metric">
+    <div class="value" id="qualityVal" style="color:var(--green)">—</div>
+    <div class="label">Quality Score</div>
+    <div class="bar"><div class="bar-fill" id="qualityBar" style="background:var(--green)"></div></div>
+  </div>
+  <div class="metric">
+    <div class="value" id="energyVal" style="color:var(--blue)">—</div>
+    <div class="label">Energy Usage (MWh)</div>
+    <div class="bar"><div class="bar-fill" id="energyBar" style="background:var(--blue)"></div></div>
+  </div>
+  <div class="metric">
+    <div class="value" id="throughVal" style="color:var(--accent)">—</div>
+    <div class="label">Throughput (tons/hr)</div>
+    <div class="bar"><div class="bar-fill" id="throughBar" style="background:var(--accent)"></div></div>
+  </div>
+</div>
+
+<button class="btn-optimize" id="optBtn" onclick="optimize()">✦ AI Optimize</button>
+
+<div class="comparison" id="comparison">
+  <h3>Traditional vs AI-Optimized</h3>
+  <div class="comp-grid" id="compGrid"></div>
+</div>
+</div>
+
+<script>
+const params = [
+  {id:'meltTemp',label:'Melt Temperature',stage:'Melt',unit:'°C',min:1400,max:1700,default:1550,optimal:1585,step:5},
+  {id:'meltTime',label:'Melt Duration',stage:'Melt',unit:'min',min:20,max:90,default:60,optimal:42,step:1},
+  {id:'alloyCarbon',label:'Carbon Content',stage:'Raw Material',unit:'%',min:0.1,max:1.5,default:0.8,optimal:0.45,step:0.05},
+  {id:'alloyChrome',label:'Chromium Content',stage:'Raw Material',unit:'%',min:0,max:20,default:10,optimal:13.5,step:0.5},
+  {id:'castSpeed',label:'Casting Speed',stage:'Cast',unit:'m/min',min:0.5,max:3,default:1.5,optimal:2.1,step:0.1},
+  {id:'castCoolRate',label:'Cooling Rate',stage:'Cast',unit:'°C/s',min:5,max:50,default:20,optimal:32,step:1},
+  {id:'rollSpeed',label:'Rolling Speed',stage:'Roll',unit:'m/s',min:1,max:15,default:8,optimal:11.5,step:0.5},
+  {id:'rollReduction',label:'Thickness Reduction',stage:'Roll',unit:'%',min:10,max:60,default:35,optimal:48,step:1},
+  {id:'finishCoat',label:'Coating Thickness',stage:'Finish',unit:'μm',min:5,max:50,default:20,optimal:28,step:1},
+  {id:'finishTemp',label:'Finish Temperature',stage:'Finish',unit:'°C',min:200,max:600,default:400,optimal:335,step:5},
+];
+
+let values = {};
+let savedTraditional = null;
+
+function init(){
+  params.forEach(p=>values[p.id]=p.default);
+  renderControls();
+  recalc();
+}
+
+function renderControls(){
+  document.getElementById('controls').innerHTML = params.map(p=>`
+    <div class="control-card">
+      <h4>${p.label}</h4>
+      <div class="stage-label">${p.stage} Stage</div>
+      <div class="slider-row">
+        <input type="range" id="s_${p.id}" min="${p.min}" max="${p.max}" step="${p.step}" value="${values[p.id]}" oninput="setParam('${p.id}',this.value)">
+        <span class="val" id="v_${p.id}">${values[p.id]}${p.unit}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function setParam(id, val){
+  values[id] = +val;
+  const p = params.find(x=>x.id===id);
+  document.getElementById('v_'+id).textContent = val+p.unit;
+  recalc();
+}
+
+function recalc(){
+  // Quality: higher when params are closer to optimal
+  let qualitySum = 0;
+  params.forEach(p=>{
+    const range = p.max - p.min;
+    const dist = Math.abs(values[p.id]-p.optimal)/range;
+    qualitySum += (1-dist);
+  });
+  const quality = Math.min(99, Math.max(20, (qualitySum/params.length)*100));
+
+  // Energy: combination of temperature and speed params
+  const energy = (values.meltTemp/1700*0.4 + values.meltTime/90*0.25 + (1-values.castSpeed/3)*0.15 + values.finishTemp/600*0.2)*45+15;
+
+  // Throughput: depends on speeds and reduction
+  const throughput = (values.castSpeed/3*0.3 + values.rollSpeed/15*0.35 + values.rollReduction/60*0.2 + (1-values.meltTime/90)*0.15)*28+8;
+
+  document.getElementById('qualityVal').textContent = quality.toFixed(1);
+  document.getElementById('qualityBar').style.width = quality+'%';
+  document.getElementById('energyVal').textContent = energy.toFixed(1);
+  document.getElementById('energyBar').style.width = (energy/60*100)+'%';
+  document.getElementById('throughVal').textContent = throughput.toFixed(1);
+  document.getElementById('throughBar').style.width = (throughput/36*100)+'%';
+
+  // Update pipeline display
+  document.getElementById('pipeTemp0').textContent = `C:${values.alloyCarbon}% Cr:${values.alloyChrome}%`;
+  document.getElementById('pipeTemp1').textContent = values.meltTemp+'°C / '+values.meltTime+'min';
+  document.getElementById('pipeTemp2').textContent = values.castSpeed+'m/min / '+values.castCoolRate+'°C/s';
+  document.getElementById('pipeTemp3').textContent = values.rollSpeed+'m/s / '+values.rollReduction+'%';
+  document.getElementById('pipeTemp4').textContent = values.finishCoat+'μm / '+values.finishTemp+'°C';
+}
+
+function optimize(){
+  // Save traditional values first
+  savedTraditional = {};
+  params.forEach(p=>savedTraditional[p.id]=values[p.id]);
+
+  const btn = document.getElementById('optBtn');
+  btn.disabled = true;
+  btn.textContent = 'Optimizing...';
+
+  // Animate sliders to optimal
+  let step = 0;
+  const totalSteps = 40;
+  const interval = setInterval(()=>{
+    step++;
+    const t = step/totalSteps;
+    const ease = t<0.5?2*t*t:1-Math.pow(-2*t+2,2)/2; // ease in-out
+    params.forEach(p=>{
+      const newVal = savedTraditional[p.id] + (p.optimal-savedTraditional[p.id])*ease;
+      const snapped = Math.round(newVal/p.step)*p.step;
+      values[p.id] = snapped;
+      const slider = document.getElementById('s_'+p.id);
+      if(slider) slider.value = snapped;
+      document.getElementById('v_'+p.id).textContent = snapped+p.unit;
+    });
+    recalc();
+
+    if(step>=totalSteps){
+      clearInterval(interval);
+      btn.disabled = false;
+      btn.textContent = '✦ AI Optimize';
+      showComparison();
+    }
+  },50);
+}
+
+function showComparison(){
+  // Calc traditional metrics
+  const tVals = savedTraditional;
+  let tQ = 0;
+  params.forEach(p=>{
+    const range = p.max-p.min;
+    tQ += (1-Math.abs(tVals[p.id]-p.optimal)/range);
+  });
+  tQ = Math.min(99,Math.max(20,(tQ/params.length)*100));
+  const tE = (tVals.meltTemp/1700*0.4+tVals.meltTime/90*0.25+(1-tVals.castSpeed/3)*0.15+tVals.finishTemp/600*0.2)*45+15;
+  const tT = (tVals.castSpeed/3*0.3+tVals.rollSpeed/15*0.35+tVals.rollReduction/60*0.2+(1-tVals.meltTime/90)*0.15)*28+8;
+
+  // Calc optimized
+  let oQ = 0;
+  params.forEach(p=>{
+    const range = p.max-p.min;
+    oQ += (1-Math.abs(p.optimal-p.optimal)/range);
+  });
+  oQ = Math.min(99,Math.max(20,(oQ/params.length)*100));
+  const oE = (params.find(p=>p.id==='meltTemp').optimal/1700*0.4+params.find(p=>p.id==='meltTime').optimal/90*0.25+(1-params.find(p=>p.id==='castSpeed').optimal/3)*0.15+params.find(p=>p.id==='finishTemp').optimal/600*0.2)*45+15;
+  const oT = (params.find(p=>p.id==='castSpeed').optimal/3*0.3+params.find(p=>p.id==='rollSpeed').optimal/15*0.35+params.find(p=>p.id==='rollReduction').optimal/60*0.2+(1-params.find(p=>p.id==='meltTime').optimal/90)*0.15)*28+8;
+
+  const comp = document.getElementById('comparison');
+  comp.style.display = 'block';
+  document.getElementById('compGrid').innerHTML = `
+    <div class="comp-item">
+      <div class="comp-label">Quality Score</div>
+      <div class="comp-values"><span class="comp-old">${tQ.toFixed(1)}</span><span class="comp-new">${oQ.toFixed(1)}</span></div>
+      <div class="comp-delta">+${((oQ-tQ)/tQ*100).toFixed(1)}% improvement</div>
+    </div>
+    <div class="comp-item">
+      <div class="comp-label">Energy Usage (MWh)</div>
+      <div class="comp-values"><span class="comp-old">${tE.toFixed(1)}</span><span class="comp-new">${oE.toFixed(1)}</span></div>
+      <div class="comp-delta">${((tE-oE)/tE*100).toFixed(1)}% reduction</div>
+    </div>
+    <div class="comp-item">
+      <div class="comp-label">Throughput (tons/hr)</div>
+      <div class="comp-values"><span class="comp-old">${tT.toFixed(1)}</span><span class="comp-new">${oT.toFixed(1)}</span></div>
+      <div class="comp-delta">+${((oT-tT)/tT*100).toFixed(1)}% increase</div>
+    </div>
+  `;
+  comp.scrollIntoView({behavior:'smooth'});
+}
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stablecoin Finance | YC Startup Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#f5f5f5;--fg:#1a1a1a;--card:#fff;--card-border:#e0e0e0;--accent:#ff6600;--subtle:#888;--green:#22c55e;--blue:#3b82f6;--red:#ef4444;--purple:#a855f7}
+@media(prefers-color-scheme:dark){:root{--bg:#0f0f0f;--fg:#e8e8e8;--card:#1a1a1a;--card-border:#2a2a2a;--subtle:#777}}
+body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--fg);min-height:100vh}
+a.back{position:fixed;top:16px;left:16px;color:var(--accent);text-decoration:none;font-size:14px;z-index:1000;font-weight:500}
+a.back:hover{text-decoration:underline}
+.header{text-align:center;padding:40px 20px 16px}
+.header h1{font-size:28px;font-weight:700}.header h1 span{color:var(--accent)}
+.header p{color:var(--subtle);font-size:14px;margin-top:8px}
+.controls{display:flex;justify-content:center;gap:16px;padding:0 20px 20px;flex-wrap:wrap;align-items:center}
+.controls label{font-size:12px;font-weight:600;color:var(--subtle)}
+.country-select{padding:10px 16px;background:var(--card);border:2px solid var(--card-border);border-radius:10px;font-family:inherit;font-size:14px;color:var(--fg);cursor:pointer;font-weight:500;min-width:160px}
+.country-select:focus{border-color:var(--accent);outline:none}
+.arrow-label{font-size:24px;color:var(--accent)}
+.amount-wrap{display:flex;align-items:center;gap:8px}
+.amount-input{width:140px;padding:10px 14px;background:var(--card);border:2px solid var(--card-border);border-radius:10px;font-family:inherit;font-size:14px;color:var(--fg);text-align:right;font-weight:600}
+.amount-input:focus{border-color:var(--accent);outline:none}
+.map-section{position:relative;max-width:900px;margin:0 auto;padding:0 20px}
+.map-container{position:relative;width:100%;aspect-ratio:2/1}
+canvas#mapCanvas{width:100%;height:100%;display:block;border-radius:14px;background:var(--card);border:1px solid var(--card-border)}
+.comparison{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:900px;margin:20px auto 0;padding:0 20px}
+.comp-card{background:var(--card);border:2px solid var(--card-border);border-radius:14px;padding:24px;transition:border-color .2s}
+.comp-card.wire{border-color:var(--card-border)}
+.comp-card.stable{border-color:var(--accent)}
+.comp-card .card-header{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.comp-card .card-title{font-size:16px;font-weight:700}
+.comp-card .card-tag{font-size:10px;padding:3px 10px;border-radius:6px;font-weight:700;text-transform:uppercase}
+.comp-card.wire .card-tag{background:var(--card-border);color:var(--subtle)}
+.comp-card.stable .card-tag{background:var(--accent);color:#fff}
+.comp-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--card-border);font-size:13px}
+.comp-row:last-child{border:none}
+.comp-row .label{color:var(--subtle);font-weight:500}
+.comp-row .value{font-weight:700;font-variant-numeric:tabular-nums}
+.comp-row .value.good{color:var(--green)}
+.comp-row .value.bad{color:var(--red)}
+.comp-row .value.accent{color:var(--accent)}
+.intermediaries{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:11px;color:var(--subtle);flex-wrap:wrap}
+.intermediary{padding:4px 10px;background:var(--bg);border-radius:6px;font-weight:500}
+.savings-section{max-width:900px;margin:20px auto 40px;padding:0 20px}
+.savings-card{background:linear-gradient(135deg,#ff6600,#ff8533);border-radius:14px;padding:24px 30px;color:#fff;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
+.savings-card .savings-label{font-size:14px;font-weight:500;opacity:0.9}
+.savings-card .savings-value{font-size:36px;font-weight:700}
+.savings-card .savings-detail{font-size:12px;opacity:0.8}
+.savings-card .savings-annual{text-align:right}
+.savings-card .savings-annual .big{font-size:28px;font-weight:700}
+.savings-card .savings-annual .small{font-size:12px;opacity:0.8}
+.time-anim{margin-top:10px;display:flex;align-items:center;gap:8px;font-size:12px}
+.time-bar{flex:1;height:8px;background:var(--card-border);border-radius:4px;overflow:hidden}
+.time-fill{height:100%;border-radius:4px;transition:width 1s ease}
+.time-fill.slow{background:var(--red)}
+.time-fill.fast{background:var(--green)}
+</style>
+</head>
+<body>
+<a class="back" href="index.html">&larr; Back to all demos</a>
+<div class="header">
+<h1><span>Stablecoin</span> Cross-Border Payments</h1>
+<p>Compare traditional wire transfers with stablecoin payments across borders</p>
+</div>
+<div class="controls">
+<div>
+<label>From</label><br>
+<select class="country-select" id="fromCountry">
+<option value="US">&#127482;&#127480; United States</option>
+<option value="EU">&#127466;&#127482; European Union</option>
+<option value="BR">&#127463;&#127479; Brazil</option>
+<option value="NG">&#127475;&#127468; Nigeria</option>
+<option value="IN">&#127470;&#127475; India</option>
+<option value="JP">&#127471;&#127477; Japan</option>
+</select>
+</div>
+<div class="arrow-label" style="margin-top:18px">&#10132;</div>
+<div>
+<label>To</label><br>
+<select class="country-select" id="toCountry">
+<option value="EU">&#127466;&#127482; European Union</option>
+<option value="US">&#127482;&#127480; United States</option>
+<option value="BR">&#127463;&#127479; Brazil</option>
+<option value="NG">&#127475;&#127468; Nigeria</option>
+<option value="IN">&#127470;&#127475; India</option>
+<option value="JP">&#127471;&#127477; Japan</option>
+</select>
+</div>
+<div class="amount-wrap" style="margin-top:18px">
+<label>Amount: $</label>
+<input class="amount-input" id="amountInput" type="number" value="10000" min="100" max="10000000">
+</div>
+</div>
+<div class="map-section">
+<div class="map-container"><canvas id="mapCanvas"></canvas></div>
+</div>
+<div class="comparison">
+<div class="comp-card wire" id="wireCard">
+<div class="card-header"><div class="card-title">&#127974; Traditional Wire</div><div class="card-tag">Legacy</div></div>
+<div id="wireDetails"></div>
+</div>
+<div class="comp-card stable" id="stableCard">
+<div class="card-header"><div class="card-title">&#9889; Stablecoin Transfer</div><div class="card-tag">Instant</div></div>
+<div id="stableDetails"></div>
+</div>
+</div>
+<div class="savings-section">
+<div class="savings-card" id="savingsCard"></div>
+</div>
+<script>
+const countries={
+US:{name:'United States',x:0.22,y:0.38,currency:'USD'},
+EU:{name:'Europe',x:0.48,y:0.30,currency:'EUR'},
+BR:{name:'Brazil',x:0.32,y:0.68,currency:'BRL'},
+NG:{name:'Nigeria',x:0.47,y:0.55,currency:'NGN'},
+IN:{name:'India',x:0.65,y:0.45,currency:'INR'},
+JP:{name:'Japan',x:0.82,y:0.36,currency:'JPY'}
+};
+
+const wireData={
+fee_pct:{default:3.5,US_EU:2.5,EU_US:2.5,US_JP:3.0,JP_US:3.0},
+time_days:{default:'3-5',US_EU:'2-3',EU_US:'2-3',US_JP:'3-4'},
+intermediaries:{default:['Sender Bank','Correspondent Bank','SWIFT Network','Receiving Bank'],
+US_EU:['Sender Bank','SWIFT','Correspondent Bank','Receiving Bank'],
+US_NG:['Sender Bank','US Correspondent','SWIFT','NG Correspondent','Receiving Bank']}
+};
+
+function getWireFee(from,to){return wireData.fee_pct[from+'_'+to]||wireData.fee_pct[to+'_'+from]||wireData.fee_pct.default}
+function getWireTime(from,to){return wireData.time_days[from+'_'+to]||wireData.time_days[to+'_'+from]||wireData.time_days.default}
+function getIntermediaries(from,to){return wireData.intermediaries[from+'_'+to]||wireData.intermediaries[to+'_'+from]||wireData.intermediaries.default}
+
+const stableFee=0.1; // 0.1%
+const stableTime='~30 seconds';
+
+const canvas=document.getElementById('mapCanvas');
+const ctx=canvas.getContext('2d');
+let animPhase=0,flowParticles=[];
+
+function updateComparison(){
+const from=document.getElementById('fromCountry').value;
+const to=document.getElementById('toCountry').value;
+const amount=parseFloat(document.getElementById('amountInput').value)||10000;
+
+const wireFee=getWireFee(from,to);
+const wireTime=getWireTime(from,to);
+const intermediaries=getIntermediaries(from,to);
+const wireCost=(amount*wireFee/100);
+const stableCost=(amount*stableFee/100);
+const savings=wireCost-stableCost;
+
+document.getElementById('wireDetails').innerHTML=`
+<div class="comp-row"><span class="label">Fee</span><span class="value bad">${wireFee}% ($${wireCost.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})})</span></div>
+<div class="comp-row"><span class="label">Transfer Time</span><span class="value bad">${wireTime} business days</span></div>
+<div class="comp-row"><span class="label">Recipient Gets</span><span class="value">$${(amount-wireCost).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>
+<div class="comp-row"><span class="label">Intermediaries</span><span class="value">${intermediaries.length}</span></div>
+<div class="intermediaries">${intermediaries.map(i=>`<span class="intermediary">${i}</span>`).join('<span>&#8594;</span>')}</div>
+<div class="time-anim"><span>Speed</span><div class="time-bar"><div class="time-fill slow" style="width:25%"></div></div><span>Slow</span></div>`;
+
+document.getElementById('stableDetails').innerHTML=`
+<div class="comp-row"><span class="label">Fee</span><span class="value good">${stableFee}% ($${stableCost.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})})</span></div>
+<div class="comp-row"><span class="label">Transfer Time</span><span class="value good">${stableTime}</span></div>
+<div class="comp-row"><span class="label">Recipient Gets</span><span class="value good">$${(amount-stableCost).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>
+<div class="comp-row"><span class="label">Intermediaries</span><span class="value good">0 (peer-to-peer)</span></div>
+<div class="intermediaries"><span class="intermediary" style="border:1px solid var(--accent);color:var(--accent)">Sender Wallet &#8594; Blockchain &#8594; Receiver Wallet</span></div>
+<div class="time-anim"><span>Speed</span><div class="time-bar"><div class="time-fill fast" style="width:95%"></div></div><span>Instant</span></div>`;
+
+const annualSavings=savings*12;
+document.getElementById('savingsCard').innerHTML=`
+<div><div class="savings-label">Savings per Transfer</div><div class="savings-value">$${savings.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</div><div class="savings-detail">${((wireFee-stableFee)).toFixed(1)}% less in fees &middot; Days faster</div></div>
+<div class="savings-annual"><div class="small">If sent monthly</div><div class="big">$${annualSavings.toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0})}/yr</div><div class="small">in savings</div></div>`;
+
+// Reset flow animation
+flowParticles=[];
+for(let i=0;i<15;i++){
+flowParticles.push({t:Math.random(),speed:0.003+Math.random()*0.004,size:2+Math.random()*3});
+}
+}
+
+// Map drawing
+function drawMap(){
+const dpr=window.devicePixelRatio||1;
+const rect=canvas.parentElement.getBoundingClientRect();
+canvas.width=rect.width*dpr;canvas.height=rect.height*dpr;
+ctx.scale(dpr,dpr);
+const w=rect.width,h=rect.height;
+canvas.style.width=w+'px';canvas.style.height=h+'px';
+
+ctx.clearRect(0,0,w,h);
+
+// Draw simplified world map dots
+const isDark=window.matchMedia('(prefers-color-scheme:dark)').matches;
+ctx.fillStyle=isDark?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.06)';
+for(let x=0;x<w;x+=12){
+for(let y=0;y<h;y+=12){
+// Simple land mass approximation
+const nx=x/w,ny=y/h;
+if(isLand(nx,ny)){
+ctx.beginPath();ctx.arc(x,y,1.5,0,Math.PI*2);ctx.fill();
+}
+}
+}
+
+const from=document.getElementById('fromCountry').value;
+const to=document.getElementById('toCountry').value;
+const fc=countries[from],tc=countries[to];
+const fx=fc.x*w,fy=fc.y*h,tx=tc.x*w,ty=tc.y*h;
+
+// Draw flow path
+ctx.beginPath();
+ctx.moveTo(fx,fy);
+const cpx=(fx+tx)/2,cpy=Math.min(fy,ty)-60;
+ctx.quadraticCurveTo(cpx,cpy,tx,ty);
+ctx.strokeStyle='rgba(255,102,0,0.2)';ctx.lineWidth=2;ctx.setLineDash([6,4]);ctx.stroke();
+ctx.setLineDash([]);
+
+// Draw flow particles
+flowParticles.forEach(p=>{
+p.t+=p.speed;if(p.t>1)p.t=0;
+const t=p.t;
+const px=(1-t)*(1-t)*fx+2*(1-t)*t*cpx+t*t*tx;
+const py=(1-t)*(1-t)*fy+2*(1-t)*t*cpy+t*t*ty;
+ctx.beginPath();ctx.arc(px,py,p.size,0,Math.PI*2);
+ctx.fillStyle=`rgba(255,102,0,${0.3+0.7*(1-Math.abs(t-0.5)*2)})`;
+ctx.fill();
+});
+
+// Draw country nodes
+Object.entries(countries).forEach(([code,c])=>{
+const cx=c.x*w,cy=c.y*h;
+const isActive=code===from||code===to;
+const r=isActive?10:6;
+
+if(isActive){
+ctx.beginPath();ctx.arc(cx,cy,r+8,0,Math.PI*2);
+ctx.fillStyle='rgba(255,102,0,0.1)';ctx.fill();
+ctx.beginPath();ctx.arc(cx,cy,r+4,0,Math.PI*2);
+ctx.fillStyle='rgba(255,102,0,0.15)';ctx.fill();
+}
+
+ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);
+ctx.fillStyle=isActive?'#ff6600':(isDark?'#444':'#ccc');
+ctx.fill();
+
+ctx.fillStyle=isDark?'#e8e8e8':'#1a1a1a';
+ctx.font=(isActive?'600 12px':'500 10px')+' Space Grotesk';
+ctx.textAlign='center';
+ctx.fillText(c.name,cx,cy+r+14);
+});
+
+animPhase+=0.02;
+requestAnimationFrame(drawMap);
+}
+
+function isLand(nx,ny){
+// Very rough continent approximation
+// North America
+if(nx>0.1&&nx<0.35&&ny>0.2&&ny<0.5)return Math.random()>0.3;
+// South America
+if(nx>0.2&&nx<0.38&&ny>0.5&&ny<0.85)return Math.random()>0.4;
+// Europe
+if(nx>0.42&&nx<0.58&&ny>0.18&&ny<0.42)return Math.random()>0.3;
+// Africa
+if(nx>0.42&&nx<0.58&&ny>0.35&&ny<0.78)return Math.random()>0.4;
+// Asia
+if(nx>0.55&&nx<0.85&&ny>0.15&&ny<0.55)return Math.random()>0.35;
+// India
+if(nx>0.6&&nx<0.7&&ny>0.35&&ny<0.55)return Math.random()>0.25;
+// Japan
+if(nx>0.78&&nx<0.86&&ny>0.28&&ny<0.42)return Math.random()>0.5;
+// Australia
+if(nx>0.75&&nx<0.9&&ny>0.6&&ny<0.8)return Math.random()>0.5;
+return false;
+}
+
+['fromCountry','toCountry','amountInput'].forEach(id=>{
+document.getElementById(id).addEventListener('change',updateComparison);
+document.getElementById(id).addEventListener('input',updateComparison);
+});
+
+updateComparison();
+drawMap();
+</script>
+</body>
+</html>
