@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI-Native Agencies</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f8f8f8;--surface:#fff;--text:#1a1a1a;--text-secondary:#666;--border:#e0e0e0;--accent:#ff6600;--accent-light:rgba(255,102,0,.12);--green:#22c55e;--red:#ef4444;--blue:#3b82f6;--shadow:0 2px 12px rgba(0,0,0,.08)}
+@media(prefers-color-scheme:dark){:root{--bg:#0f0f0f;--surface:#1a1a1a;--text:#e8e8e8;--text-secondary:#999;--border:#333;--accent-light:rgba(255,102,0,.2);--shadow:0 2px 12px rgba(0,0,0,.3)}}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.back-link{display:inline-block;padding:16px 24px;color:var(--accent);text-decoration:none;font-weight:500;font-size:14px}
+.back-link:hover{opacity:.7}
+.container{max-width:1100px;margin:0 auto;padding:0 24px 48px}
+h1{font-size:28px;font-weight:700;margin-bottom:4px}
+.subtitle{color:var(--text-secondary);font-size:15px;margin-bottom:24px}
+.badge{display:inline-block;background:var(--accent);color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;margin-left:8px;vertical-align:middle}
+
+.headline{text-align:center;margin-bottom:32px;padding:24px;background:var(--surface);border:1px solid var(--border);border-radius:14px}
+.headline .big{font-size:42px;font-weight:700;color:var(--accent)}
+.headline .desc{font-size:14px;color:var(--text-secondary);margin-top:4px}
+
+.controls{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:28px;padding:20px;background:var(--surface);border:1px solid var(--border);border-radius:12px}
+.control-group{flex:1;min-width:180px}
+.control-group label{display:block;font-size:13px;font-weight:600;margin-bottom:6px}
+.control-group input[type=range]{width:100%;accent-color:var(--accent)}
+.control-group .val{font-size:13px;color:var(--accent);font-weight:600}
+
+.comparison{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:28px}
+.side{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px}
+.side h2{font-size:18px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.side h2 .dot{width:10px;height:10px;border-radius:50%}
+.trad-dot{background:var(--text-secondary)}
+.ai-dot{background:var(--accent)}
+
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);font-size:14px}
+.stat-row:last-child{border-bottom:none}
+.stat-row .stat-val{font-weight:700;font-size:16px}
+.stat-row .stat-val.good{color:var(--green)}
+.stat-row .stat-val.warn{color:var(--red)}
+
+.bar-section{margin-bottom:28px}
+.bar-section h3{font-size:15px;font-weight:600;margin-bottom:16px;text-align:center}
+.bar-row{display:flex;align-items:center;gap:12px;margin-bottom:12px;font-size:13px}
+.bar-label{width:80px;text-align:right;font-weight:500;flex-shrink:0}
+.bar-track{flex:1;height:28px;background:var(--bg);border-radius:6px;position:relative;overflow:hidden}
+.bar-fill{height:100%;border-radius:6px;transition:width .8s ease;display:flex;align-items:center;padding:0 10px;font-size:12px;font-weight:600;color:#fff}
+.bar-trad{background:var(--text-secondary)}
+.bar-ai{background:var(--accent)}
+
+.scale-chart{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px}
+.scale-chart h3{font-size:15px;font-weight:600;margin-bottom:12px}
+canvas{width:100%;border-radius:8px}
+
+@media(max-width:700px){.comparison{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">← Back to all demos</a>
+<div class="container">
+<h1>AI-Native Agencies <span class="badge">Spring 2026</span></h1>
+<p class="subtitle">Compare traditional agency economics vs AI-native. Higher margins, faster delivery, fewer headcount.</p>
+
+<div class="headline">
+  <div class="big" id="rpeHeadline">—</div>
+  <div class="desc">Revenue per Employee: AI-Native vs Traditional</div>
+</div>
+
+<div class="controls">
+  <div class="control-group">
+    <label>Number of Clients: <span class="val" id="vClients">10</span></label>
+    <input type="range" id="sClients" min="5" max="100" value="10" oninput="update()">
+  </div>
+  <div class="control-group">
+    <label>Project Complexity: <span class="val" id="vComplexity">Medium</span></label>
+    <input type="range" id="sComplexity" min="1" max="3" value="2" oninput="update()">
+  </div>
+  <div class="control-group">
+    <label>Price per Project: <span class="val" id="vPrice">$50K</span></label>
+    <input type="range" id="sPrice" min="10" max="200" value="50" oninput="update()">
+  </div>
+</div>
+
+<div class="comparison">
+  <div class="side">
+    <h2><span class="dot trad-dot"></span> Traditional Agency</h2>
+    <div id="tradStats"></div>
+  </div>
+  <div class="side">
+    <h2><span class="dot ai-dot"></span> AI-Native Agency</h2>
+    <div id="aiStats"></div>
+  </div>
+</div>
+
+<div class="bar-section">
+  <h3>Margin Comparison by Scale</h3>
+  <div id="barChart"></div>
+</div>
+
+<div class="scale-chart">
+  <h3>Margin % as Client Count Grows</h3>
+  <canvas id="scaleCanvas" height="250"></canvas>
+</div>
+</div>
+
+<script>
+const complexityNames = ['Low','Medium','High'];
+const complexityHeadcount = [0.8, 1.5, 2.5]; // people per client
+const complexityAIReduction = [0.7, 0.6, 0.5]; // % reduction in headcount
+const avgSalary = 95000;
+const aiToolCostPerPerson = 15000; // annual AI tooling cost per person
+
+function update(){
+  const clients = +document.getElementById('sClients').value;
+  const complexity = +document.getElementById('sComplexity').value;
+  const priceK = +document.getElementById('sPrice').value;
+
+  document.getElementById('vClients').textContent = clients;
+  document.getElementById('vComplexity').textContent = complexityNames[complexity-1];
+  document.getElementById('vPrice').textContent = '$'+priceK+'K';
+
+  const price = priceK*1000;
+  const revenue = clients*price;
+
+  // Traditional
+  const tradHeadcount = Math.ceil(clients*complexityHeadcount[complexity-1]);
+  const tradSalaries = tradHeadcount*avgSalary;
+  const tradOverhead = tradSalaries*0.2;
+  const tradCost = tradSalaries+tradOverhead;
+  const tradProfit = revenue-tradCost;
+  const tradMargin = (tradProfit/revenue*100);
+  const tradUtil = Math.min(92, 65+clients*0.5);
+  const tradWeeks = complexity*3+2;
+  const tradRPE = revenue/tradHeadcount;
+
+  // AI-native
+  const aiHeadcount = Math.ceil(tradHeadcount*(1-complexityAIReduction[complexity-1]));
+  const aiAgents = Math.ceil(tradHeadcount*complexityAIReduction[complexity-1]*0.8);
+  const aiSalaries = aiHeadcount*avgSalary*1.15; // higher paid
+  const aiTooling = (aiHeadcount+aiAgents)*aiToolCostPerPerson;
+  const aiOverhead = aiSalaries*0.1;
+  const aiCost = aiSalaries+aiTooling+aiOverhead;
+  const aiProfit = revenue-aiCost;
+  const aiMargin = (aiProfit/revenue*100);
+  const aiUtil = Math.min(95, 80+clients*0.3);
+  const aiWeeks = Math.ceil(tradWeeks*0.4);
+  const aiRPE = revenue/aiHeadcount;
+
+  document.getElementById('tradStats').innerHTML = statRows([
+    ['Revenue', '$'+(revenue/1000).toFixed(0)+'K', ''],
+    ['Headcount', tradHeadcount+' people', ''],
+    ['Total Cost', '$'+(tradCost/1000).toFixed(0)+'K', ''],
+    ['Profit', '$'+(tradProfit/1000).toFixed(0)+'K', tradProfit>=0?'good':'warn'],
+    ['Margin', tradMargin.toFixed(1)+'%', tradMargin>=20?'good':'warn'],
+    ['Utilization', tradUtil.toFixed(0)+'%', ''],
+    ['Avg Delivery', tradWeeks+' weeks', ''],
+    ['Rev/Employee', '$'+(tradRPE/1000).toFixed(0)+'K', ''],
+  ]);
+
+  document.getElementById('aiStats').innerHTML = statRows([
+    ['Revenue', '$'+(revenue/1000).toFixed(0)+'K', ''],
+    ['Headcount', aiHeadcount+' people + '+aiAgents+' AI agents', ''],
+    ['Total Cost', '$'+(aiCost/1000).toFixed(0)+'K', ''],
+    ['Profit', '$'+(aiProfit/1000).toFixed(0)+'K', aiProfit>=0?'good':'warn'],
+    ['Margin', aiMargin.toFixed(1)+'%', aiMargin>=20?'good':'warn'],
+    ['Utilization', aiUtil.toFixed(0)+'%', ''],
+    ['Avg Delivery', aiWeeks+' weeks', ''],
+    ['Rev/Employee', '$'+(aiRPE/1000).toFixed(0)+'K', 'good'],
+  ]);
+
+  // Headline
+  document.getElementById('rpeHeadline').textContent =
+    '$'+(aiRPE/1000).toFixed(0)+'K vs $'+(tradRPE/1000).toFixed(0)+'K';
+
+  // Bar chart at different scales
+  const scales = [10,25,50,75,100];
+  let barHTML = '';
+  scales.forEach(s=>{
+    const rev = s*price;
+    const tH = Math.ceil(s*complexityHeadcount[complexity-1]);
+    const tC = tH*avgSalary*1.2;
+    const tM = Math.max(0,((rev-tC)/rev*100));
+    const aH = Math.ceil(tH*(1-complexityAIReduction[complexity-1]));
+    const aA = Math.ceil(tH*complexityAIReduction[complexity-1]*0.8);
+    const aC = aH*avgSalary*1.15*1.1+(aH+aA)*aiToolCostPerPerson;
+    const aM = Math.max(0,((rev-aC)/rev*100));
+    barHTML += `<div class="bar-row"><span class="bar-label">${s} clients</span>
+      <div class="bar-track"><div class="bar-fill bar-trad" style="width:${tM}%">${tM.toFixed(0)}%</div></div>
+      <div class="bar-track"><div class="bar-fill bar-ai" style="width:${aM}%">${aM.toFixed(0)}%</div></div></div>`;
+  });
+  document.getElementById('barChart').innerHTML = barHTML;
+
+  // Scale chart
+  drawScaleChart(complexity, price);
+}
+
+function statRows(rows){
+  return rows.map(([label,val,cls])=>`<div class="stat-row"><span>${label}</span><span class="stat-val ${cls}">${val}</span></div>`).join('');
+}
+
+function drawScaleChart(complexity, price){
+  const canvas = document.getElementById('scaleCanvas');
+  const dpr = devicePixelRatio||1;
+  canvas.width = canvas.offsetWidth*dpr;
+  canvas.height = 250*dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+  const w = canvas.offsetWidth, h = 250;
+  const isDark = matchMedia('(prefers-color-scheme:dark)').matches;
+
+  ctx.clearRect(0,0,w,h);
+  const points = [];
+  for(let s=5;s<=100;s+=1){
+    const rev = s*price;
+    const tH = Math.ceil(s*complexityHeadcount[complexity-1]);
+    const tC = tH*avgSalary*1.2;
+    const tM = Math.max(-10,(rev-tC)/rev*100);
+    const aH = Math.ceil(tH*(1-complexityAIReduction[complexity-1]));
+    const aA = Math.ceil(tH*complexityAIReduction[complexity-1]*0.8);
+    const aC = aH*avgSalary*1.15*1.1+(aH+aA)*aiToolCostPerPerson;
+    const aM = Math.max(-10,(rev-aC)/rev*100);
+    points.push({s,tM,aM});
+  }
+
+  const maxM = 80, minM = -10;
+  const px = i=>(i/(points.length-1))*w*0.9+w*0.05;
+  const py = m=>h-((m-minM)/(maxM-minM))*h*0.85-h*0.07;
+
+  // Zero line
+  ctx.strokeStyle = isDark?'#444':'#ddd';
+  ctx.setLineDash([4,4]);
+  ctx.beginPath();ctx.moveTo(0,py(0));ctx.lineTo(w,py(0));ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Traditional
+  ctx.strokeStyle = isDark?'#666':'#aaa';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  points.forEach((p,i)=>{i===0?ctx.moveTo(px(i),py(p.tM)):ctx.lineTo(px(i),py(p.tM))});
+  ctx.stroke();
+
+  // AI
+  ctx.strokeStyle = '#ff6600';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  points.forEach((p,i)=>{i===0?ctx.moveTo(px(i),py(p.aM)):ctx.lineTo(px(i),py(p.aM))});
+  ctx.stroke();
+
+  // Fill between
+  ctx.fillStyle = 'rgba(255,102,0,0.08)';
+  ctx.beginPath();
+  points.forEach((p,i)=>{i===0?ctx.moveTo(px(i),py(p.aM)):ctx.lineTo(px(i),py(p.aM))});
+  for(let i=points.length-1;i>=0;i--) ctx.lineTo(px(i),py(points[i].tM));
+  ctx.closePath();ctx.fill();
+
+  // Labels
+  ctx.font = '12px Space Grotesk';
+  ctx.fillStyle = '#ff6600';ctx.fillText('AI-Native',w-80,py(points[points.length-1].aM)-8);
+  ctx.fillStyle = isDark?'#666':'#aaa';ctx.fillText('Traditional',w-80,py(points[points.length-1].tM)+16);
+  ctx.fillStyle = var_color(isDark);
+  ctx.font = '11px Space Grotesk';
+  ctx.fillText('5 clients',w*0.05,h-2);
+  ctx.fillText('100 clients',w*0.85,h-2);
+}
+
+function var_color(isDark){return isDark?'#888':'#888'}
+
+update();
+window.addEventListener('resize',update);
+</script>
+</body>
+</html>

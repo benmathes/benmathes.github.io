@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>New Space Companies</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f8f8f8;--surface:#fff;--text:#1a1a1a;--text-secondary:#666;--border:#e0e0e0;--accent:#ff6600;--accent-light:rgba(255,102,0,0.12);--shadow:0 2px 12px rgba(0,0,0,0.08);}
+@media(prefers-color-scheme:dark){:root{--bg:#0a0a10;--surface:#141420;--text:#e8e8e8;--text-secondary:#999;--border:#2a2a35;--accent-light:rgba(255,102,0,0.18);--shadow:0 2px 12px rgba(0,0,0,0.4);}}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+.back-link{display:inline-block;padding:16px 24px;color:var(--accent);text-decoration:none;font-weight:500;font-size:14px;}
+.back-link:hover{opacity:0.7;}
+.container{max-width:1100px;margin:0 auto;padding:0 24px 48px;}
+h1{font-size:32px;font-weight:700;margin-bottom:8px;}
+.subtitle{color:var(--text-secondary);font-size:16px;margin-bottom:32px;}
+.layout{display:grid;grid-template-columns:1fr 300px;gap:24px;}
+@media(max-width:850px){.layout{grid-template-columns:1fr;}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;box-shadow:var(--shadow);}
+canvas{width:100%;border-radius:8px;display:block;}
+h3{font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px;}
+.slider-group{margin-bottom:14px;}
+.slider-label{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;}
+.slider-label .val{color:var(--accent);font-weight:600;}
+input[type=range]{width:100%;accent-color:var(--accent);}
+.btn{background:var(--accent);color:white;border:none;padding:12px;border-radius:8px;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;width:100%;transition:all 0.2s;}
+.btn:hover{filter:brightness(1.1);transform:translateY(-1px);}
+.btn:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.stat{text-align:center;padding:10px;background:var(--bg);border-radius:8px;}
+.stat .val{font-size:20px;font-weight:700;color:var(--accent);}
+.stat .lbl{font-size:10px;color:var(--text-secondary);text-transform:uppercase;margin-top:2px;}
+.outcome{padding:16px;border-radius:8px;text-align:center;font-weight:700;font-size:18px;margin-top:12px;}
+.outcome.orbit{background:rgba(0,200,100,0.15);color:#00c864;}
+.outcome.suborbital{background:rgba(255,170,0,0.15);color:#ffaa00;}
+.outcome.fail{background:rgba(255,50,50,0.15);color:#ff3232;}
+.controls{display:flex;flex-direction:column;gap:16px;}
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">&#8592; Back to all demos</a>
+<div class="container">
+  <h1>New Space Companies</h1>
+  <p class="subtitle">Orbital launch simulator: adjust parameters and attempt to reach orbit</p>
+  <div class="layout">
+    <div class="card" style="padding:0;overflow:hidden;">
+      <canvas id="spaceCanvas" width="760" height="560"></canvas>
+    </div>
+    <div class="controls">
+      <div class="card">
+        <h3>Launch Parameters</h3>
+        <div class="slider-group">
+          <div class="slider-label"><span>Thrust (kN)</span><span class="val" id="thrustVal">3500</span></div>
+          <input type="range" min="500" max="8000" step="100" value="3500" id="thrustSlider" oninput="document.getElementById('thrustVal').textContent=this.value">
+        </div>
+        <div class="slider-group">
+          <div class="slider-label"><span>Launch Angle</span><span class="val" id="angleVal">80&deg;</span></div>
+          <input type="range" min="45" max="90" step="1" value="80" id="angleSlider" oninput="document.getElementById('angleVal').textContent=this.value+'°'">
+        </div>
+        <div class="slider-group">
+          <div class="slider-label"><span>Payload (kg)</span><span class="val" id="payloadVal">5000</span></div>
+          <input type="range" min="500" max="25000" step="500" value="5000" id="payloadSlider" oninput="document.getElementById('payloadVal').textContent=this.value">
+        </div>
+        <button class="btn" id="launchBtn" onclick="startLaunch()">LAUNCH</button>
+        <button class="btn" style="background:var(--accent-light);color:var(--accent);margin-top:6px;" onclick="resetSim()">Reset</button>
+      </div>
+      <div class="card">
+        <h3>Telemetry</h3>
+        <div class="stat-grid">
+          <div class="stat"><div class="val" id="altVal">0</div><div class="lbl">Altitude (km)</div></div>
+          <div class="stat"><div class="val" id="velVal">0</div><div class="lbl">Velocity (m/s)</div></div>
+          <div class="stat"><div class="val" id="gVal">0.0</div><div class="lbl">G-Force</div></div>
+          <div class="stat"><div class="val" id="fuelVal">100%</div><div class="lbl">Fuel</div></div>
+        </div>
+        <div id="outcomeBox"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('spaceCanvas');
+const ctx = canvas.getContext('2d');
+const W = 760, H = 560;
+canvas.width = W; canvas.height = H;
+
+const EARTH_R = 6371; // km
+const ORBIT_ALT = 200; // km LEO
+const G = 9.81;
+
+let sim = null;
+let trail = [];
+let stars = [];
+for (let i = 0; i < 200; i++) stars.push({x:Math.random()*W, y:Math.random()*H, s:Math.random()*2+0.5, b:Math.random()});
+
+// Visualization params
+const earthCenterX = W * 0.15;
+const earthCenterY = H + 300;
+const earthDrawR = 380;
+const launchX = earthCenterX + Math.cos(-1.2) * earthDrawR;
+const launchY = earthCenterY + Math.sin(-1.2) * earthDrawR;
+
+function resetSim() {
+  sim = null;
+  trail = [];
+  document.getElementById('launchBtn').disabled = false;
+  document.getElementById('launchBtn').textContent = 'LAUNCH';
+  document.getElementById('altVal').textContent = '0';
+  document.getElementById('velVal').textContent = '0';
+  document.getElementById('gVal').textContent = '0.0';
+  document.getElementById('fuelVal').textContent = '100%';
+  document.getElementById('outcomeBox').innerHTML = '';
+}
+
+function startLaunch() {
+  const thrust = +document.getElementById('thrustSlider').value;
+  const angle = +document.getElementById('angleSlider').value;
+  const payload = +document.getElementById('payloadSlider').value;
+
+  const rocketMass = 50000 + payload; // kg
+  const fuelMass = 400000; // kg
+  const burnRate = 1500; // kg/s
+  const exhaustVel = thrust * 1000 / burnRate;
+
+  sim = {
+    x: 0, y: 0, // relative to launch point, in meters
+    vx: 0, vy: 0,
+    mass: rocketMass + fuelMass,
+    fuel: fuelMass,
+    thrust: thrust * 1000,
+    angle: angle * Math.PI / 180,
+    burnRate,
+    exhaustVel,
+    time: 0,
+    maxAlt: 0,
+    maxVel: 0,
+    phase: 'powered', // powered, coasting, done
+    outcome: null,
+    gravityTurn: false
+  };
+  trail = [];
+  document.getElementById('launchBtn').disabled = true;
+  document.getElementById('launchBtn').textContent = 'In Flight...';
+}
+
+function updateSim(dt) {
+  if (!sim || sim.phase === 'done') return;
+
+  const s = sim;
+  s.time += dt;
+
+  // Altitude in meters
+  const alt = Math.sqrt(s.x*s.x + s.y*s.y); // simplification
+  const altKm = alt / 1000;
+  s.maxAlt = Math.max(s.maxAlt, altKm);
+
+  // Gravity (simplified)
+  const grav = G * (EARTH_R*1000)**2 / ((EARTH_R*1000 + alt)**2);
+  const gravAngle = Math.atan2(-s.y, -s.x) + Math.PI; // toward earth
+  const gravX = 0;
+  const gravY = grav; // simplified: gravity always "down"
+
+  let ax = 0, ay = -grav;
+
+  // Thrust
+  if (s.fuel > 0 && s.phase === 'powered') {
+    const fuelUsed = s.burnRate * dt;
+    s.fuel = Math.max(0, s.fuel - fuelUsed);
+    s.mass -= fuelUsed;
+
+    // Gravity turn: start tilting after 10s
+    let thrustAngle = s.angle;
+    if (s.time > 10) {
+      const turnRate = 0.003;
+      thrustAngle = Math.max(0.1, s.angle - (s.time - 10) * turnRate);
+    }
+
+    const thrustAcc = s.thrust / s.mass;
+    ax += Math.cos(thrustAngle) * thrustAcc * 0.3; // horizontal
+    ay += Math.sin(thrustAngle) * thrustAcc; // vertical
+
+    if (s.fuel <= 0) s.phase = 'coasting';
+  } else {
+    s.phase = 'coasting';
+  }
+
+  s.vx += ax * dt;
+  s.vy += ay * dt;
+  s.x += s.vx * dt;
+  s.y += s.vy * dt;
+
+  const vel = Math.sqrt(s.vx*s.vx + s.vy*s.vy);
+  s.maxVel = Math.max(s.maxVel, vel);
+
+  // Orbit check: altitude > 200km and horizontal velocity > 7800 m/s (simplified)
+  const orbitalVel = Math.sqrt(G * (EARTH_R*1000) * (EARTH_R*1000) / ((EARTH_R + ORBIT_ALT)*1000));
+
+  if (altKm >= ORBIT_ALT && vel >= orbitalVel * 0.85) {
+    s.phase = 'done';
+    s.outcome = 'orbit';
+  } else if (s.y < -100 && s.vy < 0 && s.phase === 'coasting') {
+    s.phase = 'done';
+    s.outcome = s.maxAlt > 100 ? 'suborbital' : 'fail';
+  } else if (s.time > 600) {
+    s.phase = 'done';
+    s.outcome = s.maxAlt >= ORBIT_ALT ? 'suborbital' : 'fail';
+  }
+
+  // Screen coords for trail
+  const screenScale = earthDrawR / (EARTH_R * 1000);
+  const sx = launchX + s.x * screenScale * 0.001;
+  const sy = launchY - s.y * screenScale * 0.001;
+  trail.push({x: sx, y: sy, phase: s.fuel > 0 ? 'powered' : 'coasting'});
+
+  // Update UI
+  document.getElementById('altVal').textContent = altKm.toFixed(1);
+  document.getElementById('velVal').textContent = vel.toFixed(0);
+  document.getElementById('gVal').textContent = (vel > 0 ? (Math.sqrt(ax*ax+(ay+grav)*(ay+grav))/G).toFixed(1) : '0.0');
+  document.getElementById('fuelVal').textContent = (s.fuel / 400000 * 100).toFixed(0) + '%';
+
+  if (s.outcome) {
+    const box = document.getElementById('outcomeBox');
+    if (s.outcome === 'orbit') {
+      box.innerHTML = '<div class="outcome orbit">ORBIT ACHIEVED!</div>';
+    } else if (s.outcome === 'suborbital') {
+      box.innerHTML = '<div class="outcome suborbital">SUBORBITAL ARC</div>';
+    } else {
+      box.innerHTML = '<div class="outcome fail">LAUNCH FAILED</div>';
+    }
+    document.getElementById('launchBtn').disabled = false;
+    document.getElementById('launchBtn').textContent = 'LAUNCH';
+  }
+}
+
+function draw() {
+  ctx.fillStyle = '#050510';
+  ctx.fillRect(0, 0, W, H);
+
+  // Stars
+  for (let s of stars) {
+    s.b += (Math.random()-0.5)*0.05;
+    s.b = Math.max(0.3, Math.min(1, s.b));
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.s, 0, Math.PI*2);
+    ctx.fillStyle = `rgba(255,255,255,${s.b})`;
+    ctx.fill();
+  }
+
+  // Earth
+  const earthGrad = ctx.createRadialGradient(earthCenterX-50, earthCenterY-80, earthDrawR*0.5, earthCenterX, earthCenterY, earthDrawR);
+  earthGrad.addColorStop(0, '#1a5c3a');
+  earthGrad.addColorStop(0.3, '#0d3d6b');
+  earthGrad.addColorStop(1, '#0a1628');
+  ctx.beginPath();
+  ctx.arc(earthCenterX, earthCenterY, earthDrawR, 0, Math.PI*2);
+  ctx.fillStyle = earthGrad;
+  ctx.fill();
+
+  // Atmosphere glow
+  ctx.beginPath();
+  ctx.arc(earthCenterX, earthCenterY, earthDrawR + 8, 0, Math.PI*2);
+  ctx.strokeStyle = 'rgba(100,180,255,0.3)';
+  ctx.lineWidth = 6;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(earthCenterX, earthCenterY, earthDrawR + 3, 0, Math.PI*2);
+  ctx.strokeStyle = 'rgba(100,180,255,0.15)';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // Orbit line (dotted)
+  const orbitDrawR = earthDrawR + (ORBIT_ALT / EARTH_R) * earthDrawR;
+  ctx.beginPath();
+  ctx.arc(earthCenterX, earthCenterY, orbitDrawR, -Math.PI, 0);
+  ctx.strokeStyle = 'rgba(0,255,100,0.2)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4,6]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.font = '400 10px Space Grotesk';
+  ctx.fillStyle = 'rgba(0,255,100,0.4)';
+  ctx.fillText('LEO (200km)', earthCenterX + orbitDrawR * 0.7, earthCenterY - orbitDrawR * 0.7 - 6);
+
+  // Launch pad
+  ctx.beginPath();
+  ctx.arc(launchX, launchY, 4, 0, Math.PI*2);
+  ctx.fillStyle = '#ff6600';
+  ctx.fill();
+  ctx.font = '500 11px Space Grotesk';
+  ctx.fillStyle = '#ff6600';
+  ctx.fillText('Launch Site', launchX + 8, launchY - 8);
+
+  // Trail
+  for (let i = 1; i < trail.length; i++) {
+    const alpha = i / trail.length;
+    ctx.beginPath();
+    ctx.moveTo(trail[i-1].x, trail[i-1].y);
+    ctx.lineTo(trail[i].x, trail[i].y);
+    ctx.strokeStyle = trail[i].phase === 'powered' ? `rgba(255,102,0,${alpha})` : `rgba(100,200,255,${alpha*0.5})`;
+    ctx.lineWidth = trail[i].phase === 'powered' ? 3 : 1.5;
+    ctx.stroke();
+  }
+
+  // Rocket
+  if (sim && sim.phase !== 'done' && trail.length > 0) {
+    const tip = trail[trail.length - 1];
+    // Flame
+    if (sim.fuel > 0) {
+      const flameLen = 8 + Math.random() * 6;
+      ctx.beginPath();
+      ctx.moveTo(tip.x - 3, tip.y + 4);
+      ctx.lineTo(tip.x, tip.y + flameLen);
+      ctx.lineTo(tip.x + 3, tip.y + 4);
+      ctx.fillStyle = `rgba(255,${150+Math.random()*100},0,0.8)`;
+      ctx.fill();
+    }
+    // Rocket body
+    ctx.beginPath();
+    ctx.moveTo(tip.x, tip.y - 8);
+    ctx.lineTo(tip.x - 3, tip.y + 4);
+    ctx.lineTo(tip.x + 3, tip.y + 4);
+    ctx.closePath();
+    ctx.fillStyle = '#e0e0e0';
+    ctx.fill();
+  }
+
+  // Orbit achieved ring
+  if (sim && sim.outcome === 'orbit' && trail.length > 0) {
+    const tip = trail[trail.length-1];
+    const orbitR = Math.sqrt((tip.x-earthCenterX)**2 + (tip.y-earthCenterY)**2);
+    const pulse = Math.sin(Date.now()/400)*0.2+0.3;
+    ctx.beginPath();
+    ctx.arc(earthCenterX, earthCenterY, orbitR, 0, Math.PI*2);
+    ctx.strokeStyle = `rgba(0,255,100,${pulse})`;
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6,4]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Altitude scale
+  ctx.font = '400 10px Space Grotesk';
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  for (let km = 100; km <= 400; km += 100) {
+    const r = earthDrawR + (km / EARTH_R) * earthDrawR;
+    const labelX = earthCenterX + r * Math.cos(-0.5);
+    const labelY = earthCenterY + r * Math.sin(-0.5);
+    if (labelY < H && labelX < W) {
+      ctx.fillText(km + 'km', labelX + 4, labelY);
+    }
+  }
+
+  updateSim(1/60 * 8); // time acceleration
+  requestAnimationFrame(draw);
+}
+
+draw();
+</script>
+</body>
+</html>

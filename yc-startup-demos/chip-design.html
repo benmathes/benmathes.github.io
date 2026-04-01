@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LLMs for Chip Design</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f8f8;
+  --surface: #ffffff;
+  --text: #1a1a1a;
+  --text-secondary: #666;
+  --border: #e0e0e0;
+  --accent: #ff6600;
+  --accent-light: rgba(255, 102, 0, 0.15);
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --gate-bg: #e8f0fe;
+  --gate-border: #4a90d9;
+  --wire-color: #4a90d9;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --text: #e8e8e8;
+    --text-secondary: #999;
+    --border: #333;
+    --accent-light: rgba(255, 102, 0, 0.2);
+    --shadow: 0 2px 12px rgba(0,0,0,0.3);
+    --gate-bg: #1e2a3a;
+    --gate-border: #5a9ae9;
+    --wire-color: #5a9ae9;
+  }
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Space Grotesk', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow: hidden;
+}
+.back-link {
+  display: inline-block;
+  padding: 16px 24px;
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 14px;
+  transition: opacity 0.2s;
+}
+.back-link:hover { opacity: 0.7; }
+header {
+  padding: 0 24px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+header h1 { font-size: 24px; font-weight: 700; }
+.metrics {
+  display: flex;
+  gap: 20px;
+  font-size: 13px;
+}
+.metric { display: flex; align-items: center; gap: 6px; }
+.metric-val { font-weight: 700; color: var(--accent); font-size: 16px; }
+.main-layout {
+  display: flex;
+  height: calc(100vh - 110px);
+}
+.toolbox {
+  width: 160px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+}
+.toolbox h3 {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+.tool-item {
+  background: var(--gate-bg);
+  border: 2px solid var(--gate-border);
+  border-radius: 8px;
+  padding: 10px 8px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: grab;
+  transition: transform 0.15s, box-shadow 0.15s;
+  user-select: none;
+}
+.tool-item:hover { transform: scale(1.05); box-shadow: var(--shadow); }
+.tool-item:active { cursor: grabbing; }
+.tool-item.switch { border-color: #4caf50; background: rgba(76,175,80,0.15); }
+.tool-item.led { border-color: #f44336; background: rgba(244,67,54,0.15); }
+.canvas-area {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+#circuit-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-accent {
+  background: var(--accent);
+  color: white;
+}
+.btn-accent:hover { opacity: 0.85; }
+.btn-outline {
+  background: transparent;
+  border: 2px solid var(--border);
+  color: var(--text);
+}
+.btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+.toolbar-bottom {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 10;
+  background: var(--surface);
+  padding: 8px 16px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+.hint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--text-secondary);
+  font-size: 14px;
+  text-align: center;
+  pointer-events: none;
+  opacity: 0.6;
+}
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">← Back to all demos</a>
+<header>
+  <h1>LLMs for Chip Design</h1>
+  <div class="metrics">
+    <div class="metric">Gates: <span class="metric-val" id="gate-count">0</span></div>
+    <div class="metric">Delay: <span class="metric-val" id="prop-delay">0</span><span>ns</span></div>
+  </div>
+</header>
+<div class="main-layout">
+  <div class="toolbox">
+    <h3>Inputs</h3>
+    <div class="tool-item switch" draggable="true" data-type="SWITCH">SWITCH</div>
+    <h3>Gates</h3>
+    <div class="tool-item" draggable="true" data-type="AND">AND</div>
+    <div class="tool-item" draggable="true" data-type="OR">OR</div>
+    <div class="tool-item" draggable="true" data-type="NOT">NOT</div>
+    <div class="tool-item" draggable="true" data-type="XOR">XOR</div>
+    <div class="tool-item" draggable="true" data-type="NAND">NAND</div>
+    <h3>Outputs</h3>
+    <div class="tool-item led" draggable="true" data-type="LED">LED</div>
+  </div>
+  <div class="canvas-area">
+    <canvas id="circuit-canvas"></canvas>
+    <div class="hint" id="hint-text">Drag gates from the toolbox to build a circuit.<br>Click and drag between ports to connect wires.</div>
+    <div class="toolbar-bottom">
+      <button class="btn btn-accent" id="btn-optimize">AI Optimize</button>
+      <button class="btn btn-outline" id="btn-clear">Clear All</button>
+    </div>
+  </div>
+</div>
+<script>
+const canvas = document.getElementById('circuit-canvas');
+const ctx = canvas.getContext('2d');
+const hint = document.getElementById('hint-text');
+
+let W, H, dpr;
+function resize() {
+  const r = canvas.parentElement.getBoundingClientRect();
+  dpr = window.devicePixelRatio || 1;
+  W = r.width; H = r.height;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  draw();
+}
+window.addEventListener('resize', resize);
+
+const gates = [];
+const wires = [];
+let nextId = 1;
+
+const GATE_W = 80, GATE_H = 50;
+const PORT_R = 6;
+
+const darkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+function gateInputCount(type) {
+  if (type === 'NOT') return 1;
+  if (type === 'SWITCH') return 0;
+  if (type === 'LED') return 1;
+  return 2;
+}
+function gateOutputCount(type) {
+  if (type === 'LED') return 0;
+  return 1;
+}
+
+function createGate(type, x, y) {
+  const g = {
+    id: nextId++,
+    type,
+    x, y,
+    w: type === 'SWITCH' ? 50 : type === 'LED' ? 50 : GATE_W,
+    h: type === 'SWITCH' ? 40 : type === 'LED' ? 40 : GATE_H,
+    inputs: [],
+    outputs: [],
+    value: type === 'SWITCH' ? 0 : null,
+    animX: x, animY: y,
+  };
+  const inC = gateInputCount(type);
+  const outC = gateOutputCount(type);
+  for (let i = 0; i < inC; i++) g.inputs.push({ id: `${g.id}-i${i}`, value: 0 });
+  for (let i = 0; i < outC; i++) g.outputs.push({ id: `${g.id}-o${i}`, value: 0 });
+  return g;
+}
+
+function getPortPos(gate, isInput, idx) {
+  const x = gate.animX !== undefined ? gate.animX : gate.x;
+  const y = gate.animY !== undefined ? gate.animY : gate.y;
+  if (isInput) {
+    const count = gate.inputs.length;
+    const spacing = gate.h / (count + 1);
+    return { x: x, y: y + spacing * (idx + 1) };
+  } else {
+    const count = gate.outputs.length;
+    const spacing = gate.h / (count + 1);
+    return { x: x + gate.w, y: y + spacing * (idx + 1) };
+  }
+}
+
+function evaluate() {
+  // reset
+  gates.forEach(g => {
+    g.inputs.forEach(p => p.value = 0);
+    if (g.type !== 'SWITCH') g.value = null;
+  });
+  // propagate values through wires, iteratively
+  for (let iter = 0; iter < 20; iter++) {
+    // set output values for switches
+    gates.forEach(g => {
+      if (g.type === 'SWITCH') {
+        g.outputs[0].value = g.value;
+      }
+    });
+    // propagate wires
+    wires.forEach(w => {
+      const sg = gates.find(g => g.id === w.fromGate);
+      const dg = gates.find(g => g.id === w.toGate);
+      if (sg && dg) {
+        const outPort = sg.outputs[w.fromPort];
+        if (outPort !== undefined) {
+          dg.inputs[w.toPort].value = outPort.value;
+        }
+      }
+    });
+    // evaluate gates
+    gates.forEach(g => {
+      const a = g.inputs[0] ? g.inputs[0].value : 0;
+      const b = g.inputs[1] ? g.inputs[1].value : 0;
+      switch (g.type) {
+        case 'AND': g.value = a & b; break;
+        case 'OR': g.value = a | b; break;
+        case 'NOT': g.value = a ? 0 : 1; break;
+        case 'XOR': g.value = a ^ b; break;
+        case 'NAND': g.value = (a & b) ? 0 : 1; break;
+        case 'LED': g.value = a; break;
+        case 'SWITCH': break;
+      }
+      if (g.outputs[0] !== undefined && g.type !== 'SWITCH') {
+        g.outputs[0].value = g.value || 0;
+      }
+    });
+  }
+  updateMetrics();
+}
+
+function updateMetrics() {
+  const gateCount = gates.filter(g => g.type !== 'SWITCH' && g.type !== 'LED').length;
+  document.getElementById('gate-count').textContent = gateCount;
+  // simple delay estimate: longest path
+  const delay = Math.max(1, gateCount) * 2;
+  document.getElementById('prop-delay').textContent = gateCount === 0 ? '0' : delay;
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+
+  // Draw grid
+  ctx.strokeStyle = darkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.04)';
+  ctx.lineWidth = 1;
+  for (let x = 0; x < W; x += 30) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  }
+  for (let y = 0; y < H; y += 30) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+
+  // Draw wires
+  wires.forEach(w => {
+    const sg = gates.find(g => g.id === w.fromGate);
+    const dg = gates.find(g => g.id === w.toGate);
+    if (!sg || !dg) return;
+    const from = getPortPos(sg, false, w.fromPort);
+    const to = getPortPos(dg, true, w.toPort);
+    const val = sg.outputs[w.fromPort] ? sg.outputs[w.fromPort].value : 0;
+    ctx.strokeStyle = val ? '#4caf50' : (darkMode ? '#555' : '#aaa');
+    ctx.lineWidth = val ? 3 : 2;
+    ctx.beginPath();
+    const mx = (from.x + to.x) / 2;
+    ctx.moveTo(from.x, from.y);
+    ctx.bezierCurveTo(mx, from.y, mx, to.y, to.x, to.y);
+    ctx.stroke();
+  });
+
+  // Draw temp wire
+  if (draggingWire) {
+    ctx.strokeStyle = '#ff6600';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6, 4]);
+    ctx.beginPath();
+    const mx = (draggingWire.x1 + draggingWire.x2) / 2;
+    ctx.moveTo(draggingWire.x1, draggingWire.y1);
+    ctx.bezierCurveTo(mx, draggingWire.y1, mx, draggingWire.y2, draggingWire.x2, draggingWire.y2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Draw gates
+  gates.forEach(g => {
+    const x = g.animX !== undefined ? g.animX : g.x;
+    const y = g.animY !== undefined ? g.animY : g.y;
+
+    if (g.type === 'SWITCH') {
+      ctx.fillStyle = g.value ? '#4caf50' : (darkMode ? '#333' : '#ccc');
+      ctx.strokeStyle = g.value ? '#388e3c' : (darkMode ? '#555' : '#999');
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(x, y, g.w, g.h, 8);
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = g.value ? '#fff' : (darkMode ? '#aaa' : '#555');
+      ctx.font = '600 14px Space Grotesk';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(g.value ? '1' : '0', x + g.w / 2, y + g.h / 2);
+    } else if (g.type === 'LED') {
+      const on = g.value;
+      ctx.fillStyle = on ? '#ff6600' : (darkMode ? '#333' : '#ddd');
+      ctx.strokeStyle = on ? '#cc5200' : (darkMode ? '#555' : '#999');
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(x + g.w / 2, y + g.h / 2, 18, 0, Math.PI * 2);
+      ctx.fill(); ctx.stroke();
+      if (on) {
+        ctx.save();
+        ctx.globalAlpha = 0.3;
+        ctx.fillStyle = '#ff6600';
+        ctx.beginPath();
+        ctx.arc(x + g.w / 2, y + g.h / 2, 26, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+      ctx.fillStyle = on ? '#fff' : (darkMode ? '#888' : '#666');
+      ctx.font = '600 11px Space Grotesk';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('LED', x + g.w / 2, y + g.h / 2);
+    } else {
+      // Logic gate
+      const bg = darkMode ? '#1e2a3a' : '#e8f0fe';
+      const border = darkMode ? '#5a9ae9' : '#4a90d9';
+      ctx.fillStyle = bg;
+      ctx.strokeStyle = border;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(x, y, g.w, g.h, 8);
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = darkMode ? '#e8e8e8' : '#1a1a1a';
+      ctx.font = '700 14px Space Grotesk';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(g.type, x + g.w / 2, y + g.h / 2);
+    }
+
+    // Draw ports
+    g.inputs.forEach((p, i) => {
+      const pos = getPortPos(g, true, i);
+      ctx.fillStyle = p.value ? '#4caf50' : (darkMode ? '#555' : '#bbb');
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y, PORT_R, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = darkMode ? '#888' : '#666';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    });
+    g.outputs.forEach((p, i) => {
+      const pos = getPortPos(g, false, i);
+      ctx.fillStyle = p.value ? '#4caf50' : (darkMode ? '#555' : '#bbb');
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y, PORT_R, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = darkMode ? '#888' : '#666';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    });
+  });
+
+  if (gates.length > 0) hint.style.display = 'none';
+}
+
+// Interaction
+let draggingGate = null;
+let dragOffX = 0, dragOffY = 0;
+let draggingWire = null;
+let wireFrom = null;
+
+function hitTestPort(mx, my) {
+  for (const g of gates) {
+    for (let i = 0; i < g.outputs.length; i++) {
+      const p = getPortPos(g, false, i);
+      if (Math.hypot(mx - p.x, my - p.y) < PORT_R + 4) {
+        return { gate: g, isInput: false, idx: i };
+      }
+    }
+    for (let i = 0; i < g.inputs.length; i++) {
+      const p = getPortPos(g, true, i);
+      if (Math.hypot(mx - p.x, my - p.y) < PORT_R + 4) {
+        return { gate: g, isInput: true, idx: i };
+      }
+    }
+  }
+  return null;
+}
+
+function hitTestGate(mx, my) {
+  for (let i = gates.length - 1; i >= 0; i--) {
+    const g = gates[i];
+    const gx = g.animX !== undefined ? g.animX : g.x;
+    const gy = g.animY !== undefined ? g.animY : g.y;
+    if (mx >= gx && mx <= gx + g.w && my >= gy && my <= gy + g.h) return g;
+  }
+  return null;
+}
+
+canvas.addEventListener('mousedown', e => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+
+  // Check port first
+  const port = hitTestPort(mx, my);
+  if (port && !port.isInput) {
+    const pos = getPortPos(port.gate, false, port.idx);
+    wireFrom = port;
+    draggingWire = { x1: pos.x, y1: pos.y, x2: mx, y2: my };
+    return;
+  }
+
+  // Check gate - toggle switch
+  const g = hitTestGate(mx, my);
+  if (g && g.type === 'SWITCH') {
+    g.value = g.value ? 0 : 1;
+    evaluate();
+    draw();
+    return;
+  }
+
+  if (g) {
+    draggingGate = g;
+    dragOffX = mx - g.x;
+    dragOffY = my - g.y;
+  }
+});
+
+canvas.addEventListener('mousemove', e => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+
+  if (draggingWire) {
+    draggingWire.x2 = mx;
+    draggingWire.y2 = my;
+    draw();
+    return;
+  }
+
+  if (draggingGate) {
+    draggingGate.x = mx - dragOffX;
+    draggingGate.y = my - dragOffY;
+    draggingGate.animX = draggingGate.x;
+    draggingGate.animY = draggingGate.y;
+    draw();
+  }
+});
+
+canvas.addEventListener('mouseup', e => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+
+  if (draggingWire && wireFrom) {
+    const port = hitTestPort(mx, my);
+    if (port && port.isInput) {
+      // Check not already connected
+      const exists = wires.some(w => w.toGate === port.gate.id && w.toPort === port.idx);
+      if (!exists && port.gate.id !== wireFrom.gate.id) {
+        wires.push({
+          fromGate: wireFrom.gate.id,
+          fromPort: wireFrom.idx,
+          toGate: port.gate.id,
+          toPort: port.idx,
+        });
+        evaluate();
+      }
+    }
+    draggingWire = null;
+    wireFrom = null;
+    draw();
+  }
+
+  draggingGate = null;
+});
+
+// Drag and drop from toolbox
+document.querySelectorAll('.tool-item').forEach(el => {
+  el.addEventListener('dragstart', e => {
+    e.dataTransfer.setData('text/plain', el.dataset.type);
+  });
+});
+
+canvas.addEventListener('dragover', e => e.preventDefault());
+canvas.addEventListener('drop', e => {
+  e.preventDefault();
+  const type = e.dataTransfer.getData('text/plain');
+  if (!type) return;
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left - 40;
+  const y = e.clientY - rect.top - 25;
+  const g = createGate(type, x, y);
+  g.animX = x; g.animY = y;
+  gates.push(g);
+  evaluate();
+  draw();
+});
+
+// Right-click to delete
+canvas.addEventListener('contextmenu', e => {
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  const g = hitTestGate(mx, my);
+  if (g) {
+    const idx = gates.indexOf(g);
+    if (idx >= 0) gates.splice(idx, 1);
+    // Remove connected wires
+    for (let i = wires.length - 1; i >= 0; i--) {
+      if (wires[i].fromGate === g.id || wires[i].toGate === g.id) {
+        wires.splice(i, 1);
+      }
+    }
+    evaluate();
+    draw();
+  }
+});
+
+// Clear
+document.getElementById('btn-clear').addEventListener('click', () => {
+  gates.length = 0;
+  wires.length = 0;
+  hint.style.display = '';
+  evaluate();
+  draw();
+});
+
+// AI Optimize
+document.getElementById('btn-optimize').addEventListener('click', () => {
+  if (gates.length === 0) return;
+  const logicGates = gates.filter(g => g.type !== 'SWITCH' && g.type !== 'LED');
+  if (logicGates.length <= 1) return;
+
+  // Animate: remove redundant gates and compact layout
+  // Simulated optimization: remove duplicate gate types that have no wires, compact positions
+  const usedIds = new Set();
+  wires.forEach(w => { usedIds.add(w.fromGate); usedIds.add(w.toGate); });
+
+  // Remove unconnected logic gates
+  for (let i = gates.length - 1; i >= 0; i--) {
+    const g = gates[i];
+    if (g.type !== 'SWITCH' && g.type !== 'LED' && !usedIds.has(g.id)) {
+      gates.splice(i, 1);
+    }
+  }
+
+  // Compact remaining gates with animation
+  const switches = gates.filter(g => g.type === 'SWITCH');
+  const leds = gates.filter(g => g.type === 'LED');
+  const logic = gates.filter(g => g.type !== 'SWITCH' && g.type !== 'LED');
+
+  // Arrange in columns
+  const startX = 80, midX = W / 2 - 40, endX = W - 140;
+  switches.forEach((g, i) => { g.targetX = startX; g.targetY = 60 + i * 70; });
+  logic.forEach((g, i) => { g.targetX = midX; g.targetY = 60 + i * 70; });
+  leds.forEach((g, i) => { g.targetX = endX; g.targetY = 60 + i * 70; });
+
+  let frame = 0;
+  const totalFrames = 40;
+  function animateOptimize() {
+    frame++;
+    const t = Math.min(1, frame / totalFrames);
+    const ease = 1 - Math.pow(1 - t, 3);
+    gates.forEach(g => {
+      if (g.targetX !== undefined) {
+        g.animX = g.x + (g.targetX - g.x) * ease;
+        g.animY = g.y + (g.targetY - g.y) * ease;
+        if (t >= 1) {
+          g.x = g.targetX;
+          g.y = g.targetY;
+          g.animX = g.x;
+          g.animY = g.y;
+          delete g.targetX;
+          delete g.targetY;
+        }
+      }
+    });
+    evaluate();
+    draw();
+    if (frame < totalFrames) requestAnimationFrame(animateOptimize);
+  }
+  animateOptimize();
+});
+
+resize();
+</script>
+</body>
+</html>

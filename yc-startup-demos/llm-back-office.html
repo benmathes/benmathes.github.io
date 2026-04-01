@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LLMs for Back Office | YC Startup Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#f5f5f5;--fg:#1a1a1a;--card:#fff;--card-border:#e0e0e0;--accent:#ff6600;--subtle:#888;--green:#22c55e;--blue:#3b82f6;--red:#ef4444;--doc-bg:#fffef5}
+@media(prefers-color-scheme:dark){:root{--bg:#0f0f0f;--fg:#e8e8e8;--card:#1a1a1a;--card-border:#2a2a2a;--subtle:#777;--doc-bg:#1c1a14}}
+body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--fg);min-height:100vh}
+a.back{position:fixed;top:16px;left:16px;color:var(--accent);text-decoration:none;font-size:14px;z-index:1000;font-weight:500}
+a.back:hover{text-decoration:underline}
+.header{text-align:center;padding:40px 20px 16px}
+.header h1{font-size:26px;font-weight:700}.header h1 span{color:var(--accent)}
+.header p{color:var(--subtle);font-size:14px;margin-top:8px}
+.stats-bar{display:flex;justify-content:center;gap:32px;padding:12px 20px;margin-bottom:8px}
+.stat-item{text-align:center}
+.stat-item .stat-value{font-size:24px;font-weight:700}
+.stat-item .stat-value.accent{color:var(--accent)}
+.stat-item .stat-label{font-size:11px;color:var(--subtle);font-weight:500}
+.workspace{display:grid;grid-template-columns:220px 1fr 340px;gap:20px;padding:0 30px 30px;max-width:1400px;margin:0 auto;min-height:65vh}
+.doc-stack{display:flex;flex-direction:column;gap:10px}
+.doc-stack h3{font-size:13px;font-weight:700;margin-bottom:4px;color:var(--subtle);text-transform:uppercase;letter-spacing:0.5px}
+.doc-card{background:var(--card);border:1px solid var(--card-border);border-radius:10px;padding:14px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.doc-card:hover{border-color:var(--accent);transform:translateX(4px)}
+.doc-card.processing{opacity:0.4;pointer-events:none}
+.doc-card.done{opacity:0.3;pointer-events:none}
+.doc-card .doc-type{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;padding:2px 8px;border-radius:4px;display:inline-block;margin-bottom:6px}
+.doc-card .doc-type.invoice{background:#ff660020;color:var(--accent)}
+.doc-card .doc-type.contract{background:#3b82f620;color:var(--blue)}
+.doc-card .doc-type.form{background:#22c55e20;color:var(--green)}
+.doc-card .doc-title{font-size:13px;font-weight:600}
+.doc-card .doc-meta{font-size:11px;color:var(--subtle);margin-top:4px}
+.processing-area{background:var(--card);border:1px solid var(--card-border);border-radius:14px;display:flex;flex-direction:column;overflow:hidden;position:relative}
+.processing-header{padding:14px 20px;border-bottom:1px solid var(--card-border);font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px}
+.processing-header .badge{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700}
+.processing-header .badge.active{background:var(--accent);color:#fff;animation:blink 1s infinite}
+.processing-header .badge.idle{background:var(--card-border);color:var(--subtle)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.5}}
+.doc-viewer{flex:1;padding:24px;position:relative;background:var(--doc-bg);overflow:auto}
+.doc-viewer .placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--subtle);font-size:14px;gap:8px}
+.doc-viewer .placeholder .icon{font-size:48px;opacity:0.3}
+.doc-content{font-size:13px;line-height:1.8}
+.doc-content .field-line{padding:3px 4px;border-radius:4px;transition:background .3s}
+.doc-content .field-line.highlighted{background:rgba(255,102,0,0.15);border-left:3px solid var(--accent)}
+.doc-content .company-header{font-size:18px;font-weight:700;margin-bottom:4px}
+.doc-content .doc-number{font-size:12px;color:var(--subtle);margin-bottom:16px}
+.doc-content table{width:100%;border-collapse:collapse;margin:12px 0;font-size:12px}
+.doc-content table th{text-align:left;padding:6px 10px;border-bottom:2px solid var(--card-border);font-weight:600;font-size:11px}
+.doc-content table td{padding:6px 10px;border-bottom:1px solid var(--card-border)}
+.scan-line{position:absolute;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:0;top:0;pointer-events:none}
+.scan-line.active{opacity:1;animation:scanDown 2s ease-in-out forwards}
+@keyframes scanDown{0%{top:0}100%{top:100%}}
+.extract-panel{display:flex;flex-direction:column;gap:12px}
+.extract-panel h3{font-size:13px;font-weight:700;color:var(--subtle);text-transform:uppercase;letter-spacing:0.5px}
+.extract-card{background:var(--card);border:1px solid var(--card-border);border-radius:10px;padding:16px}
+.extract-card h4{font-size:12px;font-weight:700;margin-bottom:10px}
+.field-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--card-border);font-size:12px}
+.field-row:last-child{border:none}
+.field-row .label{color:var(--subtle);font-weight:500}
+.field-row .value{font-weight:600}
+.field-row .conf{font-size:10px;padding:2px 6px;border-radius:4px;font-weight:700}
+.field-row .conf.high{background:#22c55e20;color:var(--green)}
+.field-row .conf.med{background:#ff660020;color:var(--accent)}
+.field-row .conf.low{background:#ef444420;color:var(--red)}
+.line-items-table{width:100%;border-collapse:collapse;font-size:11px;margin-top:8px}
+.line-items-table th{text-align:left;padding:5px 8px;border-bottom:2px solid var(--card-border);font-weight:600}
+.line-items-table td{padding:5px 8px;border-bottom:1px solid var(--card-border)}
+.extract-card.hidden{opacity:0;transform:translateY(10px);transition:all .4s}
+.extract-card.visible{opacity:1;transform:translateY(0)}
+.comparison{background:var(--card);border:1px solid var(--card-border);border-radius:10px;padding:14px}
+.comparison h4{font-size:12px;font-weight:700;margin-bottom:10px}
+.comp-row{display:flex;justify-content:space-between;font-size:12px;padding:6px 0;border-bottom:1px solid var(--card-border)}
+.comp-row:last-child{border:none}
+.comp-row .human{color:var(--subtle)}.comp-row .ai{color:var(--accent);font-weight:600}
+</style>
+</head>
+<body>
+<a class="back" href="index.html">&larr; Back to all demos</a>
+<div class="header">
+<h1><span>LLMs</span> for Back Office Processes</h1>
+<p>Click a document to watch AI extract structured data in real time</p>
+</div>
+<div class="stats-bar">
+<div class="stat-item"><div class="stat-value accent" id="processedCount">0</div><div class="stat-label">Processed</div></div>
+<div class="stat-item"><div class="stat-value" id="avgConf">—</div><div class="stat-label">Avg Confidence</div></div>
+<div class="stat-item"><div class="stat-value" id="aiSpeed">~3s</div><div class="stat-label">AI per doc</div></div>
+<div class="stat-item"><div class="stat-value" style="color:var(--subtle)">~4 min</div><div class="stat-label">Human per doc</div></div>
+</div>
+<div class="workspace">
+<div class="doc-stack">
+<h3>Incoming Documents</h3>
+<div id="docList"></div>
+</div>
+<div class="processing-area">
+<div class="processing-header">Document Viewer <span class="badge idle" id="statusBadge">IDLE</span></div>
+<div class="doc-viewer" id="docViewer">
+<div class="placeholder"><div class="icon">&#128196;</div>Select a document to process</div>
+</div>
+<div class="scan-line" id="scanLine"></div>
+</div>
+<div class="extract-panel">
+<h3>Extracted Data</h3>
+<div class="extract-card hidden" id="extractMain">
+<h4>Document Fields</h4>
+<div id="extractFields"></div>
+</div>
+<div class="extract-card hidden" id="extractLines">
+<h4>Line Items</h4>
+<div id="extractLineItems"></div>
+</div>
+<div class="comparison">
+<h4>Processing Speed Comparison</h4>
+<div class="comp-row"><span>Metric</span><span class="human">Human</span><span class="ai">AI</span></div>
+<div class="comp-row"><span>Docs/hour</span><span class="human">15</span><span class="ai">1,200</span></div>
+<div class="comp-row"><span>Accuracy</span><span class="human">96%</span><span class="ai">98.5%</span></div>
+<div class="comp-row"><span>Cost/doc</span><span class="human">$4.20</span><span class="ai">$0.03</span></div>
+<div class="comp-row"><span>24/7</span><span class="human">No</span><span class="ai">Yes</span></div>
+</div>
+</div>
+</div>
+<script>
+const documents=[
+{type:'invoice',typeCls:'invoice',title:'Invoice #INV-2847',meta:'Acme Corp &middot; $12,450.00',
+content:`<div class="company-header">ACME CORPORATION</div>
+<div class="doc-number">Invoice #INV-2847 &middot; March 15, 2025</div>
+<div class="field-line" data-field="vendor">Bill To: TechStart Inc.</div>
+<div class="field-line" data-field="address">123 Innovation Blvd, San Francisco, CA 94105</div>
+<br>
+<div class="field-line" data-field="vendor">From: Acme Corporation</div>
+<div class="field-line" data-field="vendoraddr">456 Supply Chain Ave, Austin, TX 78701</div>
+<br>
+<div class="field-line" data-field="terms">Payment Terms: Net 30</div>
+<div class="field-line" data-field="due">Due Date: April 14, 2025</div>
+<br>
+<table>
+<tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr>
+<tr class="field-line" data-field="line"><td>Cloud API Credits</td><td>10,000</td><td>$0.85</td><td>$8,500.00</td></tr>
+<tr class="field-line" data-field="line"><td>Support Plan (Premium)</td><td>1</td><td>$2,500.00</td><td>$2,500.00</td></tr>
+<tr class="field-line" data-field="line"><td>Data Storage (500GB)</td><td>1</td><td>$1,450.00</td><td>$1,450.00</td></tr>
+</table>
+<br>
+<div class="field-line" data-field="total" style="font-weight:700;font-size:15px">Total: $12,450.00</div>`,
+fields:[
+{label:'Vendor',value:'Acme Corporation',conf:99,cls:'high'},
+{label:'Invoice #',value:'INV-2847',conf:99,cls:'high'},
+{label:'Date',value:'March 15, 2025',conf:98,cls:'high'},
+{label:'Due Date',value:'April 14, 2025',conf:97,cls:'high'},
+{label:'Total',value:'$12,450.00',conf:99,cls:'high'},
+{label:'Terms',value:'Net 30',conf:95,cls:'high'}
+],
+lineItems:[
+{desc:'Cloud API Credits',qty:'10,000',price:'$0.85',total:'$8,500.00'},
+{desc:'Support Plan (Premium)',qty:'1',price:'$2,500.00',total:'$2,500.00'},
+{desc:'Data Storage (500GB)',qty:'1',price:'$1,450.00',total:'$1,450.00'}
+]},
+{type:'contract',typeCls:'contract',title:'Service Agreement',meta:'Globex Inc &middot; 12 months',
+content:`<div class="company-header">SERVICE AGREEMENT</div>
+<div class="doc-number">Contract #SA-00412 &middot; Effective: January 1, 2025</div>
+<div class="field-line" data-field="party1"><b>Party A:</b> Globex International Inc.</div>
+<div class="field-line" data-field="party2"><b>Party B:</b> TechStart Inc.</div>
+<br>
+<div class="field-line" data-field="scope"><b>Scope:</b> Party A agrees to provide cloud infrastructure management services including monitoring, scaling, and incident response for Party B's production environment.</div>
+<br>
+<div class="field-line" data-field="term"><b>Term:</b> 12 months, auto-renewing</div>
+<div class="field-line" data-field="value"><b>Annual Value:</b> $156,000 ($13,000/month)</div>
+<div class="field-line" data-field="sla"><b>SLA:</b> 99.95% uptime guarantee</div>
+<div class="field-line" data-field="termination"><b>Termination:</b> 60-day written notice required</div>
+<br>
+<div class="field-line" data-field="sig">Signed: J. Smith (Globex) &amp; M. Johnson (TechStart)</div>`,
+fields:[
+{label:'Type',value:'Service Agreement',conf:98,cls:'high'},
+{label:'Contract #',value:'SA-00412',conf:99,cls:'high'},
+{label:'Party A',value:'Globex International Inc.',conf:97,cls:'high'},
+{label:'Party B',value:'TechStart Inc.',conf:98,cls:'high'},
+{label:'Term',value:'12 months, auto-renewing',conf:95,cls:'high'},
+{label:'Value',value:'$156,000/year',conf:96,cls:'high'},
+{label:'SLA',value:'99.95% uptime',conf:93,cls:'high'},
+{label:'Notice Period',value:'60 days',conf:91,cls:'high'}
+],lineItems:[]},
+{type:'form',typeCls:'form',title:'Expense Report',meta:'Sarah Chen &middot; $847.50',
+content:`<div class="company-header">EXPENSE REPORT</div>
+<div class="doc-number">EXP-2025-0334 &middot; Submitted: March 18, 2025</div>
+<div class="field-line" data-field="employee"><b>Employee:</b> Sarah Chen, Engineering</div>
+<div class="field-line" data-field="dept"><b>Department:</b> Engineering</div>
+<div class="field-line" data-field="purpose"><b>Purpose:</b> Client meeting - Bay Area trip</div>
+<br>
+<table>
+<tr><th>Date</th><th>Description</th><th>Category</th><th>Amount</th></tr>
+<tr class="field-line" data-field="line"><td>Mar 12</td><td>Flight SFO→LAX</td><td>Travel</td><td>$284.00</td></tr>
+<tr class="field-line" data-field="line"><td>Mar 12</td><td>Hotel - Marriott</td><td>Lodging</td><td>$189.00</td></tr>
+<tr class="field-line" data-field="line"><td>Mar 12</td><td>Client dinner</td><td>Meals</td><td>$156.50</td></tr>
+<tr class="field-line" data-field="line"><td>Mar 13</td><td>Uber to office</td><td>Transport</td><td>$42.00</td></tr>
+<tr class="field-line" data-field="line"><td>Mar 13</td><td>Lunch meeting</td><td>Meals</td><td>$78.00</td></tr>
+<tr class="field-line" data-field="line"><td>Mar 13</td><td>Uber to airport</td><td>Transport</td><td>$38.00</td></tr>
+<tr class="field-line" data-field="line"><td>Mar 14</td><td>Parking SFO</td><td>Transport</td><td>$60.00</td></tr>
+</table>
+<br>
+<div class="field-line" data-field="total" style="font-weight:700">Total: $847.50</div>`,
+fields:[
+{label:'Employee',value:'Sarah Chen',conf:99,cls:'high'},
+{label:'Department',value:'Engineering',conf:97,cls:'high'},
+{label:'Report #',value:'EXP-2025-0334',conf:99,cls:'high'},
+{label:'Purpose',value:'Client meeting - Bay Area',conf:92,cls:'high'},
+{label:'Total',value:'$847.50',conf:98,cls:'high'},
+{label:'# Items',value:'7 expenses',conf:99,cls:'high'}
+],
+lineItems:[
+{desc:'Flight SFO→LAX',qty:'Travel',price:'Mar 12',total:'$284.00'},
+{desc:'Hotel - Marriott',qty:'Lodging',price:'Mar 12',total:'$189.00'},
+{desc:'Client dinner',qty:'Meals',price:'Mar 12',total:'$156.50'},
+{desc:'Uber to office',qty:'Transport',price:'Mar 13',total:'$42.00'}
+]},
+{type:'invoice',typeCls:'invoice',title:'Invoice #7721',meta:'DataFlow Ltd &middot; $3,200.00',
+content:`<div class="company-header">DATAFLOW LTD</div>
+<div class="doc-number">Invoice #7721 &middot; March 20, 2025</div>
+<div class="field-line" data-field="vendor">To: TechStart Inc.</div>
+<div class="field-line" data-field="vendor">From: DataFlow Ltd, London, UK</div>
+<br>
+<div class="field-line" data-field="terms">Terms: Net 15</div>
+<div class="field-line" data-field="due">Due: April 4, 2025</div>
+<br>
+<table>
+<tr><th>Service</th><th>Period</th><th>Amount</th></tr>
+<tr class="field-line" data-field="line"><td>ETL Pipeline License</td><td>Q1 2025</td><td>$2,400.00</td></tr>
+<tr class="field-line" data-field="line"><td>Premium Support Add-on</td><td>Q1 2025</td><td>$800.00</td></tr>
+</table>
+<br>
+<div class="field-line" data-field="total" style="font-weight:700">Total Due: $3,200.00</div>`,
+fields:[
+{label:'Vendor',value:'DataFlow Ltd',conf:98,cls:'high'},
+{label:'Invoice #',value:'7721',conf:99,cls:'high'},
+{label:'Date',value:'March 20, 2025',conf:97,cls:'high'},
+{label:'Due Date',value:'April 4, 2025',conf:96,cls:'high'},
+{label:'Total',value:'$3,200.00',conf:99,cls:'high'},
+{label:'Currency',value:'USD',conf:88,cls:'med'}
+],
+lineItems:[
+{desc:'ETL Pipeline License',qty:'Q1 2025',price:'—',total:'$2,400.00'},
+{desc:'Premium Support Add-on',qty:'Q1 2025',price:'—',total:'$800.00'}
+]},
+{type:'contract',typeCls:'contract',title:'NDA - Venture Co',meta:'Mutual NDA &middot; 2 years',
+content:`<div class="company-header">MUTUAL NON-DISCLOSURE AGREEMENT</div>
+<div class="doc-number">NDA-2025-088 &middot; March 22, 2025</div>
+<div class="field-line" data-field="party1"><b>Party A:</b> TechStart Inc.</div>
+<div class="field-line" data-field="party2"><b>Party B:</b> Venture Capital Co.</div>
+<br>
+<div class="field-line" data-field="scope">Both parties agree to maintain strict confidentiality of all proprietary information shared during due diligence process.</div>
+<br>
+<div class="field-line" data-field="term"><b>Duration:</b> 2 years from execution date</div>
+<div class="field-line" data-field="jurisdiction"><b>Governing Law:</b> State of Delaware</div>
+<div class="field-line" data-field="remedy"><b>Remedies:</b> Injunctive relief + actual damages</div>`,
+fields:[
+{label:'Type',value:'Mutual NDA',conf:99,cls:'high'},
+{label:'Reference',value:'NDA-2025-088',conf:98,cls:'high'},
+{label:'Party A',value:'TechStart Inc.',conf:99,cls:'high'},
+{label:'Party B',value:'Venture Capital Co.',conf:97,cls:'high'},
+{label:'Duration',value:'2 years',conf:96,cls:'high'},
+{label:'Jurisdiction',value:'Delaware',conf:94,cls:'high'}
+],lineItems:[]}
+];
+
+let processed=0,processing=false;
+const docList=document.getElementById('docList');
+
+documents.forEach((doc,i)=>{
+const card=document.createElement('div');
+card.className='doc-card';card.dataset.index=i;
+card.innerHTML=`<div class="doc-type ${doc.typeCls}">${doc.type}</div><div class="doc-title">${doc.title}</div><div class="doc-meta">${doc.meta}</div>`;
+card.addEventListener('click',()=>processDoc(i,card));
+docList.appendChild(card);
+});
+
+async function processDoc(index,card){
+if(processing)return;
+processing=true;
+const doc=documents[index];
+card.classList.add('processing');
+
+// Show document
+const viewer=document.getElementById('docViewer');
+viewer.innerHTML=`<div class="doc-content">${doc.content}</div>`;
+document.getElementById('statusBadge').className='badge active';
+document.getElementById('statusBadge').textContent='PROCESSING';
+
+// Scan animation
+const scanLine=document.getElementById('scanLine');
+scanLine.classList.remove('active');
+void scanLine.offsetWidth;
+scanLine.classList.add('active');
+
+// Highlight fields sequentially
+const fieldLines=viewer.querySelectorAll('.field-line');
+for(let i=0;i<fieldLines.length;i++){
+await wait(300);
+fieldLines[i].classList.add('highlighted');
+}
+
+// Show extracted fields
+await wait(500);
+const extractMain=document.getElementById('extractMain');
+extractMain.classList.remove('hidden');extractMain.classList.add('visible');
+const fieldsDiv=document.getElementById('extractFields');
+fieldsDiv.innerHTML='';
+for(let i=0;i<doc.fields.length;i++){
+await wait(200);
+const f=doc.fields[i];
+fieldsDiv.innerHTML+=`<div class="field-row"><span class="label">${f.label}</span><span class="value">${f.value}</span><span class="conf ${f.cls}">${f.conf}%</span></div>`;
+}
+
+// Show line items if any
+if(doc.lineItems.length>0){
+await wait(400);
+const extractLines=document.getElementById('extractLines');
+extractLines.classList.remove('hidden');extractLines.classList.add('visible');
+const linesDiv=document.getElementById('extractLineItems');
+linesDiv.innerHTML=`<table class="line-items-table"><thead><tr><th>Description</th><th>Detail</th><th>Amount</th></tr></thead><tbody id="lineBody"></tbody></table>`;
+const body=document.getElementById('lineBody');
+for(let i=0;i<doc.lineItems.length;i++){
+await wait(150);
+const li=doc.lineItems[i];
+body.innerHTML+=`<tr><td>${li.desc}</td><td>${li.qty}</td><td style="font-weight:600">${li.total}</td></tr>`;
+}
+}
+
+// Done
+document.getElementById('statusBadge').className='badge';
+document.getElementById('statusBadge').textContent='COMPLETE';
+document.getElementById('statusBadge').style.background='#22c55e20';
+document.getElementById('statusBadge').style.color='var(--green)';
+card.classList.remove('processing');card.classList.add('done');
+processed++;
+document.getElementById('processedCount').textContent=processed;
+const avgConf=doc.fields.reduce((s,f)=>s+f.conf,0)/doc.fields.length;
+document.getElementById('avgConf').textContent=Math.round(avgConf)+'%';
+processing=false;
+}
+
+function wait(ms){return new Promise(r=>setTimeout(r,ms))}
+</script>
+</body>
+</html>

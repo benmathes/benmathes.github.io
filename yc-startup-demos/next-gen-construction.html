@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Next-Generation Construction</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f8f8;
+  --surface: #ffffff;
+  --text: #1a1a1a;
+  --text-secondary: #666;
+  --border: #e0e0e0;
+  --accent: #ff6600;
+  --accent-light: rgba(255, 102, 0, 0.15);
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --green: #4caf50;
+  --blue: #2196f3;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --text: #e8e8e8;
+    --text-secondary: #999;
+    --border: #333;
+    --accent-light: rgba(255, 102, 0, 0.2);
+    --shadow: 0 2px 12px rgba(0,0,0,0.3);
+  }
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Space Grotesk', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+.back-link {
+  display: inline-block;
+  padding: 16px 24px;
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 14px;
+  transition: opacity 0.2s;
+}
+.back-link:hover { opacity: 0.7; }
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px 48px;
+}
+h1 { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+.subtitle { color: var(--text-secondary); font-size: 14px; margin-bottom: 24px; }
+.grid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 24px;
+}
+@media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+.card h2 { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+.form-group { margin-bottom: 16px; }
+.form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--text-secondary);
+}
+select, input[type="range"] {
+  width: 100%;
+  font-family: inherit;
+  font-size: 14px;
+}
+select {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+}
+.range-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.range-wrap input { flex: 1; accent-color: var(--accent); }
+.range-val {
+  font-weight: 700;
+  font-size: 14px;
+  min-width: 80px;
+  text-align: right;
+}
+.comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 16px;
+}
+.comp-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+.comp-card.ai { border-color: var(--accent); }
+.comp-card h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-secondary); margin-bottom: 8px; }
+.comp-val { font-size: 28px; font-weight: 700; }
+.comp-card.ai .comp-val { color: var(--accent); }
+.comp-sub { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+.savings-badge {
+  display: inline-block;
+  background: var(--accent);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 700;
+  margin-top: 4px;
+}
+.gantt-area { min-height: 300px; }
+.gantt-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.gantt-header h2 { margin: 0; }
+.legend { display: flex; gap: 16px; font-size: 12px; }
+.legend-item { display: flex; align-items: center; gap: 4px; }
+.legend-dot {
+  width: 10px; height: 10px;
+  border-radius: 3px;
+}
+.gantt-chart { position: relative; }
+.gantt-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.gantt-label {
+  width: 100px;
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.gantt-track {
+  flex: 1;
+  height: 32px;
+  background: var(--bg);
+  border-radius: 6px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.gantt-bar {
+  position: absolute;
+  top: 2px;
+  height: 28px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: white;
+  transition: left 0.6s ease, width 0.6s ease;
+  min-width: 20px;
+}
+.gantt-bar.traditional { background: var(--blue); opacity: 0.6; }
+.gantt-bar.ai { background: var(--accent); }
+.phase-progress { margin-top: 24px; }
+.phase-progress h3 { font-size: 14px; margin-bottom: 12px; }
+.progress-phases {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.phase-seg {
+  flex: 1;
+  height: 40px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+.phase-seg .fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  background: rgba(255,255,255,0.3);
+  transition: width 0.3s;
+}
+.phase-seg span { position: relative; z-index: 1; }
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  background: var(--accent);
+  color: white;
+  transition: opacity 0.2s;
+  width: 100%;
+  margin-top: 8px;
+}
+.btn:hover { opacity: 0.85; }
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">← Back to all demos</a>
+<div class="container">
+  <h1>Next-Generation Construction</h1>
+  <p class="subtitle">Configure a building project and compare traditional vs AI-optimized construction timelines</p>
+  <div class="grid">
+    <div>
+      <div class="card">
+        <h2>Project Configuration</h2>
+        <div class="form-group">
+          <label>Building Type</label>
+          <select id="building-type">
+            <option value="residential">Residential</option>
+            <option value="commercial">Commercial</option>
+            <option value="industrial">Industrial</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Size (sq ft)</label>
+          <div class="range-wrap">
+            <input type="range" id="size" min="500" max="50000" step="500" value="5000">
+            <span class="range-val" id="size-val">5,000</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Stories</label>
+          <div class="range-wrap">
+            <input type="range" id="stories" min="1" max="20" step="1" value="2">
+            <span class="range-val" id="stories-val">2</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Construction Method</label>
+          <select id="method">
+            <option value="traditional">Traditional</option>
+            <option value="modular">Modular Prefab</option>
+            <option value="3dprinted">3D Printed</option>
+          </select>
+        </div>
+        <button class="btn" id="btn-simulate">Simulate Construction</button>
+      </div>
+      <div class="card" style="margin-top: 16px;">
+        <h2>Cost Comparison</h2>
+        <div class="comparison">
+          <div class="comp-card">
+            <h3>Traditional</h3>
+            <div class="comp-val" id="cost-trad">$750K</div>
+            <div class="comp-sub" id="cost-trad-time">18 months</div>
+          </div>
+          <div class="comp-card ai">
+            <h3>AI Optimized</h3>
+            <div class="comp-val" id="cost-ai">$562K</div>
+            <div class="comp-sub" id="cost-ai-time">12 months</div>
+            <div class="savings-badge" id="savings-badge">Save 25%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="card gantt-area">
+        <div class="gantt-header">
+          <h2>Construction Timeline</h2>
+          <div class="legend">
+            <div class="legend-item"><div class="legend-dot" style="background:#2196f3;opacity:0.6"></div>Traditional</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#ff6600"></div>AI Optimized</div>
+          </div>
+        </div>
+        <div class="gantt-chart" id="gantt-chart"></div>
+        <div class="phase-progress">
+          <h3>AI-Optimized Construction Progress</h3>
+          <div class="progress-phases" id="progress-phases"></div>
+          <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;" id="progress-status">Click "Simulate Construction" to begin</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const phases = [
+  { name: 'Foundation', color: '#6366f1', tradPct: 0.2, aiPct: 0.15 },
+  { name: 'Framing', color: '#f59e0b', tradPct: 0.3, aiPct: 0.2 },
+  { name: 'Systems', color: '#10b981', tradPct: 0.25, aiPct: 0.35 },
+  { name: 'Finishing', color: '#ef4444', tradPct: 0.25, aiPct: 0.3 },
+];
+
+function getConfig() {
+  const type = document.getElementById('building-type').value;
+  const size = +document.getElementById('size').value;
+  const stories = +document.getElementById('stories').value;
+  const method = document.getElementById('method').value;
+  return { type, size, stories, method };
+}
+
+function calcTimeline(cfg) {
+  let baseMonths = 6;
+  if (cfg.type === 'commercial') baseMonths = 10;
+  if (cfg.type === 'industrial') baseMonths = 14;
+  baseMonths += Math.floor(cfg.size / 5000) * 2;
+  baseMonths += (cfg.stories - 1) * 1.5;
+
+  let methodMult = 1;
+  if (cfg.method === 'modular') methodMult = 0.7;
+  if (cfg.method === '3dprinted') methodMult = 0.5;
+
+  const tradMonths = Math.round(baseMonths);
+  const aiMonths = Math.max(2, Math.round(baseMonths * methodMult * 0.7));
+
+  const baseCostPerSqft = cfg.type === 'residential' ? 150 : cfg.type === 'commercial' ? 250 : 200;
+  let methodCostMult = 1;
+  if (cfg.method === 'modular') methodCostMult = 0.85;
+  if (cfg.method === '3dprinted') methodCostMult = 0.6;
+
+  const tradCost = Math.round(cfg.size * baseCostPerSqft * cfg.stories * 0.4);
+  const aiCost = Math.round(tradCost * methodCostMult * 0.75);
+
+  return { tradMonths, aiMonths, tradCost, aiCost };
+}
+
+function formatCost(c) {
+  if (c >= 1e6) return '$' + (c / 1e6).toFixed(1) + 'M';
+  return '$' + (c / 1e3).toFixed(0) + 'K';
+}
+
+function updateAll() {
+  const cfg = getConfig();
+  const tl = calcTimeline(cfg);
+
+  document.getElementById('cost-trad').textContent = formatCost(tl.tradCost);
+  document.getElementById('cost-ai').textContent = formatCost(tl.aiCost);
+  document.getElementById('cost-trad-time').textContent = tl.tradMonths + ' months';
+  document.getElementById('cost-ai-time').textContent = tl.aiMonths + ' months';
+  const savePct = Math.round((1 - tl.aiCost / tl.tradCost) * 100);
+  document.getElementById('savings-badge').textContent = 'Save ' + savePct + '%';
+
+  renderGantt(tl);
+  renderPhases();
+}
+
+function renderGantt(tl) {
+  const maxMonths = tl.tradMonths;
+  let html = '';
+  let tradAccum = 0, aiAccum = 0;
+  phases.forEach(p => {
+    const tradW = p.tradPct * tl.tradMonths;
+    const aiW = p.aiPct * tl.aiMonths;
+    const tradLeft = (tradAccum / maxMonths) * 100;
+    const tradWidth = (tradW / maxMonths) * 100;
+    const aiLeft = (aiAccum / maxMonths) * 100;
+    const aiWidth = (aiW / maxMonths) * 100;
+    html += `<div class="gantt-row">
+      <div class="gantt-label">${p.name}</div>
+      <div class="gantt-track">
+        <div class="gantt-bar traditional" style="left:${tradLeft}%;width:${tradWidth}%;background:${p.color};opacity:0.4">${Math.round(tradW)}mo</div>
+        <div class="gantt-bar ai" style="left:${aiLeft}%;width:${aiWidth}%;background:${p.color}">${Math.round(aiW)}mo</div>
+      </div>
+    </div>`;
+    tradAccum += tradW;
+    aiAccum += aiW;
+  });
+  // month markers
+  html += '<div style="display:flex;margin-top:6px;margin-left:100px;">';
+  for (let i = 0; i <= maxMonths; i += Math.max(1, Math.floor(maxMonths / 8))) {
+    const pct = (i / maxMonths) * 100;
+    html += `<div style="position:absolute;left:calc(100px + ${pct}% * 0.78);font-size:10px;color:var(--text-secondary)">${i}mo</div>`;
+  }
+  html += '</div>';
+  document.getElementById('gantt-chart').innerHTML = html;
+}
+
+function renderPhases() {
+  let html = '';
+  phases.forEach(p => {
+    html += `<div class="phase-seg" style="background:${p.color}">
+      <div class="fill" style="width:0%" data-phase="${p.name}"></div>
+      <span>${p.name}</span>
+    </div>`;
+  });
+  document.getElementById('progress-phases').innerHTML = html;
+}
+
+let simRunning = false;
+document.getElementById('btn-simulate').addEventListener('click', () => {
+  if (simRunning) return;
+  simRunning = true;
+  const fills = document.querySelectorAll('.phase-seg .fill');
+  const status = document.getElementById('progress-status');
+  let phaseIdx = 0;
+  let progress = 0;
+
+  function step() {
+    progress += 2;
+    if (progress > 100) {
+      progress = 0;
+      fills[phaseIdx].style.width = '100%';
+      phaseIdx++;
+      if (phaseIdx >= phases.length) {
+        status.textContent = 'Construction complete!';
+        status.style.color = '#4caf50';
+        simRunning = false;
+        return;
+      }
+    }
+    fills[phaseIdx].style.width = progress + '%';
+    status.textContent = `Building: ${phases[phaseIdx].name} phase (${progress}%)`;
+    status.style.color = 'var(--accent)';
+    requestAnimationFrame(() => setTimeout(step, 30));
+  }
+  // Reset
+  fills.forEach(f => f.style.width = '0%');
+  step();
+});
+
+// Range updates
+document.getElementById('size').addEventListener('input', e => {
+  document.getElementById('size-val').textContent = (+e.target.value).toLocaleString();
+  updateAll();
+});
+document.getElementById('stories').addEventListener('input', e => {
+  document.getElementById('stories-val').textContent = e.target.value;
+  updateAll();
+});
+document.getElementById('building-type').addEventListener('change', updateAll);
+document.getElementById('method').addEventListener('change', updateAll);
+
+updateAll();
+</script>
+</body>
+</html>

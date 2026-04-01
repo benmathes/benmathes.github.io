@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eliminating Middlemen in Healthcare</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fafafa;--surface:#fff;--text:#1a1a2e;--text2:#555;--border:#e0e0e0;--accent:#ff6600;--card:#fff;--bg2:#f0f0f5;--green:#2ecc71;--red:#e74c3c;}
+@media(prefers-color-scheme:dark){:root{--bg:#0f0f1a;--surface:#1a1a2e;--text:#e8e8f0;--text2:#aaa;--border:#2a2a3e;--card:#1e1e32;--bg2:#16162a;}}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+a{color:var(--accent);text-decoration:none;}a:hover{text-decoration:underline;}
+.back{display:inline-block;padding:16px 24px;font-size:14px;font-weight:500;}
+header{text-align:center;padding:10px 20px 30px;}
+header h1{font-size:2rem;font-weight:700;margin-bottom:8px;}
+header p{color:var(--text2);max-width:650px;margin:0 auto;font-size:1rem;}
+.container{max-width:900px;margin:0 auto;padding:0 20px 40px;}
+.price-header{text-align:center;margin-bottom:30px;}
+.price-header .original{font-size:1rem;color:var(--text2);}
+.price-header .current{font-size:3.5rem;font-weight:700;color:var(--accent);transition:all 0.5s;}
+.price-header .saved{font-size:1rem;color:var(--green);margin-top:4px;min-height:24px;}
+.waterfall{display:flex;flex-direction:column;gap:12px;margin-bottom:30px;}
+.layer{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 20px;display:flex;align-items:center;gap:16px;transition:all 0.4s ease;position:relative;overflow:hidden;}
+.layer.removed{opacity:0.4;transform:scale(0.97);}
+.layer.removed .layer-bar-fill{width:0% !important;}
+.layer-icon{font-size:1.5rem;width:40px;text-align:center;flex-shrink:0;}
+.layer-info{flex:1;min-width:0;}
+.layer-name{font-weight:600;font-size:1rem;margin-bottom:2px;}
+.layer-desc{font-size:0.8rem;color:var(--text2);}
+.layer-bar{height:10px;background:var(--bg2);border-radius:5px;margin-top:8px;overflow:hidden;}
+.layer-bar-fill{height:100%;border-radius:5px;transition:width 0.8s ease;}
+.layer-cost{font-size:1.3rem;font-weight:700;min-width:60px;text-align:right;transition:all 0.4s;}
+.layer-cost.struck{text-decoration:line-through;color:var(--text2);font-size:1rem;}
+.toggle{flex-shrink:0;}
+.toggle-btn{width:52px;height:28px;border-radius:14px;border:none;cursor:pointer;position:relative;transition:background 0.3s;background:var(--border);}
+.toggle-btn.active{background:var(--green);}
+.toggle-btn::after{content:'';position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform 0.3s;box-shadow:0 1px 3px rgba(0,0,0,0.2);}
+.toggle-btn.active::after{transform:translateX(24px);}
+.summary{background:var(--surface);border:2px solid var(--accent);border-radius:16px;padding:24px;text-align:center;}
+.summary h2{font-size:1.3rem;margin-bottom:16px;}
+.summary-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.summary-item{padding:12px;}
+.summary-item .val{font-size:1.8rem;font-weight:700;}
+.summary-item .label{font-size:0.8rem;color:var(--text2);margin-top:4px;}
+.reset-btn{display:block;margin:20px auto 0;padding:10px 24px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-family:inherit;font-size:0.9rem;cursor:pointer;}
+.reset-btn:hover{border-color:var(--accent);}
+.layer-colors{position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:4px 0 0 4px;}
+</style>
+</head>
+<body>
+<a class="back" href="index.html">← Back to all demos</a>
+<header>
+<h1>Eliminating Middlemen in Healthcare</h1>
+<p>See where your healthcare dollar actually goes. Toggle off middlemen to see the direct-to-patient price.</p>
+</header>
+<div class="container">
+<div class="price-header">
+<div class="original">Starting price of a medical procedure</div>
+<div class="current" id="currentPrice">$100.00</div>
+<div class="saved" id="savedMsg"></div>
+</div>
+<div class="waterfall" id="waterfall"></div>
+<div class="summary">
+<h2>Impact Summary</h2>
+<div class="summary-grid">
+<div class="summary-item">
+<div class="val" id="origPrice" style="color:var(--red);">$100</div>
+<div class="label">Current System Cost</div>
+</div>
+<div class="summary-item">
+<div class="val" id="newPrice" style="color:var(--green);">$100</div>
+<div class="label">Direct-to-Patient Price</div>
+</div>
+<div class="summary-item">
+<div class="val" id="pctSaved" style="color:var(--accent);">0%</div>
+<div class="label">Potential Savings</div>
+</div>
+</div>
+</div>
+<button class="reset-btn" id="resetBtn">Reset All Middlemen</button>
+</div>
+<script>
+const layers = [
+  {id:'hospital', name:'Hospital Administration', desc:'Facility fees, overhead, administrative staff', pct:35, icon:'🏥', color:'#3498db', removable:false},
+  {id:'insurance', name:'Insurance Administration', desc:'Claims processing, prior auth, utilization review', pct:15, icon:'📋', color:'#e74c3c', removable:true},
+  {id:'pbm', name:'Pharmacy Benefit Managers', desc:'Drug formulary management, rebate negotiations', pct:12, icon:'💊', color:'#9b59b6', removable:true},
+  {id:'distributor', name:'Medical Distributors', desc:'Supply chain markups, logistics middlemen', pct:8, icon:'🚚', color:'#e67e22', removable:true},
+  {id:'pharma', name:'Pharma Marketing Markup', desc:'DTC advertising, rep costs, rebate games', pct:20, icon:'📺', color:'#f39c12', removable:true},
+  {id:'provider', name:'Actual Care Provider', desc:'Doctor, nurse, clinical care delivery', pct:10, icon:'👨‍⚕️', color:'#2ecc71', removable:false},
+];
+
+const totalBase = 100;
+const waterfall = document.getElementById('waterfall');
+const removed = new Set();
+
+function render(){
+  waterfall.innerHTML = '';
+  layers.forEach(layer => {
+    const isRemoved = removed.has(layer.id);
+    const div = document.createElement('div');
+    div.className = 'layer' + (isRemoved ? ' removed' : '');
+    div.innerHTML = `
+      <div class="layer-colors" style="background:${layer.color}"></div>
+      <div class="layer-icon">${layer.icon}</div>
+      <div class="layer-info">
+        <div class="layer-name">${layer.name}</div>
+        <div class="layer-desc">${layer.desc}</div>
+        <div class="layer-bar">
+          <div class="layer-bar-fill" style="width:${isRemoved ? 0 : layer.pct}%;background:${layer.color};"></div>
+        </div>
+      </div>
+      <div class="layer-cost ${isRemoved ? 'struck' : ''}" style="color:${isRemoved ? 'var(--text2)' : layer.color}">$${layer.pct.toFixed(2)}</div>
+      <div class="toggle">
+        ${layer.removable ?
+          `<button class="toggle-btn ${isRemoved ? '' : 'active'}" data-id="${layer.id}" title="${isRemoved ? 'Add back' : 'Remove middleman'}"></button>` :
+          `<span style="font-size:0.7rem;color:var(--text2);display:block;width:52px;text-align:center;">Essential</span>`
+        }
+      </div>
+    `;
+    waterfall.appendChild(div);
+
+    // Animate bar fill
+    if(!isRemoved){
+      setTimeout(()=>{
+        const fill = div.querySelector('.layer-bar-fill');
+        if(fill) fill.style.width = layer.pct + '%';
+      }, 50);
+    }
+  });
+
+  // Bind toggle buttons
+  document.querySelectorAll('.toggle-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.id;
+      if(removed.has(id)) removed.delete(id); else removed.add(id);
+      updatePrices();
+      render();
+    });
+  });
+
+  updatePrices();
+}
+
+function updatePrices(){
+  let removedTotal = 0;
+  layers.forEach(l => { if(removed.has(l.id)) removedTotal += l.pct; });
+  const newTotal = totalBase - removedTotal;
+  const savings = removedTotal;
+
+  animateValue('currentPrice', newTotal, '$');
+  document.getElementById('savedMsg').textContent = savings > 0 ? `You save $${savings.toFixed(2)} by removing ${removed.size} middlemen` : '';
+  document.getElementById('origPrice').textContent = '$' + totalBase;
+  document.getElementById('newPrice').textContent = '$' + newTotal.toFixed(0);
+  document.getElementById('pctSaved').textContent = Math.round(savings) + '%';
+
+  if(savings > 0){
+    document.getElementById('currentPrice').style.color = '#2ecc71';
+  } else {
+    document.getElementById('currentPrice').style.color = 'var(--accent)';
+  }
+}
+
+function animateValue(elId, target, prefix){
+  const el = document.getElementById(elId);
+  const current = parseFloat(el.textContent.replace(/[^0-9.]/g,''));
+  const diff = target - current;
+  const steps = 20;
+  let step = 0;
+  const interval = setInterval(()=>{
+    step++;
+    const val = current + diff * (step/steps);
+    el.textContent = prefix + val.toFixed(2);
+    if(step >= steps){
+      clearInterval(interval);
+      el.textContent = prefix + target.toFixed(2);
+    }
+  }, 20);
+}
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  removed.clear();
+  render();
+});
+
+render();
+</script>
+</body>
+</html>

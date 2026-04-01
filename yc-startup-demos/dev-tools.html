@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Developer Tools | YC Startup Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#f5f5f5;--fg:#1a1a1a;--card:#fff;--card-border:#e0e0e0;--accent:#ff6600;--code-bg:#1e1e2e;--code-fg:#cdd6f4;--subtle:#888;--green:#22c55e;--blue:#3b82f6}
+@media(prefers-color-scheme:dark){:root{--bg:#0f0f0f;--fg:#e8e8e8;--card:#1a1a1a;--card-border:#2a2a2a;--subtle:#777}}
+body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--fg);min-height:100vh}
+a.back{position:fixed;top:16px;left:16px;color:var(--accent);text-decoration:none;font-size:14px;z-index:1000;font-weight:500}
+a.back:hover{text-decoration:underline}
+.header{text-align:center;padding:40px 20px 20px}
+.header h1{font-size:28px;font-weight:700}.header h1 span{color:var(--accent)}
+.header p{color:var(--subtle);font-size:14px;margin-top:8px}
+.tool-picker{display:flex;justify-content:center;gap:10px;padding:0 20px 24px;flex-wrap:wrap}
+.tool-btn{padding:10px 20px;background:var(--card);border:2px solid var(--card-border);border-radius:10px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;color:var(--fg);transition:all .2s}
+.tool-btn:hover{border-color:var(--accent);color:var(--accent)}
+.tool-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.transformer{display:grid;grid-template-columns:1fr auto 1fr;gap:0;padding:0 40px 40px;max-width:1400px;margin:0 auto;align-items:stretch;min-height:60vh}
+.pane{background:var(--card);border:1px solid var(--card-border);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;transition:opacity .3s}
+.pane-header{padding:14px 20px;border-bottom:1px solid var(--card-border);font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px}
+.pane-header .tag{font-size:10px;padding:2px 8px;border-radius:6px;font-weight:700;text-transform:uppercase}
+.pane-header .tag.raw{background:#ff660020;color:var(--accent)}
+.pane-header .tag.polished{background:#22c55e20;color:var(--green)}
+.pane-body{flex:1;padding:20px;overflow:auto}
+.code-area{background:var(--code-bg);color:var(--code-fg);border-radius:10px;padding:16px;font-family:'Courier New',monospace;font-size:12.5px;line-height:1.7;white-space:pre;overflow-x:auto;min-height:300px}
+.code-area .comment{color:#6c7086}.code-area .keyword{color:#cba6f7}.code-area .string{color:#a6e3a1}.code-area .fn{color:#89b4fa}.code-area .flag{color:#f9e2af}
+.arrow-col{display:flex;align-items:center;justify-content:center;padding:0 16px}
+.transform-btn{width:64px;height:64px;border-radius:50%;background:var(--accent);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px;box-shadow:0 4px 20px rgba(255,102,0,.3);transition:transform .2s,box-shadow .2s}
+.transform-btn:hover{transform:scale(1.1);box-shadow:0 6px 30px rgba(255,102,0,.4)}
+.transform-btn.animating{animation:pulse .6s ease infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+/* Polished UI components */
+.ui-mock{display:flex;flex-direction:column;gap:16px}
+.ui-mock .ui-row{display:flex;gap:12px;align-items:center}
+.ui-mock .ui-input{flex:1;padding:10px 14px;background:var(--bg);border:1px solid var(--card-border);border-radius:8px;font-size:13px;color:var(--fg);font-family:inherit}
+.ui-mock .ui-btn{padding:10px 20px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap}
+.ui-mock .ui-btn.secondary{background:var(--card-border);color:var(--fg)}
+.ui-mock .ui-label{font-size:12px;font-weight:600;color:var(--subtle);text-transform:uppercase;letter-spacing:0.5px}
+.ui-mock .ui-select{padding:10px 14px;background:var(--bg);border:1px solid var(--card-border);border-radius:8px;font-size:13px;color:var(--fg);font-family:inherit;min-width:140px}
+.ui-mock .ui-table{width:100%;border-collapse:collapse;font-size:12px}
+.ui-mock .ui-table th{text-align:left;padding:8px 12px;border-bottom:2px solid var(--card-border);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:var(--subtle)}
+.ui-mock .ui-table td{padding:8px 12px;border-bottom:1px solid var(--card-border)}
+.ui-mock .ui-status{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.ui-mock .ui-status.on{background:var(--green)}.ui-mock .ui-status.off{background:var(--subtle)}
+.ui-mock .ui-toggle{width:36px;height:20px;background:var(--card-border);border-radius:10px;position:relative;cursor:pointer}
+.ui-mock .ui-toggle.on{background:var(--green)}
+.ui-mock .ui-toggle::after{content:'';position:absolute;width:16px;height:16px;border-radius:50%;background:#fff;top:2px;left:2px;transition:transform .2s}
+.ui-mock .ui-toggle.on::after{transform:translateX(16px)}
+.ui-mock .ui-card{background:var(--bg);border-radius:10px;padding:14px}
+.ui-mock .ui-progress{height:6px;background:var(--card-border);border-radius:3px;overflow:hidden}
+.ui-mock .ui-progress .fill{height:100%;background:var(--accent);border-radius:3px}
+.appear{animation:fadeUp .4s ease both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.hidden{opacity:0;pointer-events:none}
+</style>
+</head>
+<body>
+<a class="back" href="index.html">&larr; Back to all demos</a>
+<div class="header">
+<h1><span>Internal Tool</span> &rarr; Product</h1>
+<p>See how rough internal scripts become polished developer tools</p>
+</div>
+<div class="tool-picker" id="toolPicker"></div>
+<div class="transformer">
+<div class="pane" id="leftPane">
+<div class="pane-header"><span class="tag raw">Internal Script</span> <span id="leftTitle"></span></div>
+<div class="pane-body"><div class="code-area" id="codeArea"></div></div>
+</div>
+<div class="arrow-col"><button class="transform-btn" id="transformBtn" title="Transform">&#9654;</button></div>
+<div class="pane hidden" id="rightPane">
+<div class="pane-header"><span class="tag polished">Polished Product</span> <span id="rightTitle"></span></div>
+<div class="pane-body"><div class="ui-mock" id="uiMock"></div></div>
+</div>
+</div>
+<script>
+const tools=[
+{id:'deploy',name:'Deploy Script',
+code:`<span class="comment">#!/bin/bash</span>
+<span class="comment"># deploy.sh - internal deploy tool</span>
+<span class="comment"># Usage: ./deploy.sh [env] [service] [version]</span>
+
+<span class="keyword">ENV</span>=<span class="string">\${1:-staging}</span>
+<span class="keyword">SERVICE</span>=<span class="string">\${2:-api}</span>
+<span class="keyword">VERSION</span>=<span class="string">\${3:-latest}</span>
+
+<span class="fn">echo</span> <span class="string">"Building $SERVICE..."</span>
+docker build -t registry/$SERVICE:$VERSION .
+
+<span class="fn">echo</span> <span class="string">"Pushing to registry..."</span>
+docker push registry/$SERVICE:$VERSION
+
+<span class="fn">echo</span> <span class="string">"Rolling out to $ENV..."</span>
+kubectl <span class="flag">--context</span>=$ENV set image \\
+  deployment/$SERVICE $SERVICE=registry/$SERVICE:$VERSION
+
+<span class="fn">echo</span> <span class="string">"Waiting for rollout..."</span>
+kubectl <span class="flag">--context</span>=$ENV rollout status \\
+  deployment/$SERVICE <span class="flag">--timeout</span>=300s
+
+<span class="fn">echo</span> <span class="string">"Checking health..."</span>
+curl -sf https://$SERVICE.$ENV.internal/health`,
+ui:`<div class="ui-label">Service</div>
+<div class="ui-row"><select class="ui-select"><option>api</option><option>web</option><option>worker</option><option>scheduler</option></select>
+<select class="ui-select"><option>staging</option><option>production</option><option>dev</option></select>
+<select class="ui-select"><option>v2.4.1 (latest)</option><option>v2.4.0</option><option>v2.3.9</option></select></div>
+<div class="ui-card">
+<div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:12px;font-weight:600">Deployment Progress</span><span style="font-size:12px;color:var(--green);font-weight:600">67%</span></div>
+<div class="ui-progress"><div class="fill" style="width:67%"></div></div>
+<div style="margin-top:12px;font-size:11px;color:var(--subtle)">
+<div>&#10003; Build completed (12s)</div>
+<div>&#10003; Pushed to registry</div>
+<div>&#8226; Rolling out to staging... (2/3 pods)</div>
+<div style="opacity:0.4">&#9675; Health check</div></div></div>
+<div class="ui-row"><button class="ui-btn">Deploy Now</button><button class="ui-btn secondary">Rollback</button><button class="ui-btn secondary">View Logs</button></div>`},
+
+{id:'dbquery',name:'DB Query Tool',
+code:`<span class="comment"># db_query.py - ad-hoc database queries</span>
+<span class="comment"># Usage: python db_query.py "SELECT ..."</span>
+
+<span class="keyword">import</span> psycopg2, sys, json
+<span class="keyword">from</span> tabulate <span class="keyword">import</span> tabulate
+
+<span class="fn">def</span> <span class="fn">run_query</span>(sql):
+    conn = psycopg2.<span class="fn">connect</span>(
+        host=<span class="string">"prod-db.internal"</span>,
+        dbname=<span class="string">"main"</span>,
+        user=os.<span class="fn">getenv</span>(<span class="string">"DB_USER"</span>),
+        password=os.<span class="fn">getenv</span>(<span class="string">"DB_PASS"</span>)
+    )
+    cur = conn.<span class="fn">cursor</span>()
+    cur.<span class="fn">execute</span>(sql)
+    rows = cur.<span class="fn">fetchall</span>()
+    cols = [d[0] <span class="keyword">for</span> d <span class="keyword">in</span> cur.description]
+    <span class="fn">print</span>(<span class="fn">tabulate</span>(rows, headers=cols))
+    conn.<span class="fn">close</span>()
+
+<span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:
+    <span class="fn">run_query</span>(sys.argv[1])`,
+ui:`<div class="ui-label">Database</div>
+<div class="ui-row"><select class="ui-select"><option>production (read-only)</option><option>staging</option><option>analytics</option></select></div>
+<div style="background:var(--code-bg);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;color:var(--code-fg)">SELECT id, name, email, plan FROM users WHERE created_at > '2024-01-01' LIMIT 10;</div>
+<div class="ui-row" style="gap:8px"><button class="ui-btn">Run Query</button><button class="ui-btn secondary">Format</button><button class="ui-btn secondary">Export CSV</button><span style="font-size:11px;color:var(--subtle)">10 rows &middot; 23ms</span></div>
+<table class="ui-table"><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Plan</th></tr></thead><tbody>
+<tr><td>1042</td><td>Sarah Chen</td><td>sarah@acme.co</td><td>Pro</td></tr>
+<tr><td>1043</td><td>Mike Patel</td><td>mike@globex.io</td><td>Enterprise</td></tr>
+<tr><td>1044</td><td>Ana Garcia</td><td>ana@startup.dev</td><td>Free</td></tr>
+<tr><td>1045</td><td>James Lee</td><td>james@corp.com</td><td>Pro</td></tr>
+</tbody></table>`},
+
+{id:'logsearch',name:'Log Search',
+code:`<span class="comment"># logsearch.sh - grep through log files</span>
+<span class="comment"># Usage: ./logsearch.sh [service] [pattern] [hours]</span>
+
+<span class="keyword">SERVICE</span>=<span class="string">$1</span>
+<span class="keyword">PATTERN</span>=<span class="string">$2</span>
+<span class="keyword">HOURS</span>=<span class="string">\${3:-24}</span>
+
+<span class="fn">echo</span> <span class="string">"Searching $SERVICE logs for '$PATTERN'..."</span>
+
+<span class="comment"># SSH into each node and grep</span>
+<span class="keyword">for</span> node <span class="keyword">in</span> $(kubectl get nodes -o name); <span class="keyword">do</span>
+  <span class="fn">echo</span> <span class="string">"--- $node ---"</span>
+  ssh $node <span class="string">"find /var/log/$SERVICE \\
+    -mmin -$((HOURS*60)) \\
+    -exec grep -l '$PATTERN' {} \\;"</span> | \\
+  xargs grep <span class="flag">--color</span> <span class="string">"$PATTERN"</span> | \\
+  tail <span class="flag">-n</span> 100
+<span class="keyword">done</span>
+
+<span class="fn">echo</span> <span class="string">"Found $(wc -l) matches"</span>`,
+ui:`<div class="ui-row"><input class="ui-input" placeholder="Search logs..." value="error: payment_failed"><button class="ui-btn">Search</button></div>
+<div class="ui-row" style="gap:8px;flex-wrap:wrap">
+<select class="ui-select"><option>All Services</option><option>api</option><option>web</option><option>worker</option></select>
+<select class="ui-select"><option>Last 24 hours</option><option>Last 1 hour</option><option>Last 7 days</option></select>
+<select class="ui-select"><option>All Levels</option><option>ERROR</option><option>WARN</option><option>INFO</option></select>
+<span style="font-size:11px;color:var(--subtle);margin-left:auto">247 results in 0.8s</span></div>
+<div class="ui-card" style="font-family:monospace;font-size:11px;line-height:2">
+<div><span style="color:var(--subtle)">12:04:22</span> <span style="color:#ef4444;font-weight:600">ERROR</span> <span style="color:var(--blue)">api-3</span> error: <mark style="background:#ff660040;color:inherit">payment_failed</mark> user=1042 amount=99.00 reason="card_declined"</div>
+<div><span style="color:var(--subtle)">12:03:58</span> <span style="color:#ef4444;font-weight:600">ERROR</span> <span style="color:var(--blue)">api-1</span> error: <mark style="background:#ff660040;color:inherit">payment_failed</mark> user=1098 amount=49.00 reason="insufficient_funds"</div>
+<div><span style="color:var(--subtle)">12:01:14</span> <span style="color:#ef4444;font-weight:600">ERROR</span> <span style="color:var(--blue)">api-2</span> error: <mark style="background:#ff660040;color:inherit">payment_failed</mark> user=987 amount=199.00 reason="card_expired"</div>
+<div><span style="color:var(--subtle)">11:58:33</span> <span style="color:#eab308;font-weight:600">WARN</span>&nbsp; <span style="color:var(--blue)">api-1</span> retry: <mark style="background:#ff660040;color:inherit">payment_failed</mark> user=1042 attempt=2</div>
+</div>`},
+
+{id:'featureflags',name:'Feature Flags',
+code:`<span class="comment"># flags.py - toggle feature flags via CLI</span>
+<span class="comment"># Usage: python flags.py [list|enable|disable] [flag]</span>
+
+<span class="keyword">import</span> redis, sys, json
+
+r = redis.<span class="fn">Redis</span>(host=<span class="string">"redis.internal"</span>)
+
+<span class="keyword">def</span> <span class="fn">list_flags</span>():
+    flags = r.<span class="fn">hgetall</span>(<span class="string">"feature_flags"</span>)
+    <span class="keyword">for</span> k, v <span class="keyword">in</span> flags.items():
+        data = json.<span class="fn">loads</span>(v)
+        status = <span class="string">"ON"</span> <span class="keyword">if</span> data[<span class="string">"enabled"</span>] <span class="keyword">else</span> <span class="string">"OFF"</span>
+        <span class="fn">print</span>(f<span class="string">"{k}: {status} ({data['pct']}%)"</span>)
+
+<span class="keyword">def</span> <span class="fn">toggle</span>(flag, state):
+    data = json.<span class="fn">loads</span>(r.<span class="fn">hget</span>(<span class="string">"feature_flags"</span>, flag))
+    data[<span class="string">"enabled"</span>] = state
+    r.<span class="fn">hset</span>(<span class="string">"feature_flags"</span>, flag, json.<span class="fn">dumps</span>(data))
+    <span class="fn">print</span>(f<span class="string">"Flag {flag} set to {state}"</span>)
+
+cmd = sys.argv[1]
+<span class="keyword">if</span> cmd == <span class="string">"list"</span>: <span class="fn">list_flags</span>()
+<span class="keyword">elif</span> cmd == <span class="string">"enable"</span>: <span class="fn">toggle</span>(sys.argv[2], True)
+<span class="keyword">elif</span> cmd == <span class="string">"disable"</span>: <span class="fn">toggle</span>(sys.argv[2], False)`,
+ui:`<div class="ui-row"><input class="ui-input" placeholder="Search flags..." style="max-width:300px"><button class="ui-btn secondary">+ New Flag</button></div>
+<table class="ui-table"><thead><tr><th>Flag</th><th>Status</th><th>Rollout</th><th>Users</th><th></th></tr></thead><tbody>
+<tr><td style="font-weight:600">new_checkout_flow</td><td><span class="ui-status on"></span>Enabled</td><td><div class="ui-progress" style="width:100px;display:inline-block;vertical-align:middle"><div class="fill" style="width:25%"></div></div> 25%</td><td>3,200</td><td><div class="ui-toggle on"></div></td></tr>
+<tr><td style="font-weight:600">dark_mode_v2</td><td><span class="ui-status on"></span>Enabled</td><td><div class="ui-progress" style="width:100px;display:inline-block;vertical-align:middle"><div class="fill" style="width:100%"></div></div> 100%</td><td>12,847</td><td><div class="ui-toggle on"></div></td></tr>
+<tr><td style="font-weight:600">ai_search</td><td><span class="ui-status on"></span>Enabled</td><td><div class="ui-progress" style="width:100px;display:inline-block;vertical-align:middle"><div class="fill" style="width:10%"></div></div> 10%</td><td>1,284</td><td><div class="ui-toggle on"></div></td></tr>
+<tr><td style="font-weight:600">legacy_api_v1</td><td><span class="ui-status off"></span>Disabled</td><td><div class="ui-progress" style="width:100px;display:inline-block;vertical-align:middle"><div class="fill" style="width:0%"></div></div> 0%</td><td>0</td><td><div class="ui-toggle"></div></td></tr>
+</tbody></table>`}
+];
+
+const picker=document.getElementById('toolPicker');
+tools.forEach((t,i)=>{
+const btn=document.createElement('button');btn.className='tool-btn'+(i===0?' active':'');btn.textContent=t.name;
+btn.onclick=()=>{selectTool(t,btn)};
+picker.appendChild(btn);
+});
+
+let currentTool=tools[0],transformed=false;
+document.getElementById('codeArea').innerHTML=currentTool.code;
+document.getElementById('leftTitle').textContent=currentTool.name;
+
+function selectTool(tool,btn){
+currentTool=tool;transformed=false;
+document.querySelectorAll('.tool-btn').forEach(b=>b.classList.remove('active'));
+btn.classList.add('active');
+document.getElementById('codeArea').innerHTML=tool.code;
+document.getElementById('leftTitle').textContent=tool.name;
+document.getElementById('rightPane').classList.add('hidden');
+document.getElementById('transformBtn').classList.remove('animating');
+}
+
+document.getElementById('transformBtn').addEventListener('click',function(){
+if(transformed)return;
+this.classList.add('animating');
+setTimeout(()=>{
+this.classList.remove('animating');
+transformed=true;
+const right=document.getElementById('rightPane');
+right.classList.remove('hidden');
+document.getElementById('rightTitle').textContent=currentTool.name;
+const mock=document.getElementById('uiMock');
+mock.innerHTML=currentTool.ui;
+// Stagger animations
+mock.querySelectorAll(':scope > *').forEach((el,i)=>{
+el.classList.add('appear');
+el.style.animationDelay=i*0.1+'s';
+});
+},600);
+});
+</script>
+</body>
+</html>

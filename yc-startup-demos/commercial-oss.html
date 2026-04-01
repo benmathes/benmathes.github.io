@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Commercial Open Source Companies</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f8f8f8;--surface:#fff;--text:#1a1a1a;--text-secondary:#666;--border:#e0e0e0;--accent:#ff6600;--accent-light:rgba(255,102,0,0.12);--shadow:0 2px 12px rgba(0,0,0,0.08);}
+@media(prefers-color-scheme:dark){:root{--bg:#0f0f0f;--surface:#1a1a1a;--text:#e8e8e8;--text-secondary:#999;--border:#333;--accent-light:rgba(255,102,0,0.18);--shadow:0 2px 12px rgba(0,0,0,0.3);}}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+.back-link{display:inline-block;padding:16px 24px;color:var(--accent);text-decoration:none;font-weight:500;font-size:14px;}
+.back-link:hover{opacity:0.7;}
+.container{max-width:1100px;margin:0 auto;padding:0 24px 48px;}
+h1{font-size:32px;font-weight:700;margin-bottom:8px;}
+.subtitle{color:var(--text-secondary);font-size:16px;margin-bottom:32px;}
+.model-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:32px;}
+.model-card{background:var(--surface);border:2px solid var(--border);border-radius:12px;padding:16px;cursor:pointer;transition:all 0.2s;box-shadow:var(--shadow);}
+.model-card:hover{border-color:var(--accent);transform:translateY(-2px);}
+.model-card.active{border-color:var(--accent);background:var(--accent-light);}
+.model-card .icon{font-size:28px;margin-bottom:8px;}
+.model-card .name{font-size:15px;font-weight:700;margin-bottom:4px;}
+.model-card .desc{font-size:12px;color:var(--text-secondary);line-height:1.4;}
+.detail-layout{display:grid;grid-template-columns:1fr 340px;gap:24px;}
+@media(max-width:850px){.detail-layout{grid-template-columns:1fr;}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;box-shadow:var(--shadow);}
+canvas{width:100%;border-radius:8px;display:block;}
+h3{font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px;}
+.examples{display:flex;flex-direction:column;gap:8px;}
+.example{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg);border-radius:8px;}
+.example .logo{width:36px;height:36px;border-radius:8px;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--accent);font-size:14px;}
+.example .info .company{font-size:14px;font-weight:600;}
+.example .info .detail{font-size:12px;color:var(--text-secondary);}
+.metric-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:14px;}
+.metric-row:last-child{border:none;}
+.metric-row .val{font-weight:700;color:var(--accent);}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:8px;}
+.legend-item{display:flex;align-items:center;gap:4px;font-size:12px;}
+.legend-item .dot{width:10px;height:10px;border-radius:3px;}
+.sidebar{display:flex;flex-direction:column;gap:16px;}
+.model-desc{font-size:14px;line-height:1.8;color:var(--text-secondary);}
+.model-desc strong{color:var(--text);}
+.pros-cons{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;}
+.pros,.cons{font-size:12px;line-height:1.8;}
+.pros strong{color:#00c864;}
+.cons strong{color:#ff3232;}
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">&#8592; Back to all demos</a>
+<div class="container">
+  <h1>Commercial Open Source Companies</h1>
+  <p class="subtitle">Explore business models that turn open source projects into sustainable companies</p>
+  <div class="model-grid" id="modelGrid"></div>
+  <div class="detail-layout">
+    <div class="card">
+      <h3>Revenue Simulation (5 Years)</h3>
+      <div class="legend" id="chartLegend"></div>
+      <canvas id="chartCanvas" width="700" height="400"></canvas>
+    </div>
+    <div class="sidebar">
+      <div class="card">
+        <h3>Model Details</h3>
+        <div class="model-desc" id="modelDesc"></div>
+      </div>
+      <div class="card">
+        <h3>Key Metrics (Year 5)</h3>
+        <div id="metricsArea"></div>
+      </div>
+      <div class="card">
+        <h3>Example Companies</h3>
+        <div class="examples" id="examplesArea"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('chartCanvas');
+const ctx = canvas.getContext('2d');
+const CW = 700, CH = 400;
+canvas.width = CW; canvas.height = CH;
+
+const models = [
+  {
+    id:'opencore', name:'Open Core', icon:'OC',
+    desc:'Core product is open source, with proprietary enterprise features (security, admin, integrations) sold as a commercial layer.',
+    shortDesc:'Free core + paid enterprise features',
+    color:'#ff6600',
+    communityGrowth: y => 5000 * Math.pow(2.2, y),
+    conversionRate: y => 0.02 + y * 0.005,
+    arppu: 2000,
+    examples:[
+      {name:'GitLab',initials:'GL',detail:'Open core Git platform, $500M+ ARR'},
+      {name:'Elastic',initials:'EL',detail:'Search & observability, $1B+ ARR'},
+      {name:'HashiCorp',initials:'HC',detail:'Infrastructure automation, $600M+ ARR'}
+    ],
+    pros:['Clear upgrade path','Strong community','High margins'],
+    cons:['Feature allocation tension','Fork risk','Community resentment']
+  },
+  {
+    id:'saas', name:'SaaS / Hosted', icon:'SH',
+    desc:'The open source project is offered as a managed cloud service. Users can self-host for free or pay for the convenience of a hosted version with SLAs.',
+    shortDesc:'Managed cloud version of OSS project',
+    color:'#33aaff',
+    communityGrowth: y => 8000 * Math.pow(2.5, y),
+    conversionRate: y => 0.01 + y * 0.008,
+    arppu: 1200,
+    examples:[
+      {name:'Confluent',initials:'CF',detail:'Managed Kafka, $800M+ ARR'},
+      {name:'MongoDB',initials:'MG',detail:'Atlas cloud DB, $1.7B+ ARR'},
+      {name:'Supabase',initials:'SB',detail:'Open source Firebase alternative'}
+    ],
+    pros:['Recurring revenue','Low friction adoption','Operational moat'],
+    cons:['Cloud vendor competition','High infrastructure costs','Margin pressure']
+  },
+  {
+    id:'support', name:'Support & Services', icon:'SS',
+    desc:'Revenue comes from enterprise support contracts, consulting, training, and custom development around the open source project.',
+    shortDesc:'Enterprise support and consulting',
+    color:'#aa66ff',
+    communityGrowth: y => 3000 * Math.pow(1.8, y),
+    conversionRate: y => 0.005 + y * 0.003,
+    arppu: 5000,
+    examples:[
+      {name:'Red Hat',initials:'RH',detail:'Linux support, acquired by IBM for $34B'},
+      {name:'Canonical',initials:'CA',detail:'Ubuntu support & services'},
+      {name:'Tidelift',initials:'TL',detail:'OSS maintenance subscriptions'}
+    ],
+    pros:['Low engineering overhead','Deep customer relationships','Predictable revenue'],
+    cons:['Hard to scale','Low margins','Dependent on complexity']
+  },
+  {
+    id:'marketplace', name:'Marketplace', icon:'MP',
+    desc:'Build a platform/ecosystem around the OSS project where third parties sell extensions, plugins, or integrations. Revenue from transaction fees.',
+    shortDesc:'Platform for third-party extensions',
+    color:'#44ddaa',
+    communityGrowth: y => 10000 * Math.pow(2.8, y),
+    conversionRate: y => 0.003 + y * 0.004,
+    arppu: 800,
+    examples:[
+      {name:'WordPress',initials:'WP',detail:'Plugin/theme marketplace ecosystem'},
+      {name:'Shopify',initials:'SH',detail:'App store for e-commerce extensions'},
+      {name:'Grafana',initials:'GR',detail:'Plugin marketplace for observability'}
+    ],
+    pros:['Network effects','Ecosystem lock-in','Low marginal cost'],
+    cons:['Slow to monetize','Quality control','Platform governance']
+  },
+  {
+    id:'dual', name:'Dual Licensing', icon:'DL',
+    desc:'Project is licensed under a copyleft license (e.g., AGPL). Companies that want to embed it in proprietary products must purchase a commercial license.',
+    shortDesc:'Copyleft + commercial license option',
+    color:'#ff6666',
+    communityGrowth: y => 4000 * Math.pow(1.9, y),
+    conversionRate: y => 0.008 + y * 0.006,
+    arppu: 3000,
+    examples:[
+      {name:'MySQL/Oracle',initials:'MY',detail:'GPL + commercial, most famous dual license'},
+      {name:'Qt Company',initials:'QT',detail:'LGPL + commercial for embedded'},
+      {name:'MariaDB',initials:'MA',detail:'BSL + commercial licensing'}
+    ],
+    pros:['Clear monetization','Protects IP','Simple to understand'],
+    cons:['Limits contributions','Complex compliance','Community friction']
+  }
+];
+
+let selectedModel = 0;
+
+function renderModelGrid() {
+  document.getElementById('modelGrid').innerHTML = models.map((m, i) => `
+    <div class="model-card ${i===selectedModel?'active':''}" onclick="selectModel(${i})">
+      <div class="icon" style="color:${m.color}">${m.icon}</div>
+      <div class="name">${m.name}</div>
+      <div class="desc">${m.shortDesc}</div>
+    </div>
+  `).join('');
+}
+
+function selectModel(i) {
+  selectedModel = i;
+  renderModelGrid();
+  renderDetails();
+  drawChart();
+}
+
+function renderDetails() {
+  const m = models[selectedModel];
+
+  document.getElementById('modelDesc').innerHTML = `
+    ${m.desc}
+    <div class="pros-cons">
+      <div class="pros"><strong>Pros</strong><br>${m.pros.map(p=>'+ '+p).join('<br>')}</div>
+      <div class="cons"><strong>Cons</strong><br>${m.cons.map(c=>'- '+c).join('<br>')}</div>
+    </div>
+  `;
+
+  // Year 5 metrics
+  const y5Community = Math.round(m.communityGrowth(5));
+  const y5Conv = m.conversionRate(5);
+  const y5Paying = Math.round(y5Community * y5Conv);
+  const y5Revenue = y5Paying * m.arppu;
+
+  document.getElementById('metricsArea').innerHTML = `
+    <div class="metric-row"><span>Community Users</span><span class="val">${(y5Community/1000).toFixed(0)}K</span></div>
+    <div class="metric-row"><span>Conversion Rate</span><span class="val">${(y5Conv*100).toFixed(1)}%</span></div>
+    <div class="metric-row"><span>Paying Customers</span><span class="val">${y5Paying.toLocaleString()}</span></div>
+    <div class="metric-row"><span>ARPPU</span><span class="val">$${m.arppu.toLocaleString()}</span></div>
+    <div class="metric-row"><span>ARR</span><span class="val">$${(y5Revenue/1e6).toFixed(1)}M</span></div>
+  `;
+
+  document.getElementById('examplesArea').innerHTML = m.examples.map(ex => `
+    <div class="example">
+      <div class="logo">${ex.initials}</div>
+      <div class="info">
+        <div class="company">${ex.name}</div>
+        <div class="detail">${ex.detail}</div>
+      </div>
+    </div>
+  `).join('');
+
+  document.getElementById('chartLegend').innerHTML = `
+    <div class="legend-item"><span class="dot" style="background:${m.color}"></span> Revenue ($M)</div>
+    <div class="legend-item"><span class="dot" style="background:#44ddaa"></span> Community (K)</div>
+    <div class="legend-item"><span class="dot" style="background:rgba(255,255,255,0.3)"></span> Paying Customers</div>
+  `;
+}
+
+function drawChart() {
+  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const m = models[selectedModel];
+  const padL=60, padR=20, padT=30, padB=50;
+  const plotW=CW-padL-padR, plotH=CH-padT-padB;
+
+  ctx.fillStyle = isDark ? '#1a1a1a' : '#fff';
+  ctx.fillRect(0,0,CW,CH);
+
+  // Calculate data
+  const years = [1,2,3,4,5];
+  const data = years.map(y => {
+    const community = m.communityGrowth(y);
+    const conv = m.conversionRate(y);
+    const paying = community * conv;
+    const revenue = paying * m.arppu;
+    return {year:y, community, paying, revenue};
+  });
+
+  const maxRev = Math.max(...data.map(d=>d.revenue));
+  const maxComm = Math.max(...data.map(d=>d.community));
+  const maxPay = Math.max(...data.map(d=>d.paying));
+
+  // Grid
+  ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+  ctx.lineWidth = 1;
+  for (let i=0;i<=5;i++){
+    const py = padT + (i/5)*plotH;
+    ctx.beginPath();ctx.moveTo(padL,py);ctx.lineTo(padL+plotW,py);ctx.stroke();
+  }
+
+  // Revenue bars
+  const barW = plotW / 5 * 0.5;
+  data.forEach((d,i) => {
+    const cx = padL + (i+0.5)/5 * plotW;
+    const barH = (d.revenue/maxRev) * plotH * 0.9;
+    const grad = ctx.createLinearGradient(0,padT+plotH-barH,0,padT+plotH);
+    grad.addColorStop(0, m.color);
+    grad.addColorStop(1, m.color + '44');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.roundRect(cx-barW/2, padT+plotH-barH, barW, barH, [6,6,0,0]);
+    ctx.fill();
+
+    // Revenue label
+    ctx.font = '600 12px Space Grotesk';
+    ctx.fillStyle = m.color;
+    ctx.textAlign = 'center';
+    ctx.fillText('$'+(d.revenue/1e6).toFixed(1)+'M', cx, padT+plotH-barH-8);
+
+    // Year label
+    ctx.font = '500 13px Space Grotesk';
+    ctx.fillStyle = isDark ? '#888' : '#666';
+    ctx.fillText('Year '+d.year, cx, padT+plotH+20);
+  });
+
+  // Community line
+  ctx.beginPath();
+  data.forEach((d,i) => {
+    const cx = padL + (i+0.5)/5 * plotW;
+    const cy = padT + plotH - (d.community/maxComm) * plotH * 0.85;
+    i===0?ctx.moveTo(cx,cy):ctx.lineTo(cx,cy);
+  });
+  ctx.strokeStyle = '#44ddaa';
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+  data.forEach((d,i) => {
+    const cx = padL + (i+0.5)/5 * plotW;
+    const cy = padT + plotH - (d.community/maxComm) * plotH * 0.85;
+    ctx.beginPath(); ctx.arc(cx,cy,4,0,Math.PI*2);
+    ctx.fillStyle='#44ddaa'; ctx.fill();
+    ctx.font='500 10px Space Grotesk';
+    ctx.fillStyle='#44ddaa';
+    ctx.textAlign='center';
+    ctx.fillText((d.community/1000).toFixed(0)+'K', cx, cy-10);
+  });
+
+  // Paying customers line
+  ctx.beginPath();
+  data.forEach((d,i) => {
+    const cx = padL + (i+0.5)/5 * plotW;
+    const cy = padT + plotH - (d.paying/maxPay) * plotH * 0.7;
+    i===0?ctx.moveTo(cx,cy):ctx.lineTo(cx,cy);
+  });
+  ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.25)';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([4,4]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  data.forEach((d,i) => {
+    const cx = padL + (i+0.5)/5 * plotW;
+    const cy = padT + plotH - (d.paying/maxPay) * plotH * 0.7;
+    ctx.beginPath(); ctx.arc(cx,cy,3,0,Math.PI*2);
+    ctx.fillStyle=isDark?'rgba(255,255,255,0.5)':'rgba(0,0,0,0.3)'; ctx.fill();
+  });
+
+  // Y-axis label
+  ctx.save();
+  ctx.translate(16, padT + plotH/2);
+  ctx.rotate(-Math.PI/2);
+  ctx.font = '500 11px Space Grotesk';
+  ctx.fillStyle = isDark ? '#666' : '#999';
+  ctx.textAlign = 'center';
+  ctx.fillText('Revenue', 0, 0);
+  ctx.restore();
+}
+
+// roundRect polyfill
+if (!ctx.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x,y,w,h,r) {
+    if (!Array.isArray(r)) r=[r,r,r,r];
+    this.moveTo(x+r[0],y);
+    this.lineTo(x+w-r[1],y);
+    this.arcTo(x+w,y,x+w,y+r[1],r[1]);
+    this.lineTo(x+w,y+h-r[2]);
+    this.arcTo(x+w,y+h,x+w-r[2],y+h,r[2]);
+    this.lineTo(x+r[3],y+h);
+    this.arcTo(x,y+h,x,y+h-r[3],r[3]);
+    this.lineTo(x,y+r[0]);
+    this.arcTo(x,y,x+r[0],y,r[0]);
+  };
+}
+
+renderModelGrid();
+renderDetails();
+drawChart();
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', drawChart);
+</script>
+</body>
+</html>
