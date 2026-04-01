@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Guidance for Physical Work</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f8f8f8;--surface:#fff;--text:#1a1a1a;--text-secondary:#666;--border:#e0e0e0;--accent:#ff6600;--accent-light:rgba(255,102,0,.12);--green:#22c55e;--red:#ef4444;--blue:#3b82f6;--purple:#8b5cf6;--shadow:0 2px 12px rgba(0,0,0,.08)}
+@media(prefers-color-scheme:dark){:root{--bg:#0f0f0f;--surface:#1a1a1a;--text:#e8e8e8;--text-secondary:#999;--border:#333;--accent-light:rgba(255,102,0,.2);--shadow:0 2px 12px rgba(0,0,0,.3)}}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.back-link{display:inline-block;padding:16px 24px;color:var(--accent);text-decoration:none;font-weight:500;font-size:14px}
+.back-link:hover{opacity:.7}
+.container{max-width:1100px;margin:0 auto;padding:0 24px 48px}
+h1{font-size:28px;font-weight:700;margin-bottom:4px}
+.subtitle{color:var(--text-secondary);font-size:15px;margin-bottom:24px}
+.badge{display:inline-block;background:var(--accent);color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;margin-left:8px;vertical-align:middle}
+
+.time-compare{display:flex;gap:16px;margin-bottom:24px}
+.time-card{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center}
+.time-card .val{font-size:28px;font-weight:700}
+.time-card .lbl{font-size:12px;color:var(--text-secondary)}
+.time-card.paper .val{color:var(--red)}
+.time-card.ar .val{color:var(--green)}
+.time-card.saved .val{color:var(--accent)}
+
+.layout{display:grid;grid-template-columns:1fr 300px;gap:20px}
+.workspace{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;position:relative}
+.workspace canvas{width:100%;display:block;cursor:pointer}
+.sidebar{display:flex;flex-direction:column;gap:16px}
+
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.panel-header{padding:12px 16px;border-bottom:1px solid var(--border);font-weight:600;font-size:13px}
+.panel-body{padding:16px}
+
+.step-list{list-style:none}
+.step-item{padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px;display:flex;align-items:center;gap:10px;transition:background .2s}
+.step-item:last-child{border-bottom:none}
+.step-num{width:24px;height:24px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.step-item.active{background:var(--accent-light)}
+.step-item.active .step-num{background:var(--accent);color:#fff}
+.step-item.done{opacity:.5}
+.step-item.done .step-num{background:var(--green);color:#fff}
+
+.instruction{position:absolute;bottom:16px;left:16px;right:16px;background:rgba(0,0,0,.85);color:#fff;padding:14px 18px;border-radius:10px;font-size:14px;display:flex;align-items:center;gap:10px;backdrop-filter:blur(8px)}
+.instruction .inst-icon{font-size:20px}
+.instruction .inst-text{flex:1}
+.instruction .inst-hint{font-size:11px;color:#aaa;display:block;margin-top:2px}
+
+.alert-box{background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:14px;display:none;margin-top:0}
+.alert-box h4{font-size:13px;color:var(--red);margin-bottom:4px}
+.alert-box p{font-size:12px;color:#666;line-height:1.5}
+@media(prefers-color-scheme:dark){.alert-box{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3)}.alert-box p{color:#bbb}}
+
+.progress-bar{height:6px;background:var(--bg);border-radius:3px;overflow:hidden;margin-top:8px}
+.progress-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .5s}
+
+@media(max-width:800px){.layout{grid-template-columns:1fr}.time-compare{flex-direction:column}}
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">← Back to all demos</a>
+<div class="container">
+<h1>AI Guidance for Physical Work <span class="badge">Spring 2026</span></h1>
+<p class="subtitle">AR-style step-by-step instructions with intelligent difficulty detection and real-time guidance.</p>
+
+<div class="time-compare">
+  <div class="time-card paper"><div class="val">48 min</div><div class="lbl">Paper Manual</div></div>
+  <div class="time-card ar"><div class="val" id="arTime">—</div><div class="lbl">AI-Guided</div></div>
+  <div class="time-card saved"><div class="val" id="savedTime">—</div><div class="lbl">Time Saved</div></div>
+</div>
+
+<div class="layout">
+  <div class="workspace">
+    <canvas id="workCanvas" height="500"></canvas>
+    <div class="instruction" id="instruction">
+      <span class="inst-icon">🔧</span>
+      <div><span class="inst-text" id="instText">Click highlighted components to complete each step.</span><span class="inst-hint" id="instHint">Begin with Step 1</span></div>
+    </div>
+  </div>
+  <div class="sidebar">
+    <div class="panel">
+      <div class="panel-header">Progress <span style="float:right;font-weight:400;color:var(--text-secondary)" id="progressPct">0%</span></div>
+      <div class="panel-body">
+        <div class="progress-bar"><div class="progress-fill" id="progressBar" style="width:0%"></div></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">Assembly Steps</div>
+      <ul class="step-list" id="stepList"></ul>
+    </div>
+    <div class="alert-box" id="alertBox">
+      <h4>⚠ Difficulty Detected</h4>
+      <p id="alertText"></p>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+const steps = [
+  {id:0,label:'Remove access panel A',desc:'Unscrew the 4 corner bolts and slide panel off',hint:'Click the blue-highlighted panel on the left side',zone:{x:60,y:120,w:140,h:200},color:'#3b82f6',icon:'🔩'},
+  {id:1,label:'Disconnect power cable B',desc:'Gently pull the red connector from its socket',hint:'Click the highlighted cable connector',zone:{x:240,y:180,w:100,h:40},color:'#ef4444',icon:'🔌'},
+  {id:2,label:'Remove cooling fan assembly',desc:'Release 2 clips and lift fan straight up',hint:'Click the highlighted fan unit',zone:{x:260,y:100,w:120,h:100},color:'#8b5cf6',icon:'🌀'},
+  {id:3,label:'Extract faulty circuit board',desc:'Slide board out along the guide rails',hint:'Click the highlighted circuit board',zone:{x:420,y:140,w:160,h:120},color:'#22c55e',icon:'🔲'},
+  {id:4,label:'Clean thermal compound residue',desc:'Use isopropyl alcohol on the contact surface',hint:'Click the highlighted contact area',zone:{x:440,y:280,w:120,h:60},color:'#f59e0b',icon:'🧹'},
+  {id:5,label:'Install new circuit board',desc:'Align with guide rails and slide in firmly',hint:'Click the slot to insert the new board',zone:{x:420,y:140,w:160,h:120},color:'#22c55e',icon:'🔲'},
+  {id:6,label:'Reconnect power cable B',desc:'Push connector until you hear a click',hint:'Click the cable socket',zone:{x:240,y:180,w:100,h:40},color:'#ef4444',icon:'🔌'},
+  {id:7,label:'Replace cooling fan assembly',desc:'Align clips and press down to lock',hint:'Click the fan mounting area',zone:{x:260,y:100,w:120,h:100},color:'#8b5cf6',icon:'🌀'},
+  {id:8,label:'Reattach access panel A',desc:'Align panel and tighten all 4 bolts',hint:'Click the panel area to close it up',zone:{x:60,y:120,w:140,h:200},color:'#3b82f6',icon:'🔩'},
+];
+
+let currentStep = 0;
+let completed = new Set();
+let startTime = Date.now();
+let clickAttempts = {};
+
+function renderSteps(){
+  document.getElementById('stepList').innerHTML = steps.map((s,i)=>`
+    <li class="step-item ${i===currentStep?'active':''} ${completed.has(i)?'done':''}">
+      <span class="step-num">${completed.has(i)?'✓':(i+1)}</span>
+      <span>${s.label}</span>
+    </li>
+  `).join('');
+  const pct = Math.round(completed.size/steps.length*100);
+  document.getElementById('progressPct').textContent = pct+'%';
+  document.getElementById('progressBar').style.width = pct+'%';
+
+  if(currentStep < steps.length){
+    const s = steps[currentStep];
+    document.getElementById('instText').textContent = `Step ${currentStep+1}: ${s.label}`;
+    document.getElementById('instHint').textContent = s.hint;
+    document.getElementById('instruction').querySelector('.inst-icon').textContent = s.icon;
+  }
+
+  // Time
+  const elapsed = Math.round((Date.now()-startTime)/1000);
+  if(completed.size === steps.length){
+    const mins = Math.floor(elapsed/60);
+    const secs = elapsed%60;
+    document.getElementById('arTime').textContent = `${mins}m ${secs}s`;
+    const saved = 48*60 - elapsed;
+    document.getElementById('savedTime').textContent = `${Math.floor(saved/60)}m ${saved%60}s`;
+  }
+}
+
+function drawWorkspace(){
+  const canvas = document.getElementById('workCanvas');
+  const dpr = devicePixelRatio||1;
+  canvas.width = canvas.offsetWidth*dpr;
+  canvas.height = 500*dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+  const w = canvas.offsetWidth, h = 500;
+  const isDark = matchMedia('(prefers-color-scheme:dark)').matches;
+
+  ctx.clearRect(0,0,w,h);
+
+  // Background: machine chassis
+  ctx.fillStyle = isDark?'#222':'#e8e8e8';
+  ctx.fillRect(40,60,w-80,h-100);
+  ctx.strokeStyle = isDark?'#444':'#ccc';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(40,60,w-80,h-100);
+
+  // Machine label
+  ctx.font = '600 14px Space Grotesk';
+  ctx.fillStyle = isDark?'#555':'#bbb';
+  ctx.fillText('INDUSTRIAL CONTROLLER UNIT — MODEL X-200',60,50);
+
+  // Internal components (schematic)
+  // Power supply area
+  ctx.fillStyle = isDark?'#2a2a2a':'#ddd';
+  ctx.fillRect(60,320,160,100);
+  ctx.strokeStyle = isDark?'#555':'#aaa';
+  ctx.strokeRect(60,320,160,100);
+  ctx.font = '11px Space Grotesk';
+  ctx.fillStyle = isDark?'#666':'#999';
+  ctx.fillText('POWER SUPPLY',80,375);
+
+  // Heatsink lines
+  for(let i=0;i<6;i++){
+    ctx.fillStyle = isDark?'#333':'#ccc';
+    ctx.fillRect(440,280+i*10,120,6);
+  }
+  ctx.fillStyle = isDark?'#666':'#999';
+  ctx.fillText('HEATSINK',470,360);
+
+  // Cable routing lines
+  ctx.strokeStyle = isDark?'#553333':'#ffaaaa';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(200,200);ctx.lineTo(240,200);
+  ctx.stroke();
+
+  // Mounting screws
+  [[70,130],[190,130],[70,310],[190,310]].forEach(([sx,sy])=>{
+    ctx.beginPath();
+    ctx.arc(sx,sy,4,0,Math.PI*2);
+    ctx.fillStyle = isDark?'#555':'#999';
+    ctx.fill();
+  });
+
+  // Fan placeholder
+  ctx.beginPath();
+  ctx.arc(320,150,45,0,Math.PI*2);
+  ctx.strokeStyle = isDark?'#444':'#bbb';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.fillStyle = isDark?'#666':'#999';
+  ctx.font = '11px Space Grotesk';
+  ctx.fillText('FAN',308,154);
+
+  // Circuit board slot
+  ctx.fillStyle = isDark?'#1e3a1e':'#d4edda';
+  ctx.fillRect(420,140,160,120);
+  ctx.strokeStyle = isDark?'#3a5a3a':'#a3d9a5';
+  ctx.strokeRect(420,140,160,120);
+  // Chip marks
+  for(let r=0;r<3;r++){
+    for(let c=0;c<4;c++){
+      ctx.fillStyle = isDark?'#2a4a2a':'#b5d5b5';
+      ctx.fillRect(432+c*36,152+r*35,24,20);
+    }
+  }
+  ctx.fillStyle = isDark?'#4a6a4a':'#888';
+  ctx.fillText('PCB-MAIN',460,250);
+
+  // Highlight current step zone
+  if(currentStep < steps.length && !completed.has(currentStep)){
+    const s = steps[currentStep];
+    const z = s.zone;
+    ctx.save();
+
+    // Pulsing glow
+    const t = (Date.now()%2000)/2000;
+    const alpha = 0.2 + Math.sin(t*Math.PI*2)*0.15;
+    ctx.fillStyle = s.color;
+    ctx.globalAlpha = alpha;
+    ctx.fillRect(z.x-4,z.y-4,z.w+8,z.h+8);
+
+    ctx.globalAlpha = 0.8;
+    ctx.strokeStyle = s.color;
+    ctx.lineWidth = 3;
+    ctx.setLineDash([8,4]);
+    ctx.strokeRect(z.x,z.y,z.w,z.h);
+    ctx.setLineDash([]);
+
+    // Label
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = s.color;
+    ctx.font = '600 12px Space Grotesk';
+    ctx.fillText(s.label, z.x, z.y-8);
+
+    ctx.restore();
+  }
+
+  // Completed areas get check marks
+  completed.forEach(idx=>{
+    if(idx >= steps.length) return;
+    const z = steps[idx].zone;
+    ctx.fillStyle = 'rgba(34,197,94,0.15)';
+    ctx.fillRect(z.x,z.y,z.w,z.h);
+    ctx.font = '20px sans-serif';
+    ctx.fillStyle = '#22c55e';
+    ctx.fillText('✓',z.x+z.w/2-8,z.y+z.h/2+8);
+  });
+}
+
+// Click handling
+document.getElementById('workCanvas').addEventListener('click', function(e){
+  if(currentStep >= steps.length) return;
+  const rect = this.getBoundingClientRect();
+  const scaleX = this.offsetWidth / this.offsetWidth; // canvas CSS vs element
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  const z = steps[currentStep].zone;
+
+  // Check if click is in zone
+  if(x >= z.x && x <= z.x+z.w && y >= z.y && y <= z.y+z.h){
+    completed.add(currentStep);
+    currentStep++;
+    document.getElementById('alertBox').style.display = 'none';
+    if(currentStep >= steps.length){
+      document.getElementById('instText').textContent = 'Assembly complete! All steps finished.';
+      document.getElementById('instHint').textContent = 'Great work!';
+    }
+    renderSteps();
+  } else {
+    // Track failed attempts for difficulty detection
+    if(!clickAttempts[currentStep]) clickAttempts[currentStep] = 0;
+    clickAttempts[currentStep]++;
+    if(clickAttempts[currentStep] >= 2){
+      const alert = document.getElementById('alertBox');
+      alert.style.display = 'block';
+      document.getElementById('alertText').textContent =
+        `It looks like you're having trouble with "${steps[currentStep].label}". ${steps[currentStep].desc}. Look for the ${steps[currentStep].color === '#3b82f6'?'blue':steps[currentStep].color==='#ef4444'?'red':steps[currentStep].color==='#8b5cf6'?'purple':steps[currentStep].color==='#22c55e'?'green':'yellow'}-highlighted area on the diagram. The component is located ${steps[currentStep].zone.x < 200 ? 'on the left side' : steps[currentStep].zone.x > 400 ? 'on the right side' : 'in the center'} of the unit.`;
+    }
+  }
+});
+
+function animLoop(){
+  drawWorkspace();
+  requestAnimationFrame(animLoop);
+}
+
+renderSteps();
+animLoop();
+
+// Initial time display
+document.getElementById('arTime').textContent = '0m 0s';
+document.getElementById('savedTime').textContent = '—';
+setInterval(()=>{
+  if(completed.size < steps.length){
+    const elapsed = Math.round((Date.now()-startTime)/1000);
+    const mins = Math.floor(elapsed/60);
+    document.getElementById('arTime').textContent = `${mins}m ${elapsed%60}s`;
+  }
+},1000);
+</script>
+</body>
+</html>
