@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Managed Service Organizations for Healthcare</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fafafa;--surface:#fff;--text:#1a1a2e;--text2:#555;--border:#e0e0e0;--accent:#ff6600;--card:#fff;--bg2:#f0f0f5;--green:#2ecc71;--red:#e74c3c;}
+@media(prefers-color-scheme:dark){:root{--bg:#0f0f1a;--surface:#1a1a2e;--text:#e8e8f0;--text2:#aaa;--border:#2a2a3e;--card:#1e1e32;--bg2:#16162a;}}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+a{color:var(--accent);text-decoration:none;}a:hover{text-decoration:underline;}
+.back{display:inline-block;padding:16px 24px;font-size:14px;font-weight:500;}
+header{text-align:center;padding:10px 20px 24px;}
+header h1{font-size:2rem;font-weight:700;margin-bottom:8px;}
+header p{color:var(--text2);max-width:650px;margin:0 auto;font-size:1rem;}
+.main{max-width:1200px;margin:0 auto;padding:0 20px 40px;display:flex;gap:20px;flex-wrap:wrap;}
+.graph-panel{flex:2;min-width:450px;background:var(--surface);border-radius:16px;border:1px solid var(--border);padding:20px;position:relative;}
+.info-panel{flex:1;min-width:300px;display:flex;flex-direction:column;gap:16px;}
+.info-card{background:var(--surface);border-radius:16px;border:1px solid var(--border);padding:20px;}
+canvas{width:100%;height:500px;border-radius:12px;background:var(--bg2);display:block;cursor:grab;}
+canvas:active{cursor:grabbing;}
+h2{font-size:1.2rem;font-weight:600;margin-bottom:12px;}
+.score{text-align:center;padding:20px 0;}
+.score-val{font-size:3rem;font-weight:700;color:var(--accent);transition:all 0.3s;}
+.score-label{font-size:0.85rem;color:var(--text2);margin-top:4px;}
+.compare-row{display:flex;gap:8px;margin-bottom:8px;align-items:center;font-size:0.85rem;}
+.compare-label{width:100px;color:var(--text2);font-size:0.8rem;}
+.compare-bar{flex:1;height:24px;border-radius:6px;background:var(--bg2);overflow:hidden;position:relative;}
+.compare-fill{height:100%;border-radius:6px;transition:width 0.8s ease;display:flex;align-items:center;padding-left:8px;font-size:0.75rem;color:#fff;font-weight:600;}
+.compare-fill.indep{background:var(--red);}
+.compare-fill.mso{background:var(--green);}
+.savings{text-align:center;margin-top:12px;padding:12px;background:var(--bg2);border-radius:10px;}
+.savings-val{font-size:1.8rem;font-weight:700;color:var(--green);}
+.savings-label{font-size:0.8rem;color:var(--text2);}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:0.8rem;color:var(--text2);}
+.legend-item{display:flex;align-items:center;gap:4px;}
+.legend-dot{width:12px;height:12px;border-radius:50%;}
+.instructions{font-size:0.8rem;color:var(--text2);margin-top:8px;line-height:1.5;}
+</style>
+</head>
+<body>
+<a class="back" href="index.html">← Back to all demos</a>
+<header>
+<h1>Managed Service Organizations for Healthcare</h1>
+<p>Connect clinics to shared services to reduce costs. Drag connections between clinics and services to optimize the network.</p>
+</header>
+<div class="main">
+<div class="graph-panel">
+<h2>Network Graph</h2>
+<canvas id="graphCanvas"></canvas>
+<div class="legend">
+<div class="legend-item"><div class="legend-dot" style="background:#3498db"></div> Clinics</div>
+<div class="legend-item"><div class="legend-dot" style="background:#ff6600"></div> Shared Services</div>
+<div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div> Active Connection</div>
+</div>
+<p class="instructions">Click a clinic, then click a service to toggle a connection. Drag nodes to rearrange the graph.</p>
+</div>
+<div class="info-panel">
+<div class="info-card">
+<h2>Network Efficiency Score</h2>
+<div class="score">
+<div class="score-val" id="effScore">0%</div>
+<div class="score-label">Higher = more shared services</div>
+</div>
+</div>
+<div class="info-card">
+<h2>Cost Comparison (Annual per Clinic)</h2>
+<div id="comparePanel"></div>
+<div class="savings">
+<div class="savings-val" id="savingsVal">$0</div>
+<div class="savings-label">Average Annual Savings per Clinic</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+const canvas = document.getElementById('graphCanvas');
+const ctx = canvas.getContext('2d');
+const isDark = () => window.matchMedia('(prefers-color-scheme:dark)').matches;
+
+function resize(){
+  const r = canvas.getBoundingClientRect();
+  canvas.width = r.width * devicePixelRatio;
+  canvas.height = r.height * devicePixelRatio;
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+}
+resize();
+window.addEventListener('resize', resize);
+
+const services = [
+  {id:'billing',label:'Billing',cost:120000,color:'#ff6600'},
+  {id:'it',label:'IT Support',cost:95000,color:'#e67e22'},
+  {id:'cred',label:'Credentialing',cost:65000,color:'#f39c12'},
+  {id:'supply',label:'Supply Chain',cost:80000,color:'#ff8533'},
+  {id:'hr',label:'HR & Payroll',cost:70000,color:'#cc5200'},
+];
+
+const clinics = [
+  {id:'c1',label:'Family Med'},
+  {id:'c2',label:'Pediatrics'},
+  {id:'c3',label:'Cardiology'},
+  {id:'c4',label:'Orthopedics'},
+  {id:'c5',label:'Dermatology'},
+  {id:'c6',label:'OB/GYN'},
+];
+
+let nodes = [], connections = [], selectedNode = null, dragNode = null, dragOffset = {x:0,y:0};
+
+function initPositions(){
+  const w = canvas.getBoundingClientRect().width, h = canvas.getBoundingClientRect().height;
+  nodes = [];
+  // Place clinics on the left arc
+  clinics.forEach((c,i) => {
+    const angle = -Math.PI/3 + (i/(clinics.length-1)) * (2*Math.PI/3);
+    nodes.push({...c, type:'clinic', x: w*0.25 + Math.cos(angle)*120, y: h/2 + Math.sin(angle)*180, r:28, color:'#3498db'});
+  });
+  // Place services on the right arc
+  services.forEach((s,i) => {
+    const angle = -Math.PI/4 + (i/(services.length-1)) * (Math.PI/2);
+    nodes.push({...s, type:'service', x: w*0.72 + Math.cos(angle)*100, y: h/2 + Math.sin(angle)*180, r:28});
+  });
+  connections = [];
+}
+initPositions();
+
+function calcMetrics(){
+  const maxConn = clinics.length * services.length;
+  const score = maxConn > 0 ? connections.length / maxConn : 0;
+  document.getElementById('effScore').textContent = Math.round(score*100) + '%';
+  document.getElementById('effScore').style.color = score > 0.5 ? '#2ecc71' : '#ff6600';
+
+  const panel = document.getElementById('comparePanel');
+  panel.innerHTML = '';
+  let totalSavings = 0;
+  const clinicNodes = nodes.filter(n=>n.type==='clinic');
+
+  services.forEach(svc => {
+    const connCount = connections.filter(c => c.service === svc.id).length;
+    const indepCost = svc.cost;
+    const msoCost = connCount > 0 ? svc.cost / Math.max(1, connCount) * 0.7 : svc.cost;
+    const saving = indepCost - msoCost;
+    if(connCount > 0) totalSavings += saving;
+
+    const maxCost = 140000;
+    const row = document.createElement('div');
+    row.innerHTML = `
+      <div class="compare-row">
+        <div class="compare-label">${svc.label}</div>
+        <div class="compare-bar">
+          <div class="compare-fill indep" style="width:${indepCost/maxCost*100}%">$${(indepCost/1000).toFixed(0)}k</div>
+        </div>
+      </div>
+      <div class="compare-row">
+        <div class="compare-label" style="font-size:0.7rem;color:var(--green)">w/ MSO</div>
+        <div class="compare-bar">
+          <div class="compare-fill mso" style="width:${msoCost/maxCost*100}%">$${(msoCost/1000).toFixed(0)}k</div>
+        </div>
+      </div>
+    `;
+    row.style.marginBottom = '12px';
+    panel.appendChild(row);
+  });
+
+  document.getElementById('savingsVal').textContent = '$' + Math.round(totalSavings).toLocaleString();
+}
+
+function draw(){
+  const w = canvas.getBoundingClientRect().width, h = canvas.getBoundingClientRect().height;
+  ctx.clearRect(0,0,w,h);
+  const dark = isDark();
+
+  // Draw connections
+  connections.forEach(conn => {
+    const clinicNode = nodes.find(n=>n.id===conn.clinic);
+    const svcNode = nodes.find(n=>n.id===conn.service);
+    if(!clinicNode || !svcNode) return;
+
+    const t = (Date.now() % 2000) / 2000;
+    ctx.strokeStyle = '#2ecc71aa';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(clinicNode.x, clinicNode.y);
+    ctx.lineTo(svcNode.x, svcNode.y);
+    ctx.stroke();
+
+    // Animated dot
+    const dx = svcNode.x - clinicNode.x, dy = svcNode.y - clinicNode.y;
+    const dotX = clinicNode.x + dx * t, dotY = clinicNode.y + dy * t;
+    ctx.beginPath();
+    ctx.arc(dotX, dotY, 4, 0, Math.PI*2);
+    ctx.fillStyle = '#2ecc71';
+    ctx.fill();
+  });
+
+  // Draw nodes
+  nodes.forEach(n => {
+    const isSelected = selectedNode && selectedNode.id === n.id;
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, n.r, 0, Math.PI*2);
+
+    if(n.type === 'service'){
+      // rounded rect instead
+      const rr = n.r;
+      ctx.beginPath();
+      const rx = n.x - rr, ry = n.y - rr, rw = rr*2, rh = rr*2, cr = 8;
+      ctx.moveTo(rx+cr, ry);
+      ctx.lineTo(rx+rw-cr, ry); ctx.quadraticCurveTo(rx+rw,ry,rx+rw,ry+cr);
+      ctx.lineTo(rx+rw,ry+rh-cr); ctx.quadraticCurveTo(rx+rw,ry+rh,rx+rw-cr,ry+rh);
+      ctx.lineTo(rx+cr,ry+rh); ctx.quadraticCurveTo(rx,ry+rh,rx,ry+rh-cr);
+      ctx.lineTo(rx,ry+cr); ctx.quadraticCurveTo(rx,ry,rx+cr,ry);
+      ctx.closePath();
+    } else {
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.r, 0, Math.PI*2);
+    }
+
+    ctx.fillStyle = n.color + (isSelected ? '' : 'cc');
+    ctx.fill();
+    if(isSelected){
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = '#fff';
+    ctx.font = "bold 10px 'Space Grotesk'";
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const words = n.label.split(' ');
+    if(words.length > 1 && n.r > 20){
+      ctx.fillText(words[0], n.x, n.y - 6);
+      ctx.fillText(words.slice(1).join(' '), n.x, n.y + 6);
+    } else {
+      ctx.fillText(n.label, n.x, n.y);
+    }
+  });
+
+  calcMetrics();
+  requestAnimationFrame(draw);
+}
+
+function getNodeAt(x, y){
+  for(let i = nodes.length-1; i >= 0; i--){
+    const n = nodes[i];
+    const dx = x - n.x, dy = y - n.y;
+    if(dx*dx+dy*dy < n.r*n.r) return n;
+  }
+  return null;
+}
+
+let mouseDown = false, hasDragged = false;
+canvas.addEventListener('mousedown', e => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  const node = getNodeAt(mx, my);
+  if(node){
+    dragNode = node;
+    dragOffset = {x: mx - node.x, y: my - node.y};
+    mouseDown = true;
+    hasDragged = false;
+  }
+});
+
+canvas.addEventListener('mousemove', e => {
+  if(!mouseDown || !dragNode) return;
+  const rect = canvas.getBoundingClientRect();
+  dragNode.x = e.clientX - rect.left - dragOffset.x;
+  dragNode.y = e.clientY - rect.top - dragOffset.y;
+  hasDragged = true;
+});
+
+canvas.addEventListener('mouseup', e => {
+  if(!hasDragged && dragNode){
+    // Click logic
+    handleClick(dragNode);
+  }
+  mouseDown = false;
+  dragNode = null;
+});
+
+function handleClick(node){
+  if(!selectedNode){
+    selectedNode = node;
+  } else {
+    // Try to make connection
+    if(selectedNode.type !== node.type){
+      const clinic = selectedNode.type === 'clinic' ? selectedNode.id : node.id;
+      const service = selectedNode.type === 'service' ? selectedNode.id : node.id;
+      const existing = connections.findIndex(c => c.clinic === clinic && c.service === service);
+      if(existing >= 0){
+        connections.splice(existing, 1);
+      } else {
+        connections.push({clinic, service});
+      }
+    }
+    selectedNode = null;
+  }
+}
+
+// Touch support
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const t = e.touches[0];
+  const mx = t.clientX - rect.left, my = t.clientY - rect.top;
+  const node = getNodeAt(mx, my);
+  if(node){
+    dragNode = node;
+    dragOffset = {x: mx - node.x, y: my - node.y};
+    mouseDown = true;
+    hasDragged = false;
+  }
+}, {passive:false});
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if(!mouseDown || !dragNode) return;
+  const rect = canvas.getBoundingClientRect();
+  const t = e.touches[0];
+  dragNode.x = t.clientX - rect.left - dragOffset.x;
+  dragNode.y = t.clientY - rect.top - dragOffset.y;
+  hasDragged = true;
+}, {passive:false});
+canvas.addEventListener('touchend', e => {
+  if(!hasDragged && dragNode) handleClick(dragNode);
+  mouseDown = false; dragNode = null;
+});
+
+draw();
+</script>
+</body>
+</html>

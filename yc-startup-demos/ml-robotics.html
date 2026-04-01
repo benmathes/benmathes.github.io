@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Applying ML to Robotics</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f8f8;
+  --surface: #ffffff;
+  --text: #1a1a1a;
+  --text-secondary: #666;
+  --border: #e0e0e0;
+  --accent: #ff6600;
+  --accent-light: rgba(255, 102, 0, 0.15);
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --text: #e8e8e8;
+    --text-secondary: #999;
+    --border: #333;
+    --accent-light: rgba(255, 102, 0, 0.2);
+    --shadow: 0 2px 12px rgba(0,0,0,0.3);
+  }
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Space Grotesk', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+.back-link {
+  display: inline-block;
+  padding: 16px 24px;
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 14px;
+  transition: opacity 0.2s;
+}
+.back-link:hover { opacity: 0.7; }
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px 48px;
+}
+h1 {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.subtitle {
+  color: var(--text-secondary);
+  font-size: 16px;
+  margin-bottom: 32px;
+}
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 24px;
+}
+@media (max-width: 768px) {
+  .layout { grid-template-columns: 1fr; }
+}
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+canvas {
+  width: 100%;
+  border-radius: 8px;
+  display: block;
+  background: #0a0a1a;
+}
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.btn {
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+.btn:active { transform: translateY(0); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.btn-secondary {
+  background: var(--accent-light);
+  color: var(--accent);
+}
+.stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.stat {
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+}
+.stat-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+.stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.chart-area {
+  height: 120px;
+  background: var(--bg);
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+}
+.chart-area canvas {
+  background: transparent;
+}
+h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.instructions {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  padding: 12px;
+  background: var(--accent-light);
+  border-radius: 8px;
+}
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">&#8592; Back to all demos</a>
+<div class="container">
+  <h1>Applying ML to Robotics</h1>
+  <p class="subtitle">Train a 2-segment robot arm to reach targets using simulated reinforcement learning</p>
+  <div class="layout">
+    <div class="card">
+      <canvas id="armCanvas" width="700" height="500"></canvas>
+    </div>
+    <div class="controls">
+      <div class="card">
+        <h3>Controls</h3>
+        <button class="btn" id="trainBtn" onclick="startTraining()">Train Agent</button>
+        <button class="btn btn-secondary" id="newTargetBtn" onclick="newTarget()" style="margin-top:8px;">New Target</button>
+        <button class="btn btn-secondary" id="resetBtn" onclick="resetAll()" style="margin-top:8px;">Reset</button>
+      </div>
+      <div class="card">
+        <h3>Performance</h3>
+        <div class="stat-grid">
+          <div class="stat">
+            <div class="stat-label">Iteration</div>
+            <div class="stat-value" id="iterVal">0</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Distance</div>
+            <div class="stat-value" id="distVal">--</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Best Dist</div>
+            <div class="stat-value" id="bestVal">--</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Accuracy</div>
+            <div class="stat-value" id="accVal">0%</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Accuracy Over Time</h3>
+        <div class="chart-area">
+          <canvas id="chartCanvas" width="280" height="120"></canvas>
+        </div>
+      </div>
+      <div class="card instructions">
+        Click <strong>New Target</strong> to place a target dot. Click <strong>Train Agent</strong> to watch the arm learn to reach it. The arm explores random joint angles and gradually improves.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('armCanvas');
+const ctx = canvas.getContext('2d');
+const chartCanvas = document.getElementById('chartCanvas');
+const chartCtx = chartCanvas.getContext('2d');
+
+const W = 700, H = 500;
+canvas.width = W; canvas.height = H;
+chartCanvas.width = 280; chartCanvas.height = 120;
+
+const baseX = W / 2, baseY = H * 0.75;
+const seg1Len = 120, seg2Len = 100;
+
+let angle1 = -Math.PI / 4;
+let angle2 = -Math.PI / 4;
+let targetX = baseX + 100;
+let targetY = baseY - 150;
+let training = false;
+let iteration = 0;
+let bestDist = Infinity;
+let bestA1 = angle1, bestA2 = angle2;
+let accuracyHistory = [];
+let trailPoints = [];
+
+function fk(a1, a2) {
+  const x1 = baseX + Math.cos(a1) * seg1Len;
+  const y1 = baseY + Math.sin(a1) * seg1Len;
+  const x2 = x1 + Math.cos(a1 + a2) * seg2Len;
+  const y2 = y1 + Math.sin(a1 + a2) * seg2Len;
+  return { x1, y1, x2, y2 };
+}
+
+function dist(x1, y1, x2, y2) {
+  return Math.sqrt((x1-x2)**2 + (y1-y2)**2);
+}
+
+function newTarget() {
+  const a = Math.random() * Math.PI * 2;
+  const r = Math.random() * (seg1Len + seg2Len - 20) + 20;
+  targetX = baseX + Math.cos(a) * r;
+  targetY = baseY + Math.sin(a) * r;
+  targetX = Math.max(50, Math.min(W - 50, targetX));
+  targetY = Math.max(50, Math.min(H - 50, targetY));
+  bestDist = Infinity;
+  trailPoints = [];
+}
+
+function resetAll() {
+  training = false;
+  document.getElementById('trainBtn').disabled = false;
+  document.getElementById('trainBtn').textContent = 'Train Agent';
+  angle1 = -Math.PI / 4;
+  angle2 = -Math.PI / 4;
+  iteration = 0;
+  bestDist = Infinity;
+  accuracyHistory = [];
+  trailPoints = [];
+  document.getElementById('iterVal').textContent = '0';
+  document.getElementById('distVal').textContent = '--';
+  document.getElementById('bestVal').textContent = '--';
+  document.getElementById('accVal').textContent = '0%';
+}
+
+function startTraining() {
+  if (training) return;
+  training = true;
+  document.getElementById('trainBtn').disabled = true;
+  document.getElementById('trainBtn').textContent = 'Training...';
+  iteration = 0;
+  bestDist = Infinity;
+  trailPoints = [];
+  trainStep();
+}
+
+function trainStep() {
+  if (!training) return;
+
+  const batchSize = 5;
+  for (let b = 0; b < batchSize; b++) {
+    iteration++;
+    const temp = Math.max(0.01, 1.0 - iteration / 200);
+    let candA1, candA2;
+    if (bestDist < Infinity) {
+      candA1 = bestA1 + (Math.random() - 0.5) * Math.PI * temp;
+      candA2 = bestA2 + (Math.random() - 0.5) * Math.PI * temp;
+    } else {
+      candA1 = (Math.random() - 0.5) * Math.PI * 2;
+      candA2 = (Math.random() - 0.5) * Math.PI * 2;
+    }
+    const fkr = fk(candA1, candA2);
+    const d = dist(fkr.x2, fkr.y2, targetX, targetY);
+    trailPoints.push({ x: fkr.x2, y: fkr.y2, age: 0 });
+    if (trailPoints.length > 60) trailPoints.shift();
+
+    if (d < bestDist) {
+      bestDist = d;
+      bestA1 = candA1;
+      bestA2 = candA2;
+      angle1 = candA1;
+      angle2 = candA2;
+    }
+  }
+
+  const maxReach = seg1Len + seg2Len;
+  const accuracy = Math.max(0, Math.min(100, ((maxReach - bestDist) / maxReach) * 100));
+  accuracyHistory.push(accuracy);
+  if (accuracyHistory.length > 50) accuracyHistory.shift();
+
+  document.getElementById('iterVal').textContent = iteration;
+  document.getElementById('distVal').textContent = bestDist.toFixed(1);
+  document.getElementById('bestVal').textContent = bestDist.toFixed(1);
+  document.getElementById('accVal').textContent = accuracy.toFixed(1) + '%';
+
+  if (bestDist < 5 || iteration >= 500) {
+    training = false;
+    document.getElementById('trainBtn').disabled = false;
+    document.getElementById('trainBtn').textContent = bestDist < 5 ? 'Target Reached!' : 'Train Again';
+    return;
+  }
+  requestAnimationFrame(trainStep);
+}
+
+function drawArm() {
+  ctx.clearRect(0, 0, W, H);
+
+  // Grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx.lineWidth = 1;
+  for (let x = 0; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+  for (let y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+
+  // Reach circle
+  ctx.beginPath();
+  ctx.arc(baseX, baseY, seg1Len + seg2Len, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(255, 102, 0, 0.1)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Trail points
+  for (let i = 0; i < trailPoints.length; i++) {
+    const p = trailPoints[i];
+    const alpha = (i / trailPoints.length) * 0.4;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255, 102, 0, ${alpha})`;
+    ctx.fill();
+  }
+
+  // Target
+  const pulse = Math.sin(Date.now() / 300) * 0.3 + 0.7;
+  ctx.beginPath();
+  ctx.arc(targetX, targetY, 16, 0, Math.PI * 2);
+  ctx.fillStyle = `rgba(0, 255, 100, ${pulse * 0.2})`;
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(targetX, targetY, 8, 0, Math.PI * 2);
+  ctx.fillStyle = `rgba(0, 255, 100, ${pulse})`;
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(targetX, targetY, 3, 0, Math.PI * 2);
+  ctx.fillStyle = '#fff';
+  ctx.fill();
+
+  // Arm
+  const fkr = fk(angle1, angle2);
+
+  // Segment 1
+  ctx.beginPath();
+  ctx.moveTo(baseX, baseY);
+  ctx.lineTo(fkr.x1, fkr.y1);
+  ctx.strokeStyle = '#ff6600';
+  ctx.lineWidth = 8;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+
+  // Segment 2
+  ctx.beginPath();
+  ctx.moveTo(fkr.x1, fkr.y1);
+  ctx.lineTo(fkr.x2, fkr.y2);
+  ctx.strokeStyle = '#ff8833';
+  ctx.lineWidth = 6;
+  ctx.stroke();
+
+  // Joints
+  ctx.beginPath();
+  ctx.arc(baseX, baseY, 10, 0, Math.PI * 2);
+  ctx.fillStyle = '#ff6600';
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(baseX, baseY, 5, 0, Math.PI * 2);
+  ctx.fillStyle = '#0a0a1a';
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.arc(fkr.x1, fkr.y1, 7, 0, Math.PI * 2);
+  ctx.fillStyle = '#ff6600';
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(fkr.x1, fkr.y1, 3, 0, Math.PI * 2);
+  ctx.fillStyle = '#0a0a1a';
+  ctx.fill();
+
+  // End effector
+  ctx.beginPath();
+  ctx.arc(fkr.x2, fkr.y2, 5, 0, Math.PI * 2);
+  ctx.fillStyle = '#fff';
+  ctx.fill();
+
+  // Distance line
+  ctx.beginPath();
+  ctx.moveTo(fkr.x2, fkr.y2);
+  ctx.lineTo(targetX, targetY);
+  ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function drawChart() {
+  const cw = 280, ch = 120;
+  chartCtx.clearRect(0, 0, cw, ch);
+
+  if (accuracyHistory.length < 2) return;
+
+  chartCtx.beginPath();
+  const step = cw / (accuracyHistory.length - 1);
+  for (let i = 0; i < accuracyHistory.length; i++) {
+    const x = i * step;
+    const y = ch - (accuracyHistory[i] / 100) * (ch - 10) - 5;
+    if (i === 0) chartCtx.moveTo(x, y);
+    else chartCtx.lineTo(x, y);
+  }
+  chartCtx.strokeStyle = '#ff6600';
+  chartCtx.lineWidth = 2;
+  chartCtx.stroke();
+
+  // Fill below
+  chartCtx.lineTo((accuracyHistory.length - 1) * step, ch);
+  chartCtx.lineTo(0, ch);
+  chartCtx.closePath();
+  chartCtx.fillStyle = 'rgba(255, 102, 0, 0.15)';
+  chartCtx.fill();
+}
+
+function animate() {
+  drawArm();
+  drawChart();
+  requestAnimationFrame(animate);
+}
+animate();
+</script>
+</body>
+</html>

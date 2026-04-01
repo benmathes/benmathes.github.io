@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Climate Tech</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f8f8f8;--surface:#fff;--text:#1a1a1a;--text-secondary:#666;--border:#e0e0e0;--accent:#ff6600;--accent-light:rgba(255,102,0,0.12);--shadow:0 2px 12px rgba(0,0,0,0.08);}
+@media(prefers-color-scheme:dark){:root{--bg:#0f0f0f;--surface:#1a1a1a;--text:#e8e8e8;--text-secondary:#999;--border:#333;--accent-light:rgba(255,102,0,0.18);--shadow:0 2px 12px rgba(0,0,0,0.3);}}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+.back-link{display:inline-block;padding:16px 24px;color:var(--accent);text-decoration:none;font-weight:500;font-size:14px;}
+.back-link:hover{opacity:0.7;}
+.container{max-width:1100px;margin:0 auto;padding:0 24px 48px;}
+h1{font-size:32px;font-weight:700;margin-bottom:8px;}
+.subtitle{color:var(--text-secondary);font-size:16px;margin-bottom:32px;}
+.layout{display:grid;grid-template-columns:1fr 300px;gap:24px;}
+@media(max-width:850px){.layout{grid-template-columns:1fr;}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;box-shadow:var(--shadow);}
+canvas{width:100%;border-radius:8px;display:block;}
+h3{font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px;}
+.interventions{display:flex;flex-direction:column;gap:8px;}
+.intervention{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;background:var(--bg);transition:all 0.2s;border:2px solid transparent;user-select:none;}
+.intervention:hover{border-color:var(--accent);}
+.intervention.active{border-color:var(--accent);background:var(--accent-light);}
+.intervention .toggle{width:36px;height:20px;border-radius:10px;background:var(--border);position:relative;flex-shrink:0;transition:background 0.2s;}
+.intervention.active .toggle{background:var(--accent);}
+.intervention .toggle::after{content:'';position:absolute;width:16px;height:16px;border-radius:50%;background:white;top:2px;left:2px;transition:left 0.2s;}
+.intervention.active .toggle::after{left:18px;}
+.intervention .info{flex:1;}
+.intervention .name{font-size:13px;font-weight:600;}
+.intervention .impact{font-size:11px;color:var(--text-secondary);}
+.temp-display{text-align:center;padding:24px;border-radius:12px;margin-bottom:16px;transition:background 0.5s;}
+.temp-display .temp{font-size:48px;font-weight:700;}
+.temp-display .label{font-size:13px;opacity:0.8;margin-top:4px;}
+.summary{font-size:13px;line-height:1.7;color:var(--text-secondary);}
+.summary strong{color:var(--text);}
+.controls{display:flex;flex-direction:column;gap:16px;}
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">&#8592; Back to all demos</a>
+<div class="container">
+  <h1>Climate Tech</h1>
+  <p class="subtitle">Toggle climate interventions and see their impact on global CO2 emissions through 2100</p>
+  <div class="layout">
+    <div class="card" style="position:relative;overflow:hidden;">
+      <canvas id="chartCanvas" width="740" height="480"></canvas>
+    </div>
+    <div class="controls">
+      <div class="temp-display" id="tempDisplay">
+        <div class="temp" id="tempVal">3.2&deg;C</div>
+        <div class="label">Projected Warming by 2100</div>
+      </div>
+      <div class="card">
+        <h3>Toggle Interventions</h3>
+        <div class="interventions" id="interventionList"></div>
+      </div>
+      <div class="card">
+        <h3>Summary</h3>
+        <div class="summary" id="summaryText"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('chartCanvas');
+const ctx = canvas.getContext('2d');
+const CW = 740, CH = 480;
+canvas.width = CW; canvas.height = CH;
+
+const interventions = [
+  {id:'solar', name:'Solar Energy', icon:'', impact: 4.5, desc:'Massive solar deployment worldwide', color:'#ffcc00', active:false},
+  {id:'wind', name:'Wind Energy', icon:'', impact: 3.0, desc:'Onshore & offshore wind farms', color:'#66ccff', active:false},
+  {id:'nuclear', name:'Nuclear Power', icon:'', impact: 3.5, desc:'Next-gen fission & fusion research', color:'#aa66ff', active:false},
+  {id:'capture', name:'Carbon Capture', icon:'', impact: 5.0, desc:'Direct air capture & sequestration', color:'#44ddaa', active:false},
+  {id:'ev', name:'Electric Vehicles', icon:'', impact: 2.5, desc:'Full EV transition by 2040', color:'#ff6666', active:false},
+  {id:'forest', name:'Reforestation', icon:'', impact: 2.0, desc:'1 trillion trees by 2050', color:'#44bb66', active:false},
+  {id:'diet', name:'Diet Change', icon:'', impact: 1.5, desc:'Shift to plant-based diets', color:'#88cc44', active:false}
+];
+
+function renderInterventions() {
+  const list = document.getElementById('interventionList');
+  list.innerHTML = interventions.map((iv, i) => `
+    <div class="intervention ${iv.active?'active':''}" onclick="toggleIntervention(${i})">
+      <div class="toggle"></div>
+      <div class="info">
+        <div class="name">${iv.name}</div>
+        <div class="impact">${iv.desc} (${iv.impact} GtCO2/yr)</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleIntervention(i) {
+  interventions[i].active = !interventions[i].active;
+  renderInterventions();
+  drawChart();
+}
+
+// Baseline emissions pathway (GtCO2/yr)
+function baselineEmissions(year) {
+  // Roughly: 36 in 2020, growing to ~50 by 2100 without intervention
+  if (year <= 2020) return 36;
+  const t = (year - 2020) / 80;
+  return 36 + 14 * t * (1 + 0.3 * Math.sin(t * 2));
+}
+
+function interventionEmissions(year) {
+  let base = baselineEmissions(year);
+  let totalReduction = 0;
+  for (let iv of interventions) {
+    if (!iv.active) continue;
+    // Interventions ramp up over time
+    const rampStart = 2025;
+    const rampEnd = 2045;
+    let ramp = 0;
+    if (year >= rampEnd) ramp = 1;
+    else if (year > rampStart) ramp = (year - rampStart) / (rampEnd - rampStart);
+    totalReduction += iv.impact * ramp;
+  }
+  return Math.max(0, base - totalReduction);
+}
+
+function cumEmissions(emissionFn) {
+  let total = 0;
+  for (let y = 2020; y <= 2100; y++) {
+    total += emissionFn(y);
+  }
+  return total;
+}
+
+function tempFromEmissions(cumGt) {
+  // Very simplified: ~1.1C already, +0.4C per 1000 GtCO2
+  return 1.1 + (cumGt - 2000) * 0.0004;
+}
+
+function drawChart() {
+  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const startYear = 2020, endYear = 2100;
+  const maxEmit = 55;
+  const padL = 60, padR = 20, padT = 40, padB = 50;
+  const plotW = CW - padL - padR;
+  const plotH = CH - padT - padB;
+
+  // Temperature calc
+  const cumInt = cumEmissions(interventionEmissions);
+  const temp = Math.max(1.1, Math.min(5, tempFromEmissions(cumInt)));
+  document.getElementById('tempVal').textContent = temp.toFixed(1) + '\u00B0C';
+
+  // Background color based on severity
+  let bgColor;
+  if (temp <= 1.5) bgColor = 'rgba(0,200,100,0.12)';
+  else if (temp <= 2.0) bgColor = 'rgba(200,200,0,0.1)';
+  else if (temp <= 3.0) bgColor = 'rgba(255,150,0,0.1)';
+  else bgColor = 'rgba(255,50,50,0.1)';
+
+  const tempDisplay = document.getElementById('tempDisplay');
+  if (temp <= 1.5) { tempDisplay.style.background = 'rgba(0,200,100,0.15)'; tempDisplay.style.color = '#00c864'; }
+  else if (temp <= 2.0) { tempDisplay.style.background = 'rgba(200,200,0,0.12)'; tempDisplay.style.color = '#aaaa00'; }
+  else if (temp <= 3.0) { tempDisplay.style.background = 'rgba(255,150,0,0.12)'; tempDisplay.style.color = '#ff9900'; }
+  else { tempDisplay.style.background = 'rgba(255,50,50,0.12)'; tempDisplay.style.color = '#ff3232'; }
+
+  ctx.fillStyle = isDark ? '#0f0f0f' : '#fff';
+  ctx.fillRect(0, 0, CW, CH);
+
+  // Severity background gradient
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(padL, padT, plotW, plotH);
+
+  // Grid
+  ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+  ctx.lineWidth = 1;
+  for (let y = 0; y <= maxEmit; y += 10) {
+    const py = padT + plotH - (y / maxEmit) * plotH;
+    ctx.beginPath(); ctx.moveTo(padL, py); ctx.lineTo(padL + plotW, py); ctx.stroke();
+    ctx.font = '400 11px Space Grotesk';
+    ctx.fillStyle = isDark ? '#666' : '#999';
+    ctx.textAlign = 'right';
+    ctx.fillText(y + ' Gt', padL - 8, py + 4);
+  }
+  for (let yr = 2020; yr <= 2100; yr += 10) {
+    const px = padL + ((yr - startYear) / (endYear - startYear)) * plotW;
+    ctx.beginPath(); ctx.moveTo(px, padT); ctx.lineTo(px, padT + plotH); ctx.stroke();
+    ctx.textAlign = 'center';
+    ctx.fillText(yr, px, padT + plotH + 20);
+  }
+
+  // Temperature thresholds
+  const thresholds = [{t:1.5,label:'1.5\u00B0C target',color:'rgba(0,200,100,0.4)'},{t:2.0,label:'2\u00B0C limit',color:'rgba(255,200,0,0.4)'},{t:3.0,label:'3\u00B0C danger',color:'rgba(255,50,50,0.4)'}];
+
+  // Baseline curve
+  ctx.beginPath();
+  for (let yr = startYear; yr <= endYear; yr++) {
+    const px = padL + ((yr - startYear) / (endYear - startYear)) * plotW;
+    const py = padT + plotH - (baselineEmissions(yr) / maxEmit) * plotH;
+    yr === startYear ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+  }
+  ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.2)';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([6, 4]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Label baseline
+  ctx.font = '500 11px Space Grotesk';
+  ctx.fillStyle = isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.3)';
+  ctx.textAlign = 'left';
+  const bEnd = baselineEmissions(2100);
+  ctx.fillText('Baseline (no action)', padL + plotW - 120, padT + plotH - (bEnd / maxEmit) * plotH - 8);
+
+  // Intervention curve
+  ctx.beginPath();
+  const points = [];
+  for (let yr = startYear; yr <= endYear; yr++) {
+    const emit = interventionEmissions(yr);
+    const px = padL + ((yr - startYear) / (endYear - startYear)) * plotW;
+    const py = padT + plotH - (emit / maxEmit) * plotH;
+    points.push({x: px, y: py});
+    yr === startYear ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+  }
+  ctx.strokeStyle = '#ff6600';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // Fill under intervention curve
+  ctx.lineTo(padL + plotW, padT + plotH);
+  ctx.lineTo(padL, padT + plotH);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(255, 102, 0, 0.08)';
+  ctx.fill();
+
+  // Area between curves (savings)
+  ctx.beginPath();
+  for (let yr = startYear; yr <= endYear; yr++) {
+    const px = padL + ((yr - startYear) / (endYear - startYear)) * plotW;
+    const py = padT + plotH - (baselineEmissions(yr) / maxEmit) * plotH;
+    yr === startYear ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+  }
+  for (let yr = endYear; yr >= startYear; yr--) {
+    const px = padL + ((yr - startYear) / (endYear - startYear)) * plotW;
+    const py = padT + plotH - (interventionEmissions(yr) / maxEmit) * plotH;
+    ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(0, 200, 100, 0.08)';
+  ctx.fill();
+
+  // Title
+  ctx.font = '600 15px Space Grotesk';
+  ctx.fillStyle = isDark ? '#e0e0e0' : '#1a1a1a';
+  ctx.textAlign = 'left';
+  ctx.fillText('Global CO2 Emissions Pathway', padL, 26);
+
+  ctx.font = '400 12px Space Grotesk';
+  ctx.fillStyle = isDark ? '#888' : '#666';
+  ctx.fillText('GtCO2/year', padL, padT + plotH + 40);
+
+  // Summary
+  const activeCount = interventions.filter(i => i.active).length;
+  const totalReduction = interventions.filter(i => i.active).reduce((s, i) => s + i.impact, 0);
+  const endEmit = interventionEmissions(2100);
+  let summary = `<strong>${activeCount}</strong> interventions active, reducing emissions by up to <strong>${totalReduction.toFixed(1)} GtCO2/yr</strong> at full deployment. `;
+  summary += `Projected 2100 emissions: <strong>${endEmit.toFixed(1)} GtCO2/yr</strong>. `;
+  if (temp <= 1.5) summary += `<span style="color:#00c864;font-weight:700;">On track for 1.5\u00B0C target!</span>`;
+  else if (temp <= 2.0) summary += `<span style="color:#aaaa00;font-weight:700;">Within 2\u00B0C Paris Agreement goal.</span>`;
+  else if (temp <= 3.0) summary += `<span style="color:#ff9900;font-weight:700;">Exceeds 2\u00B0C. More action needed.</span>`;
+  else summary += `<span style="color:#ff3232;font-weight:700;">Dangerous warming. Urgent action required.</span>`;
+  document.getElementById('summaryText').innerHTML = summary;
+}
+
+renderInterventions();
+drawChart();
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', drawChart);
+</script>
+</body>
+</html>

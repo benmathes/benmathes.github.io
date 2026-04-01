@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A Way to End Cancer - Mutation Landscape Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #fafafa; --surface: #ffffff; --text: #1a1a2e; --text2: #555;
+  --border: #e0e0e0; --accent: #ff6600; --accent2: #ff8533;
+  --shadow: rgba(0,0,0,0.08); --card: #fff;
+}
+@media(prefers-color-scheme:dark){
+  :root {
+    --bg: #0f0f1a; --surface: #1a1a2e; --text: #e8e8f0; --text2: #aaa;
+    --border: #2a2a3e; --shadow: rgba(0,0,0,0.3); --card: #1e1e32;
+  }
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+a{color:var(--accent);text-decoration:none;}
+a:hover{text-decoration:underline;}
+.back{display:inline-block;padding:16px 24px;font-size:14px;font-weight:500;}
+header{text-align:center;padding:10px 20px 30px;}
+header h1{font-size:2rem;font-weight:700;margin-bottom:8px;}
+header p{color:var(--text2);max-width:600px;margin:0 auto;font-size:1rem;}
+.container{max-width:1200px;margin:0 auto;padding:0 20px 40px;display:flex;gap:24px;flex-wrap:wrap;}
+.body-panel{flex:1;min-width:320px;background:var(--surface);border-radius:16px;border:1px solid var(--border);padding:24px;position:relative;}
+.detail-panel{flex:1.2;min-width:360px;background:var(--surface);border-radius:16px;border:1px solid var(--border);padding:24px;}
+.body-svg{width:100%;max-width:300px;margin:0 auto;display:block;}
+.organ{cursor:pointer;transition:all 0.2s;fill-opacity:0.7;}
+.organ:hover{fill-opacity:1;filter:drop-shadow(0 0 8px var(--accent));}
+.organ.active{fill-opacity:1;stroke:var(--accent);stroke-width:3;}
+.organ-label{font-size:11px;fill:var(--text);pointer-events:none;font-family:'Space Grotesk',sans-serif;}
+h2{font-size:1.3rem;font-weight:600;margin-bottom:16px;}
+h3{font-size:1.1rem;font-weight:600;margin-bottom:12px;color:var(--accent);}
+.bubble-container{position:relative;width:100%;height:320px;margin-bottom:20px;}
+.bubble-canvas{width:100%;height:100%;border-radius:12px;background:var(--bg);border:1px solid var(--border);}
+.gene-detail{background:var(--bg);border-radius:12px;padding:16px;border:1px solid var(--border);margin-top:16px;display:none;}
+.gene-detail.visible{display:block;}
+.pipeline{display:flex;gap:4px;margin:12px 0;align-items:center;}
+.pipeline-stage{padding:6px 10px;border-radius:6px;font-size:11px;font-weight:500;background:var(--border);color:var(--text2);position:relative;}
+.pipeline-stage.reached{background:var(--accent);color:#fff;}
+.pipeline-stage.current{background:var(--accent);color:#fff;box-shadow:0 0 12px rgba(255,102,0,0.5);}
+.pipeline-arrow{color:var(--text2);font-size:12px;}
+.stat-row{display:flex;gap:12px;margin-top:12px;flex-wrap:wrap;}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;flex:1;min-width:120px;text-align:center;}
+.stat-card .val{font-size:1.5rem;font-weight:700;color:var(--accent);}
+.stat-card .label{font-size:0.75rem;color:var(--text2);margin-top:4px;}
+.prompt{text-align:center;color:var(--text2);padding:60px 20px;font-size:1.1rem;}
+.legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;font-size:0.8rem;color:var(--text2);}
+.legend span::before{content:'';display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:middle;}
+</style>
+</head>
+<body>
+<a class="back" href="index.html">← Back to all demos</a>
+<header>
+<h1>A Way to End Cancer</h1>
+<p>Explore the mutation landscape across cancer types. Click an organ to see associated mutations, targeted therapies, and clinical pipeline progress.</p>
+</header>
+<div class="container">
+<div class="body-panel">
+<h2>Select an Organ</h2>
+<svg class="body-svg" viewBox="0 0 200 450" xmlns="http://www.w3.org/2000/svg">
+<!-- Head -->
+<ellipse cx="100" cy="40" rx="28" ry="32" fill="#ddd" stroke="#bbb" stroke-width="1"/>
+<!-- Neck -->
+<rect x="90" y="70" width="20" height="20" rx="4" fill="#ddd" stroke="#bbb"/>
+<!-- Torso -->
+<path d="M60,90 Q55,90 50,100 L40,200 Q38,220 50,230 L70,240 Q80,245 100,245 Q120,245 130,240 L150,230 Q162,220 160,200 L150,100 Q145,90 140,90 Z" fill="#e8e8e8" stroke="#ccc" stroke-width="1"/>
+<!-- Lungs -->
+<ellipse class="organ" data-organ="lung" cx="75" cy="140" rx="22" ry="35" fill="#e88888"/>
+<ellipse class="organ" data-organ="lung" cx="125" cy="140" rx="22" ry="35" fill="#e88888"/>
+<text class="organ-label" x="100" y="125" text-anchor="middle">Lungs</text>
+<!-- Breast area -->
+<circle class="organ" data-organ="breast" cx="78" cy="155" r="8" fill="#e8a0c8" fill-opacity="0"/>
+<circle class="organ" data-organ="breast" cx="122" cy="155" r="8" fill="#e8a0c8" fill-opacity="0"/>
+<!-- Colon -->
+<path class="organ" data-organ="colon" d="M70,195 Q60,195 60,210 L60,225 Q60,235 75,235 L125,235 Q140,235 140,225 L140,210 Q140,195 130,195" fill="none" stroke="#88bb88" stroke-width="6" stroke-linecap="round"/>
+<text class="organ-label" x="100" y="222" text-anchor="middle">Colon</text>
+<!-- Skin (outline) -->
+<rect class="organ" data-organ="skin" x="38" y="88" width="124" height="160" rx="12" fill="transparent" stroke="#ccaa77" stroke-width="2" stroke-dasharray="4,3"/>
+<text class="organ-label" x="162" y="105" text-anchor="start" font-size="9">Skin</text>
+<!-- Breast labels -->
+<text class="organ-label" x="100" y="165" text-anchor="middle" font-size="9">Breast</text>
+<!-- Blood (heart area) -->
+<path class="organ" data-organ="blood" d="M95,115 Q95,105 100,105 Q105,105 105,115 L105,125 Q105,132 100,135 Q95,132 95,125 Z" fill="#cc4444"/>
+<text class="organ-label" x="100" y="102" text-anchor="middle" font-size="9">Blood</text>
+<!-- Arms -->
+<path d="M50,100 L30,180 L25,200" fill="none" stroke="#ddd" stroke-width="8" stroke-linecap="round"/>
+<path d="M150,100 L170,180 L175,200" fill="none" stroke="#ddd" stroke-width="8" stroke-linecap="round"/>
+<!-- Legs -->
+<path d="M80,245 L70,350 L65,420" fill="none" stroke="#ddd" stroke-width="10" stroke-linecap="round"/>
+<path d="M120,245 L130,350 L135,420" fill="none" stroke="#ddd" stroke-width="10" stroke-linecap="round"/>
+</svg>
+<div class="legend">
+<span style="color:var(--text2)">Click any highlighted organ to explore its mutation landscape</span>
+</div>
+</div>
+<div class="detail-panel" id="detailPanel">
+<div class="prompt" id="promptMsg">
+Select an organ from the body diagram to explore its cancer mutation landscape.
+</div>
+<div id="detailContent" style="display:none;">
+<h2 id="cancerTitle">Lung Cancer</h2>
+<p id="cancerDesc" style="color:var(--text2);margin-bottom:16px;font-size:0.9rem;"></p>
+<h3>Mutation Landscape</h3>
+<div class="bubble-container">
+<canvas class="bubble-canvas" id="bubbleCanvas"></canvas>
+</div>
+<p style="font-size:0.8rem;color:var(--text2);margin-bottom:16px;">Click a gene bubble for details. Bubble size = mutation frequency.</p>
+<div class="gene-detail" id="geneDetail">
+<h3 id="geneName">TP53</h3>
+<div class="stat-row">
+<div class="stat-card"><div class="val" id="geneFreq">42%</div><div class="label">Mutation Frequency</div></div>
+<div class="stat-card"><div class="val" id="geneDrugs">3</div><div class="label">Drug Targets</div></div>
+<div class="stat-card"><div class="val" id="geneSurvival">+18%</div><div class="label">Survival Improvement</div></div>
+</div>
+<p style="margin-top:12px;font-size:0.85rem;color:var(--text2);" id="drugList"></p>
+<h3 style="margin-top:16px;">Clinical Pipeline</h3>
+<div class="pipeline" id="pipeline"></div>
+</div>
+</div>
+</div>
+</div>
+
+<script>
+const cancerData = {
+  lung: {
+    title: "Lung Cancer", desc: "Most common cause of cancer death worldwide. NSCLC accounts for ~85% of cases.",
+    genes: [
+      {name:"KRAS",freq:32,color:"#e74c3c",drugs:["Sotorasib","Adagrasib","MRTX1133"],stage:5,survival:"+24%"},
+      {name:"EGFR",freq:27,color:"#3498db",drugs:["Osimertinib","Erlotinib","Gefitinib"],stage:5,survival:"+31%"},
+      {name:"TP53",freq:46,color:"#9b59b6",drugs:["APR-246","Eprenetapopt"],stage:3,survival:"+12%"},
+      {name:"ALK",freq:7,color:"#2ecc71",drugs:["Alectinib","Lorlatinib","Crizotinib"],stage:5,survival:"+42%"},
+      {name:"ROS1",freq:2,color:"#f39c12",drugs:["Entrectinib","Crizotinib"],stage:5,survival:"+38%"},
+      {name:"BRAF",freq:4,color:"#1abc9c",drugs:["Dabrafenib+Trametinib"],stage:5,survival:"+28%"},
+      {name:"MET",freq:5,color:"#e67e22",drugs:["Capmatinib","Tepotinib"],stage:5,survival:"+20%"},
+    ]
+  },
+  breast: {
+    title: "Breast Cancer", desc: "Most commonly diagnosed cancer in women. Subtypes include HR+, HER2+, and triple-negative.",
+    genes: [
+      {name:"BRCA1",freq:10,color:"#e74c3c",drugs:["Olaparib","Talazoparib"],stage:5,survival:"+33%"},
+      {name:"BRCA2",freq:8,color:"#c0392b",drugs:["Olaparib","Rucaparib"],stage:5,survival:"+30%"},
+      {name:"HER2",freq:20,color:"#3498db",drugs:["Trastuzumab","Pertuzumab","T-DXd"],stage:5,survival:"+45%"},
+      {name:"PIK3CA",freq:36,color:"#9b59b6",drugs:["Alpelisib","Inavolisib"],stage:5,survival:"+22%"},
+      {name:"TP53",freq:34,color:"#2ecc71",drugs:["APR-246"],stage:3,survival:"+10%"},
+      {name:"ESR1",freq:12,color:"#f39c12",drugs:["Elacestrant"],stage:5,survival:"+15%"},
+      {name:"CDH1",freq:3,color:"#e67e22",drugs:["Investigational"],stage:2,survival:"+5%"},
+    ]
+  },
+  colon: {
+    title: "Colorectal Cancer", desc: "Third most common cancer. Screening has dramatically improved early detection rates.",
+    genes: [
+      {name:"APC",freq:70,color:"#e74c3c",drugs:["Investigational"],stage:2,survival:"+8%"},
+      {name:"KRAS",freq:45,color:"#3498db",drugs:["Sotorasib","Adagrasib"],stage:4,survival:"+18%"},
+      {name:"TP53",freq:55,color:"#9b59b6",drugs:["APR-246"],stage:3,survival:"+10%"},
+      {name:"BRAF",freq:12,color:"#2ecc71",drugs:["Encorafenib+Cetuximab"],stage:5,survival:"+26%"},
+      {name:"PIK3CA",freq:18,color:"#f39c12",drugs:["Alpelisib"],stage:3,survival:"+12%"},
+      {name:"SMAD4",freq:15,color:"#1abc9c",drugs:["Investigational"],stage:1,survival:"+3%"},
+      {name:"MSI-H",freq:15,color:"#e67e22",drugs:["Pembrolizumab","Nivolumab"],stage:5,survival:"+40%"},
+    ]
+  },
+  skin: {
+    title: "Skin Cancer (Melanoma)", desc: "Deadliest form of skin cancer. Immunotherapy has revolutionized treatment.",
+    genes: [
+      {name:"BRAF",freq:50,color:"#e74c3c",drugs:["Vemurafenib","Dabrafenib+Trametinib"],stage:5,survival:"+35%"},
+      {name:"NRAS",freq:25,color:"#3498db",drugs:["Binimetinib"],stage:4,survival:"+15%"},
+      {name:"NF1",freq:14,color:"#9b59b6",drugs:["Investigational MEKi"],stage:2,survival:"+8%"},
+      {name:"KIT",freq:6,color:"#2ecc71",drugs:["Imatinib","Nilotinib"],stage:5,survival:"+20%"},
+      {name:"TP53",freq:15,color:"#f39c12",drugs:["APR-246"],stage:3,survival:"+10%"},
+      {name:"CDKN2A",freq:20,color:"#1abc9c",drugs:["CDK4/6 inhibitors"],stage:3,survival:"+12%"},
+    ]
+  },
+  blood: {
+    title: "Blood Cancer (Leukemia/Lymphoma)", desc: "Includes leukemia, lymphoma, and myeloma. Many subtypes with distinct genetic drivers.",
+    genes: [
+      {name:"BCR-ABL",freq:25,color:"#e74c3c",drugs:["Imatinib","Dasatinib","Ponatinib"],stage:5,survival:"+65%"},
+      {name:"FLT3",freq:30,color:"#3498db",drugs:["Midostaurin","Gilteritinib"],stage:5,survival:"+22%"},
+      {name:"IDH1/2",freq:20,color:"#9b59b6",drugs:["Ivosidenib","Enasidenib"],stage:5,survival:"+18%"},
+      {name:"TP53",freq:12,color:"#2ecc71",drugs:["Eprenetapopt+Azacitidine"],stage:3,survival:"+8%"},
+      {name:"NPM1",freq:28,color:"#f39c12",drugs:["Menin inhibitors"],stage:3,survival:"+15%"},
+      {name:"JAK2",freq:18,color:"#1abc9c",drugs:["Ruxolitinib","Fedratinib"],stage:5,survival:"+30%"},
+      {name:"BTK",freq:15,color:"#e67e22",drugs:["Ibrutinib","Acalabrutinib"],stage:5,survival:"+40%"},
+    ]
+  }
+};
+
+const stages = ["Discovery","Phase I","Phase II","Phase III","Approved"];
+let bubbles = [], currentOrgan = null, selectedGene = null, animFrame;
+const canvas = document.getElementById('bubbleCanvas');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas(){
+  const r = canvas.getBoundingClientRect();
+  canvas.width = r.width * devicePixelRatio;
+  canvas.height = r.height * devicePixelRatio;
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+}
+resizeCanvas();
+window.addEventListener('resize', () => { resizeCanvas(); if(currentOrgan) createBubbles(currentOrgan); });
+
+function createBubbles(organ){
+  const data = cancerData[organ];
+  const w = canvas.getBoundingClientRect().width, h = canvas.getBoundingClientRect().height;
+  bubbles = data.genes.map((g,i) => {
+    const r = Math.max(18, g.freq * 0.7 + 12);
+    return {
+      ...g, r, x: w/2 + (Math.random()-0.5)*100, y: h/2 + (Math.random()-0.5)*80,
+      vx: (Math.random()-0.5)*2, vy: (Math.random()-0.5)*2, targetX: w/2, targetY: h/2
+    };
+  });
+  // spread targets
+  const cx = w/2, cy = h/2, spread = Math.min(w,h)*0.3;
+  bubbles.forEach((b,i) => {
+    const angle = (i / bubbles.length) * Math.PI * 2 - Math.PI/2;
+    b.targetX = cx + Math.cos(angle) * spread;
+    b.targetY = cy + Math.sin(angle) * spread;
+  });
+}
+
+function animate(){
+  const w = canvas.getBoundingClientRect().width, h = canvas.getBoundingClientRect().height;
+  ctx.clearRect(0,0,w,h);
+  // physics
+  bubbles.forEach(b => {
+    b.vx += (b.targetX - b.x) * 0.01;
+    b.vy += (b.targetY - b.y) * 0.01;
+    b.vx *= 0.92; b.vy *= 0.92;
+    // repulsion
+    bubbles.forEach(o => {
+      if(o === b) return;
+      const dx = b.x - o.x, dy = b.y - o.y;
+      const dist = Math.sqrt(dx*dx+dy*dy);
+      const minD = b.r + o.r + 4;
+      if(dist < minD && dist > 0){
+        const f = (minD - dist)/dist * 0.3;
+        b.vx += dx*f; b.vy += dy*f;
+      }
+    });
+    b.x += b.vx; b.y += b.vy;
+    b.x = Math.max(b.r, Math.min(w-b.r, b.x));
+    b.y = Math.max(b.r, Math.min(h-b.r, b.y));
+  });
+  // draw
+  const isDark = window.matchMedia('(prefers-color-scheme:dark)').matches;
+  bubbles.forEach(b => {
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, b.r, 0, Math.PI*2);
+    const isSelected = selectedGene && selectedGene.name === b.name;
+    ctx.fillStyle = isSelected ? b.color : b.color + '99';
+    ctx.fill();
+    if(isSelected){
+      ctx.strokeStyle = '#ff6600'; ctx.lineWidth = 3; ctx.stroke();
+    }
+    ctx.fillStyle = '#fff';
+    ctx.font = `${b.r > 25 ? 12 : 10}px 'Space Grotesk'`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(b.name, b.x, b.y - 5);
+    ctx.font = `${b.r > 25 ? 10 : 8}px 'Space Grotesk'`;
+    ctx.fillStyle = '#ffffffaa';
+    ctx.fillText(b.freq+'%', b.x, b.y + 9);
+  });
+  animFrame = requestAnimationFrame(animate);
+}
+
+canvas.addEventListener('click', e => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  for(const b of bubbles){
+    const dx = mx - b.x, dy = my - b.y;
+    if(dx*dx+dy*dy < b.r*b.r){
+      showGeneDetail(b); return;
+    }
+  }
+});
+
+function showGeneDetail(gene){
+  selectedGene = gene;
+  const d = document.getElementById('geneDetail');
+  d.classList.add('visible');
+  document.getElementById('geneName').textContent = gene.name + ' Mutation';
+  document.getElementById('geneFreq').textContent = gene.freq + '%';
+  document.getElementById('geneDrugs').textContent = gene.drugs.length;
+  document.getElementById('geneSurvival').textContent = gene.survival;
+  document.getElementById('drugList').textContent = 'Targeted therapies: ' + gene.drugs.join(', ');
+  const pipe = document.getElementById('pipeline');
+  pipe.innerHTML = '';
+  stages.forEach((s,i) => {
+    if(i > 0){ const a = document.createElement('span'); a.className='pipeline-arrow'; a.textContent='→'; pipe.appendChild(a); }
+    const el = document.createElement('span');
+    el.className = 'pipeline-stage';
+    if(i < gene.stage) el.classList.add('reached');
+    if(i === gene.stage - 1) el.classList.add('current');
+    el.textContent = s;
+    pipe.appendChild(el);
+  });
+}
+
+document.querySelectorAll('.organ').forEach(el => {
+  el.addEventListener('click', () => {
+    const organ = el.dataset.organ;
+    if(!organ) return;
+    document.querySelectorAll('.organ').forEach(o => o.classList.remove('active'));
+    document.querySelectorAll(`[data-organ="${organ}"]`).forEach(o => o.classList.add('active'));
+    currentOrgan = organ;
+    selectedGene = null;
+    document.getElementById('geneDetail').classList.remove('visible');
+    document.getElementById('promptMsg').style.display = 'none';
+    document.getElementById('detailContent').style.display = 'block';
+    const data = cancerData[organ];
+    document.getElementById('cancerTitle').textContent = data.title;
+    document.getElementById('cancerDesc').textContent = data.desc;
+    createBubbles(organ);
+    if(animFrame) cancelAnimationFrame(animFrame);
+    animate();
+  });
+});
+</script>
+</body>
+</html>

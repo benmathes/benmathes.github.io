@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI-Native Hedge Funds</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f8f8f8;--surface:#fff;--text:#1a1a1a;--text-secondary:#666;--border:#e0e0e0;--accent:#ff6600;--accent-light:rgba(255,102,0,.12);--green:#22c55e;--red:#ef4444;--blue:#3b82f6;--shadow:0 2px 12px rgba(0,0,0,.08)}
+@media(prefers-color-scheme:dark){:root{--bg:#0f0f0f;--surface:#1a1a1a;--text:#e8e8e8;--text-secondary:#999;--border:#333;--accent-light:rgba(255,102,0,.2);--shadow:0 2px 12px rgba(0,0,0,.3)}}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.back-link{display:inline-block;padding:16px 24px;color:var(--accent);text-decoration:none;font-weight:500;font-size:14px}
+.back-link:hover{opacity:.7}
+.container{max-width:1200px;margin:0 auto;padding:0 24px 48px}
+h1{font-size:28px;font-weight:700;margin-bottom:4px}
+.subtitle{color:var(--text-secondary);font-size:15px;margin-bottom:20px}
+.badge{display:inline-block;background:var(--accent);color:#fff;font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;margin-left:8px;vertical-align:middle}
+
+.controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:20px}
+.controls label{font-size:13px;font-weight:500}
+.controls select,.controls button{font-family:inherit;font-size:13px;padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer}
+.btn-primary{background:var(--accent)!important;color:#fff!important;border:none!important;font-weight:600}
+.btn-primary:hover{opacity:.9}
+.btn-deploy{background:var(--green)!important;color:#fff!important;border:none!important;font-weight:600}
+
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.metric-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.metric-card .value{font-size:24px;font-weight:700}
+.metric-card .label{font-size:12px;color:var(--text-secondary);margin-top:2px}
+.metric-card .value.positive{color:var(--green)}
+.metric-card .value.negative{color:var(--red)}
+
+.chart-panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:20px}
+.chart-panel h3{font-size:14px;font-weight:600;margin-bottom:10px}
+canvas{width:100%;border-radius:8px}
+
+.live-bar{display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;font-size:13px;display:none}
+.live-dot{width:8px;height:8px;background:var(--green);border-radius:50%;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+@media(max-width:700px){.metrics{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">← Back to all demos</a>
+<div class="container">
+<h1>AI-Native Hedge Funds <span class="badge">Spring 2026</span></h1>
+<p class="subtitle">Backtest AI trading strategies against historical data, then deploy autonomous agents.</p>
+
+<div class="controls">
+  <label>Strategy:</label>
+  <select id="strategy">
+    <option value="momentum">Momentum</option>
+    <option value="meanrev">Mean Reversion</option>
+    <option value="sentiment">Sentiment Analysis</option>
+    <option value="multifactor">Multi-Factor</option>
+  </select>
+  <button class="btn-primary" onclick="runBacktest()">Backtest</button>
+  <button class="btn-deploy" id="deployBtn" onclick="deployAgent()">Deploy Agent</button>
+</div>
+
+<div class="metrics">
+  <div class="metric-card"><div class="value" id="mReturn">—</div><div class="label">Total Return</div></div>
+  <div class="metric-card"><div class="value" id="mSharpe">—</div><div class="label">Sharpe Ratio</div></div>
+  <div class="metric-card"><div class="value" id="mDrawdown">—</div><div class="label">Max Drawdown</div></div>
+  <div class="metric-card"><div class="value" id="mWinRate">—</div><div class="label">Win Rate</div></div>
+</div>
+
+<div class="chart-panel">
+  <h3>Price Chart & Trade Signals</h3>
+  <canvas id="priceChart" height="300"></canvas>
+</div>
+
+<div class="chart-panel">
+  <h3>Cumulative Returns: Strategy vs Buy & Hold</h3>
+  <canvas id="returnsChart" height="200"></canvas>
+</div>
+
+<div class="live-bar" id="liveBar">
+  <span class="live-dot"></span>
+  <span id="liveText">Agent running — monitoring market conditions...</span>
+</div>
+</div>
+
+<script>
+const DAYS = 252;
+let prices = [], trades = [], stratReturns = [], bhReturns = [];
+let animFrame = 0, animating = false, deployed = false;
+
+function generatePrices(){
+  prices = [100];
+  for(let i=1;i<DAYS;i++){
+    const drift = 0.0003;
+    const vol = 0.02;
+    const shock = (Math.random()-0.5)*2*vol + drift;
+    prices.push(prices[i-1]*(1+shock));
+  }
+}
+generatePrices();
+
+function runStrategy(name){
+  trades = [];
+  const lookback = name==='momentum'?20:name==='meanrev'?10:name==='sentiment'?5:15;
+  let position = 0; // 0=flat,1=long,-1=short
+  for(let i=lookback;i<DAYS;i++){
+    const slice = prices.slice(i-lookback,i);
+    const mean = slice.reduce((a,b)=>a+b)/slice.length;
+    const cur = prices[i];
+    let signal = 0;
+    if(name==='momentum'){
+      signal = cur > mean ? 1 : -1;
+    } else if(name==='meanrev'){
+      const std = Math.sqrt(slice.reduce((a,b)=>a+(b-mean)**2,0)/slice.length);
+      signal = cur < mean-std*0.5 ? 1 : cur > mean+std*0.5 ? -1 : 0;
+    } else if(name==='sentiment'){
+      const momentum = (cur - prices[i-5])/prices[i-5];
+      const fakesentiment = Math.sin(i*0.1)*0.02;
+      signal = momentum+fakesentiment > 0.005 ? 1 : momentum+fakesentiment < -0.005 ? -1 : 0;
+    } else {
+      const mom = cur > mean ? 0.5 : -0.5;
+      const std = Math.sqrt(slice.reduce((a,b)=>a+(b-mean)**2,0)/slice.length);
+      const rev = cur < mean-std*0.3 ? 0.3 : cur > mean+std*0.3 ? -0.3 : 0;
+      const vol = std/mean;
+      const volsig = vol > 0.03 ? -0.2 : 0.2;
+      signal = mom+rev+volsig > 0.2 ? 1 : mom+rev+volsig < -0.2 ? -1 : 0;
+    }
+    if(signal !== position){
+      trades.push({day:i, type:signal>0?'buy':'sell', price:cur});
+      position = signal;
+    }
+  }
+  // Compute returns
+  stratReturns = [0];
+  bhReturns = [0];
+  let pos = 0;
+  for(let i=1;i<DAYS;i++){
+    const dayRet = (prices[i]-prices[i-1])/prices[i-1];
+    bhReturns.push(bhReturns[i-1]+dayRet);
+    const t = trades.filter(t=>t.day===i);
+    if(t.length) pos = t[0].type==='buy'?1:-1;
+    stratReturns.push(stratReturns[i-1]+dayRet*pos);
+  }
+}
+
+function drawPriceChart(upTo){
+  const canvas = document.getElementById('priceChart');
+  const dpr = window.devicePixelRatio||1;
+  canvas.width = canvas.offsetWidth*dpr;
+  canvas.height = 300*dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+  const w = canvas.offsetWidth, h = 300;
+  const isDark = matchMedia('(prefers-color-scheme:dark)').matches;
+
+  ctx.clearRect(0,0,w,h);
+  const minP = Math.min(...prices)*0.98, maxP = Math.max(...prices)*1.02;
+  const n = upTo||DAYS;
+  const barW = w/DAYS;
+
+  // Candlestick-style bars
+  for(let i=0;i<n;i++){
+    const open = i===0?prices[0]:prices[i-1];
+    const close = prices[i];
+    const high = Math.max(open,close)*1.005;
+    const low = Math.min(open,close)*0.995;
+    const x = i*barW;
+    const yHigh = h-((high-minP)/(maxP-minP))*h*0.9-h*0.05;
+    const yLow = h-((low-minP)/(maxP-minP))*h*0.9-h*0.05;
+    const yOpen = h-((open-minP)/(maxP-minP))*h*0.9-h*0.05;
+    const yClose = h-((close-minP)/(maxP-minP))*h*0.9-h*0.05;
+    // Wick
+    ctx.strokeStyle = close>=open?(isDark?'#4ade80':'#16a34a'):(isDark?'#f87171':'#dc2626');
+    ctx.lineWidth = 1;
+    ctx.beginPath();ctx.moveTo(x+barW/2,yHigh);ctx.lineTo(x+barW/2,yLow);ctx.stroke();
+    // Body
+    ctx.fillStyle = close>=open?(isDark?'#4ade80':'#16a34a'):(isDark?'#f87171':'#dc2626');
+    const bodyTop = Math.min(yOpen,yClose);
+    const bodyH = Math.max(Math.abs(yOpen-yClose),1);
+    ctx.fillRect(x+1,bodyTop,Math.max(barW-2,1),bodyH);
+  }
+
+  // Trade markers
+  trades.filter(t=>t.day<n).forEach(t=>{
+    const x = t.day*barW+barW/2;
+    const y = h-((t.price-minP)/(maxP-minP))*h*0.9-h*0.05;
+    ctx.beginPath();
+    if(t.type==='buy'){
+      ctx.fillStyle = '#22c55e';
+      ctx.moveTo(x,y+12);ctx.lineTo(x-6,y+20);ctx.lineTo(x+6,y+20);
+    } else {
+      ctx.fillStyle = '#ef4444';
+      ctx.moveTo(x,y-12);ctx.lineTo(x-6,y-20);ctx.lineTo(x+6,y-20);
+    }
+    ctx.closePath();ctx.fill();
+  });
+}
+
+function drawReturnsChart(upTo){
+  const canvas = document.getElementById('returnsChart');
+  const dpr = window.devicePixelRatio||1;
+  canvas.width = canvas.offsetWidth*dpr;
+  canvas.height = 200*dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+  const w = canvas.offsetWidth, h = 200;
+  const isDark = matchMedia('(prefers-color-scheme:dark)').matches;
+  ctx.clearRect(0,0,w,h);
+
+  const n = upTo||DAYS;
+  const allVals = [...stratReturns.slice(0,n),...bhReturns.slice(0,n)];
+  const minR = Math.min(...allVals)-0.02, maxR = Math.max(...allVals)+0.02;
+
+  // Zero line
+  const zeroY = h-((0-minR)/(maxR-minR))*h*0.85-h*0.07;
+  ctx.strokeStyle = isDark?'#444':'#ddd';
+  ctx.setLineDash([4,4]);
+  ctx.beginPath();ctx.moveTo(0,zeroY);ctx.lineTo(w,zeroY);ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Buy & hold
+  ctx.strokeStyle = isDark?'#666':'#aaa';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for(let i=0;i<n;i++){
+    const x = (i/(DAYS-1))*w;
+    const y = h-((bhReturns[i]-minR)/(maxR-minR))*h*0.85-h*0.07;
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+
+  // Strategy
+  ctx.strokeStyle = '#ff6600';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  for(let i=0;i<n;i++){
+    const x = (i/(DAYS-1))*w;
+    const y = h-((stratReturns[i]-minR)/(maxR-minR))*h*0.85-h*0.07;
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+
+  // Legend
+  ctx.font = '12px Space Grotesk';
+  ctx.fillStyle = '#ff6600';ctx.fillRect(w-160,10,12,3);ctx.fillText('Strategy',w-144,15);
+  ctx.fillStyle = isDark?'#666':'#aaa';ctx.fillRect(w-160,26,12,3);ctx.fillText('Buy & Hold',w-144,31);
+}
+
+function updateMetrics(){
+  const totalRet = stratReturns[stratReturns.length-1]*100;
+  document.getElementById('mReturn').textContent = (totalRet>0?'+':'')+totalRet.toFixed(1)+'%';
+  document.getElementById('mReturn').className = 'value '+(totalRet>=0?'positive':'negative');
+
+  // Sharpe (simplified)
+  const dailyRets = [];
+  for(let i=1;i<stratReturns.length;i++) dailyRets.push(stratReturns[i]-stratReturns[i-1]);
+  const mean = dailyRets.reduce((a,b)=>a+b,0)/dailyRets.length;
+  const std = Math.sqrt(dailyRets.reduce((a,b)=>a+(b-mean)**2,0)/dailyRets.length);
+  const sharpe = std>0?(mean/std)*Math.sqrt(252):0;
+  document.getElementById('mSharpe').textContent = sharpe.toFixed(2);
+  document.getElementById('mSharpe').className = 'value '+(sharpe>=1?'positive':sharpe>=0?'':'negative');
+
+  // Max drawdown
+  let peak = 0, maxDD = 0;
+  for(const r of stratReturns){
+    if(r>peak) peak=r;
+    const dd = peak-r;
+    if(dd>maxDD) maxDD=dd;
+  }
+  document.getElementById('mDrawdown').textContent = '-'+(maxDD*100).toFixed(1)+'%';
+  document.getElementById('mDrawdown').className = 'value negative';
+
+  // Win rate
+  const wins = trades.filter((t,i)=>{
+    if(i===trades.length-1) return false;
+    const next = trades[i+1];
+    return t.type==='buy'?prices[next.day]>t.price:prices[next.day]<t.price;
+  });
+  const wr = trades.length>1?(wins.length/(trades.length-1)*100):0;
+  document.getElementById('mWinRate').textContent = wr.toFixed(0)+'%';
+  document.getElementById('mWinRate').className = 'value '+(wr>=50?'positive':'');
+}
+
+function runBacktest(){
+  const strat = document.getElementById('strategy').value;
+  generatePrices();
+  runStrategy(strat);
+  animFrame = 0;
+  animating = true;
+  animate();
+}
+
+function animate(){
+  if(!animating) return;
+  animFrame += 4;
+  if(animFrame>=DAYS){animFrame=DAYS;animating=false;updateMetrics();}
+  drawPriceChart(animFrame);
+  drawReturnsChart(animFrame);
+  if(animating) requestAnimationFrame(animate);
+}
+
+function deployAgent(){
+  if(deployed){deployed=false;document.getElementById('liveBar').style.display='none';document.getElementById('deployBtn').textContent='Deploy Agent';return;}
+  deployed=true;
+  document.getElementById('liveBar').style.display='flex';
+  document.getElementById('deployBtn').textContent='Stop Agent';
+  liveLoop();
+}
+
+function liveLoop(){
+  if(!deployed) return;
+  const actions = ['Monitoring market conditions...','Signal detected: evaluating momentum...','Placed limit buy order at $'+( 95+Math.random()*15).toFixed(2),'Risk check passed. Position size: '+(1000+Math.floor(Math.random()*4000))+' shares','Scanning sentiment feeds for alpha...','Adjusting stop-loss to $'+(90+Math.random()*10).toFixed(2),'Portfolio rebalance triggered','Closed position at $'+(100+Math.random()*12).toFixed(2)+' (+'+(Math.random()*3).toFixed(1)+'%)'];
+  document.getElementById('liveText').textContent = 'Agent running — '+actions[Math.floor(Math.random()*actions.length)];
+  setTimeout(liveLoop,2000+Math.random()*2000);
+}
+
+// Initial draw
+runStrategy('momentum');
+drawPriceChart(DAYS);
+drawReturnsChart(DAYS);
+updateMetrics();
+</script>
+</body>
+</html>

@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Explainable AI | YC Startup Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#f5f5f5;--fg:#1a1a1a;--card:#fff;--card-border:#e0e0e0;--accent:#ff6600;--subtle:#888;--green:#22c55e;--blue:#3b82f6;--purple:#a855f7;--node-bg:#fff;--glow:rgba(255,102,0,0.4)}
+@media(prefers-color-scheme:dark){:root{--bg:#0f0f0f;--fg:#e8e8e8;--card:#1a1a1a;--card-border:#2a2a2a;--subtle:#777;--node-bg:#222;--glow:rgba(255,102,0,0.6)}}
+body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--fg);min-height:100vh}
+a.back{position:fixed;top:16px;left:16px;color:var(--accent);text-decoration:none;font-size:14px;z-index:1000;font-weight:500}
+a.back:hover{text-decoration:underline}
+.header{text-align:center;padding:40px 20px 16px}
+.header h1{font-size:28px;font-weight:700}.header h1 span{color:var(--accent)}
+.header p{color:var(--subtle);font-size:14px;margin-top:8px;max-width:600px;margin-inline:auto}
+.main{display:grid;grid-template-columns:260px 1fr 280px;gap:20px;padding:20px 30px;max-width:1400px;margin:0 auto;min-height:70vh}
+.panel{background:var(--card);border:1px solid var(--card-border);border-radius:14px;padding:20px}
+.panel h3{font-size:14px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.panel h3 .icon{font-size:18px}
+.slider-group{margin-bottom:16px}
+.slider-label{display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:6px}
+.slider-label .val{color:var(--accent);font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;-webkit-appearance:none;height:6px;background:var(--card-border);border-radius:3px;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 2px 6px rgba(255,102,0,.3)}
+.classify-btn{width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;margin-top:8px;transition:transform .15s}
+.classify-btn:hover{transform:scale(1.02)}
+.result-box{margin-top:16px;padding:14px;background:var(--bg);border-radius:10px;text-align:center;font-size:13px}
+.result-box .prediction{font-size:24px;font-weight:700;margin:6px 0}
+.result-box .confidence{color:var(--subtle);font-size:12px}
+.network-container{position:relative;width:100%;height:100%;min-height:400px}
+canvas#networkCanvas{width:100%;height:100%;display:block}
+.shap-section h3{font-size:14px;font-weight:700;margin-bottom:12px}
+.shap-bar-group{margin-bottom:12px}
+.shap-bar-label{font-size:11px;font-weight:600;margin-bottom:4px;display:flex;justify-content:space-between}
+.shap-bar-label .val{font-variant-numeric:tabular-nums}
+.shap-bar-track{height:20px;background:var(--card-border);border-radius:4px;overflow:hidden;position:relative}
+.shap-bar-fill{height:100%;border-radius:4px;transition:width .6s ease}
+.shap-bar-fill.positive{background:var(--accent)}
+.shap-bar-fill.negative{background:var(--blue)}
+.legend{display:flex;gap:16px;margin-top:16px;font-size:11px}
+.legend span{display:flex;align-items:center;gap:4px}
+.legend .dot{width:10px;height:10px;border-radius:50%}
+.explanation{margin-top:16px;padding:14px;background:var(--bg);border-radius:10px;font-size:12px;line-height:1.6}
+</style>
+</head>
+<body>
+<a class="back" href="index.html">&larr; Back to all demos</a>
+<div class="header">
+<h1><span>Explainable</span> AI</h1>
+<p>Adjust the input features, classify, and watch activations flow through the neural network. See which features matter most.</p>
+</div>
+<div class="main">
+<div class="panel">
+<h3><span class="icon">&#9881;</span> Input Features</h3>
+<div class="slider-group">
+<div class="slider-label"><span>Ear Pointiness</span><span class="val" id="v_ear">50</span></div>
+<input type="range" min="0" max="100" value="50" id="s_ear">
+</div>
+<div class="slider-group">
+<div class="slider-label"><span>Snout Length</span><span class="val" id="v_snout">50</span></div>
+<input type="range" min="0" max="100" value="50" id="s_snout">
+</div>
+<div class="slider-group">
+<div class="slider-label"><span>Body Size</span><span class="val" id="v_size">50</span></div>
+<input type="range" min="0" max="100" value="50" id="s_size">
+</div>
+<div class="slider-group">
+<div class="slider-label"><span>Fur Length</span><span class="val" id="v_fur">50</span></div>
+<input type="range" min="0" max="100" value="50" id="s_fur">
+</div>
+<div class="slider-group">
+<div class="slider-label"><span>Eye Shape (round)</span><span class="val" id="v_eye">50</span></div>
+<input type="range" min="0" max="100" value="50" id="s_eye">
+</div>
+<div class="slider-group">
+<div class="slider-label"><span>Tail Curl</span><span class="val" id="v_tail">50</span></div>
+<input type="range" min="0" max="100" value="50" id="s_tail">
+</div>
+<button class="classify-btn" id="classifyBtn">Classify: Cat or Dog?</button>
+<div class="result-box" id="resultBox" style="display:none">
+<div>Prediction:</div>
+<div class="prediction" id="predLabel">Cat</div>
+<div class="confidence" id="predConf">Confidence: 87%</div>
+</div>
+</div>
+<div class="panel network-container">
+<canvas id="networkCanvas"></canvas>
+</div>
+<div class="panel shap-section">
+<h3><span class="icon">&#9776;</span> Feature Importance (SHAP)</h3>
+<div id="shapBars"></div>
+<div class="legend">
+<span><div class="dot" style="background:var(--accent)"></div> Pushes toward Cat</span>
+<span><div class="dot" style="background:var(--blue)"></div> Pushes toward Dog</span>
+</div>
+<div class="explanation" id="explanation">Adjust the sliders and click <b>Classify</b> to see how each feature contributes to the model's decision.</div>
+</div>
+</div>
+<script>
+const features=['ear','snout','size','fur','eye','tail'];
+const featureNames=['Ear Pointiness','Snout Length','Body Size','Fur Length','Eye Shape','Tail Curl'];
+// Cat-like weights: pointy ears, shorter snout, smaller size, longer fur, round eyes, curled tail
+const catWeights=[0.8, -0.7, -0.5, 0.4, 0.6, 0.5];
+
+let vals={ear:50,snout:50,size:50,fur:50,eye:50,tail:50};
+let activations=null, animProgress=0, animating=false;
+let prediction=null, shapValues=[];
+
+features.forEach(f=>{
+const slider=document.getElementById('s_'+f);
+slider.addEventListener('input',()=>{
+vals[f]=parseInt(slider.value);
+document.getElementById('v_'+f).textContent=slider.value;
+});
+});
+
+function sigmoid(x){return 1/(1+Math.exp(-x))}
+
+function classify(){
+const inputs=features.map(f=>vals[f]/100);
+// Simple 2-layer network simulation
+const w1=[
+[0.8,-0.3,0.2,-0.5,0.4,0.1],
+[-0.6,0.7,0.5,-0.2,-0.3,0.2],
+[0.3,-0.4,-0.6,0.8,0.5,-0.3],
+[-0.2,0.5,0.4,-0.3,-0.5,0.7],
+[0.5,-0.6,-0.3,0.6,0.7,-0.4],
+[0.1,0.3,0.2,-0.4,0.2,0.5],
+[-0.4,0.8,0.6,-0.1,-0.6,0.3],
+[0.7,-0.2,-0.5,0.3,0.4,-0.6]
+];
+const b1=[0.1,-0.1,0.2,-0.2,0.1,0.0,-0.1,0.2];
+const hidden1=w1.map((w,i)=>sigmoid(inputs.reduce((s,v,j)=>s+v*w[j],0)+b1[i]));
+
+const w2=[
+[0.6,-0.5,0.3,-0.4,0.5,0.2,-0.3,0.7],
+[-0.4,0.6,-0.2,0.5,-0.3,0.4,0.6,-0.5],
+[0.3,-0.3,0.7,-0.6,0.2,-0.5,0.4,0.3],
+[-0.5,0.4,-0.4,0.3,0.6,-0.2,-0.5,0.6],
+[0.4,-0.6,0.5,-0.3,-0.4,0.7,0.2,-0.4]
+];
+const b2=[0.0,0.1,-0.1,0.2,-0.2];
+const hidden2=w2.map((w,i)=>sigmoid(hidden1.reduce((s,v,j)=>s+v*w[j],0)+b2[i]));
+
+const wOut=[[0.7,-0.6,0.4,-0.5,0.3],[-0.6,0.7,-0.3,0.5,-0.4]];
+const bOut=[0.1,-0.1];
+const rawOut=wOut.map((w,i)=>hidden2.reduce((s,v,j)=>s+v*w[j],0)+bOut[i]);
+// Also factor in direct cat weights
+const directScore=inputs.reduce((s,v,i)=>s+v*catWeights[i],0);
+rawOut[0]+=directScore*0.5;
+rawOut[1]-=directScore*0.5;
+
+const expOut=rawOut.map(v=>Math.exp(v));
+const sumExp=expOut.reduce((a,b)=>a+b,0);
+const probs=expOut.map(v=>v/sumExp);
+
+activations={inputs,hidden1,hidden2,outputs:probs};
+prediction={label:probs[0]>probs[1]?'Cat 🐱':'Dog 🐶',confidence:Math.max(probs[0],probs[1]),isCat:probs[0]>probs[1]};
+
+// Compute SHAP-like values
+shapValues=features.map((f,i)=>{
+const contrib=(vals[f]/100 - 0.5)*catWeights[i];
+return{name:featureNames[i],value:contrib,positive:contrib>0};
+});
+shapValues.sort((a,b)=>Math.abs(b.value)-Math.abs(a.value));
+
+animProgress=0;animating=true;
+}
+
+document.getElementById('classifyBtn').addEventListener('click',classify);
+
+// Draw network
+const canvas=document.getElementById('networkCanvas');
+const ctx=canvas.getContext('2d');
+const layers=[6,8,5,2];
+const layerNames=['Input','Hidden 1','Hidden 2','Output'];
+
+function getNodePositions(){
+const w=canvas.width,h=canvas.height;
+const positions=[];
+const padX=60,padY=40;
+const usableW=w-padX*2,usableH=h-padY*2;
+layers.forEach((count,li)=>{
+const x=padX+li*(usableW/(layers.length-1));
+const layerPositions=[];
+for(let i=0;i<count;i++){
+const y=padY+(i+0.5)*(usableH/count);
+layerPositions.push({x,y});
+}
+positions.push(layerPositions);
+});
+return positions;
+}
+
+function getActivationColor(val,progress){
+const a=val*progress;
+const r=Math.floor(255*a);
+const g=Math.floor(102*a);
+const b=Math.floor(0);
+return`rgba(${r},${g},${b},${0.3+a*0.7})`;
+}
+
+function draw(){
+const dpr=window.devicePixelRatio||1;
+const rect=canvas.parentElement.getBoundingClientRect();
+canvas.width=rect.width*dpr;canvas.height=rect.height*dpr;
+ctx.scale(dpr,dpr);
+const w=rect.width,h=rect.height;
+canvas.style.width=w+'px';canvas.style.height=h+'px';
+
+ctx.clearRect(0,0,w,h);
+const positions=getNodePositions();
+
+// Determine activation values
+let actLayers;
+if(activations&&animating){
+actLayers=[
+activations.inputs,
+activations.hidden1,
+activations.hidden2,
+activations.outputs
+];
+}
+
+// Draw connections
+for(let li=0;li<positions.length-1;li++){
+positions[li].forEach((from,fi)=>{
+positions[li+1].forEach((to,ti)=>{
+let alpha=0.06;
+if(actLayers&&animProgress>li/layers.length){
+const layerProg=Math.min(1,(animProgress-li/layers.length)*layers.length);
+const actVal=actLayers[li][fi]*actLayers[li+1]?.[ti]||0;
+alpha=0.06+actVal*layerProg*0.3;
+}
+ctx.beginPath();
+ctx.moveTo(from.x,from.y);
+ctx.lineTo(to.x,to.y);
+ctx.strokeStyle=`rgba(255,102,0,${alpha})`;
+ctx.lineWidth=1;
+ctx.stroke();
+});
+});
+}
+
+// Draw nodes
+const nodeR=w>600?14:10;
+positions.forEach((layer,li)=>{
+layer.forEach((pos,ni)=>{
+ctx.beginPath();
+ctx.arc(pos.x,pos.y,nodeR,0,Math.PI*2);
+let fill='var(--node-bg)';
+if(actLayers&&animProgress>li/layers.length){
+const layerProg=Math.min(1,(animProgress-li/layers.length)*layers.length);
+const val=actLayers[li][ni]||0;
+const intensity=val*layerProg;
+ctx.fillStyle=`rgba(255,${Math.floor(102+153*(1-intensity))},${Math.floor(255*(1-intensity))},1)`;
+if(intensity>0.3){
+ctx.shadowColor='rgba(255,102,0,'+intensity*0.8+')';
+ctx.shadowBlur=intensity*20;
+}
+}else{
+ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--node-bg').trim();
+}
+ctx.fill();
+ctx.shadowColor='transparent';ctx.shadowBlur=0;
+ctx.strokeStyle='rgba(255,102,0,0.3)';ctx.lineWidth=1.5;
+ctx.stroke();
+
+// Labels for input/output
+ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--fg').trim();
+ctx.font='10px Space Grotesk';ctx.textAlign=li===0?'right':'left';
+if(li===0){
+ctx.fillText(featureNames[ni],pos.x-nodeR-6,pos.y+3);
+}
+if(li===positions.length-1){
+ctx.textAlign='left';
+ctx.fillText(ni===0?'Cat':'Dog',pos.x+nodeR+6,pos.y+3);
+}
+});
+
+// Layer label
+ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--subtle').trim();
+ctx.font='10px Space Grotesk';ctx.textAlign='center';
+const lx=layer[0].x;
+ctx.fillText(layerNames[li],lx,20);
+});
+
+if(animating){
+animProgress=Math.min(1,animProgress+0.015);
+if(animProgress>=1){animating=false;showResults();}
+}
+requestAnimationFrame(draw);
+}
+
+function showResults(){
+const rb=document.getElementById('resultBox');
+rb.style.display='block';
+document.getElementById('predLabel').textContent=prediction.label;
+document.getElementById('predConf').textContent='Confidence: '+Math.round(prediction.confidence*100)+'%';
+
+// SHAP bars
+const sb=document.getElementById('shapBars');sb.innerHTML='';
+const maxAbs=Math.max(...shapValues.map(s=>Math.abs(s.value)),0.01);
+shapValues.forEach(s=>{
+const pct=Math.abs(s.value)/maxAbs*100;
+const cls=s.positive?'positive':'negative';
+sb.innerHTML+=`<div class="shap-bar-group"><div class="shap-bar-label"><span>${s.name}</span><span class="val">${s.value>0?'+':''}${s.value.toFixed(3)}</span></div><div class="shap-bar-track"><div class="shap-bar-fill ${cls}" style="width:${pct}%"></div></div></div>`;
+});
+
+// Explanation
+const top=shapValues[0];
+const second=shapValues[1];
+const dir=prediction.isCat?'Cat':'Dog';
+document.getElementById('explanation').innerHTML=`The model classified this as <b>${dir}</b> with ${Math.round(prediction.confidence*100)}% confidence. The most influential feature was <b>${top.name}</b> (SHAP: ${top.value>0?'+':''}${top.value.toFixed(3)}), followed by <b>${second.name}</b>. ${prediction.isCat?'High ear pointiness and round eyes pushed toward Cat.':'Long snout and large body size pushed toward Dog.'}`;
+}
+
+draw();
+</script>
+</body>
+</html>

@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Better Enterprise Glue - Visual API Integration Builder</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fafafa;--surface:#fff;--text:#1a1a2e;--text2:#555;--border:#e0e0e0;--accent:#ff6600;--card:#fff;--bg2:#f0f0f5;--green:#2ecc71;}
+@media(prefers-color-scheme:dark){:root{--bg:#0f0f1a;--surface:#1a1a2e;--text:#e8e8f0;--text2:#aaa;--border:#2a2a3e;--card:#1e1e32;--bg2:#16162a;}}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow:hidden;}
+a{color:var(--accent);text-decoration:none;}a:hover{text-decoration:underline;}
+.back{display:inline-block;padding:12px 24px;font-size:14px;font-weight:500;}
+.top-bar{display:flex;align-items:center;padding:0 20px;gap:16px;flex-wrap:wrap;}
+.top-bar h1{font-size:1.3rem;font-weight:700;flex:1;}
+.btn{padding:8px 18px;border:none;border-radius:8px;font-family:inherit;font-size:0.85rem;font-weight:600;cursor:pointer;transition:transform 0.1s;}
+.btn:hover{transform:scale(1.03);}
+.btn-run{background:var(--green);color:#fff;}
+.btn-clear{background:var(--border);color:var(--text);}
+.workspace{display:flex;height:calc(100vh - 100px);overflow:hidden;}
+.sidebar{width:200px;background:var(--surface);border-right:1px solid var(--border);padding:16px;flex-shrink:0;overflow-y:auto;}
+.sidebar h3{font-size:0.85rem;color:var(--text2);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px;}
+.service-item{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;cursor:grab;display:flex;align-items:center;gap:8px;font-size:0.85rem;font-weight:500;transition:border-color 0.2s;user-select:none;}
+.service-item:hover{border-color:var(--accent);}
+.service-item .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.canvas-area{flex:1;position:relative;overflow:hidden;}
+#mainCanvas{width:100%;height:100%;display:block;background:var(--bg);}
+.log-panel{width:280px;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;}
+.log-header{padding:12px 16px;border-bottom:1px solid var(--border);font-weight:600;font-size:0.9rem;display:flex;justify-content:space-between;align-items:center;}
+.log-body{flex:1;overflow-y:auto;padding:12px;font-size:0.8rem;font-family:'Space Grotesk',monospace;}
+.log-entry{padding:6px 8px;border-radius:6px;margin-bottom:4px;border-left:3px solid transparent;}
+.log-entry.info{background:var(--bg2);border-left-color:#3498db;}
+.log-entry.success{background:#2ecc7115;border-left-color:#2ecc71;}
+.log-entry.running{background:#ff660015;border-left-color:#ff6600;}
+.log-entry .time{color:var(--text2);font-size:0.7rem;}
+.instructions{color:var(--text2);font-size:0.8rem;padding:12px;border-top:1px solid var(--border);line-height:1.4;}
+</style>
+</head>
+<body>
+<div style="display:flex;align-items:center;">
+<a class="back" href="index.html">← Back to all demos</a>
+<div class="top-bar">
+<h1>Better Enterprise Glue</h1>
+<button class="btn btn-run" id="runBtn">▶ Run Workflow</button>
+<button class="btn btn-clear" id="clearBtn">Clear</button>
+</div>
+</div>
+<div class="workspace">
+<div class="sidebar">
+<h3>Services</h3>
+<div id="serviceList"></div>
+<p class="instructions">Drag services onto the canvas. Then drag from an output port (right) to an input port (left) to connect them.</p>
+</div>
+<div class="canvas-area">
+<canvas id="mainCanvas"></canvas>
+</div>
+<div class="log-panel">
+<div class="log-header">Execution Log <span id="logStatus" style="font-size:0.75rem;color:var(--text2);">Idle</span></div>
+<div class="log-body" id="logBody">
+<div class="log-entry info"><span class="time">--:--:--</span> Waiting for workflow...</div>
+</div>
+</div>
+</div>
+
+<script>
+const servicesDef = [
+  {id:'salesforce',label:'Salesforce',color:'#00A1E0',outputs:['contacts','deals'],inputs:['updates']},
+  {id:'slack',label:'Slack',color:'#4A154B',outputs:['messages'],inputs:['notifications']},
+  {id:'postgres',label:'Postgres',color:'#336791',outputs:['query_results'],inputs:['writes']},
+  {id:'stripe',label:'Stripe',color:'#635BFF',outputs:['payments','invoices'],inputs:['charges']},
+  {id:'github',label:'GitHub',color:'#333',outputs:['commits','prs'],inputs:['issues']},
+  {id:'email',label:'Email',color:'#D44638',outputs:['inbox'],inputs:['send']},
+  {id:'s3',label:'AWS S3',color:'#FF9900',outputs:['files'],inputs:['uploads']},
+  {id:'webhook',label:'Webhook',color:'#2ecc71',outputs:['payload'],inputs:['trigger']},
+];
+
+const canvas = document.getElementById('mainCanvas');
+const ctx = canvas.getContext('2d');
+const isDark = () => window.matchMedia('(prefers-color-scheme:dark)').matches;
+
+let blocks = [], connections = [], draggingBlock = null, dragOffset = {x:0,y:0};
+let connectingFrom = null, connectingMouse = {x:0,y:0};
+let particles = [];
+let isRunning = false;
+
+function resize(){
+  const r = canvas.getBoundingClientRect();
+  canvas.width = r.width * devicePixelRatio;
+  canvas.height = r.height * devicePixelRatio;
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+}
+resize();
+window.addEventListener('resize', resize);
+
+// Render sidebar
+const sidebar = document.getElementById('serviceList');
+servicesDef.forEach(s => {
+  const div = document.createElement('div');
+  div.className = 'service-item';
+  div.draggable = true;
+  div.dataset.service = s.id;
+  div.innerHTML = `<div class="dot" style="background:${s.color}"></div>${s.label}`;
+  div.addEventListener('dragstart', e => {
+    e.dataTransfer.setData('service', s.id);
+  });
+  sidebar.appendChild(div);
+});
+
+canvas.addEventListener('dragover', e => e.preventDefault());
+canvas.addEventListener('drop', e => {
+  e.preventDefault();
+  const serviceId = e.dataTransfer.getData('service');
+  const def = servicesDef.find(s => s.id === serviceId);
+  if(!def) return;
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left, y = e.clientY - rect.top;
+  addBlock(def, x, y);
+});
+
+const BW = 140, BH = 60, PORT_R = 7;
+
+function addBlock(def, x, y){
+  blocks.push({
+    ...def, x: x - BW/2, y: y - BH/2, w: BW, h: BH,
+    instanceId: def.id + '_' + Date.now()
+  });
+}
+
+function getInputPort(block){
+  return {x: block.x, y: block.y + block.h/2};
+}
+function getOutputPort(block){
+  return {x: block.x + block.w, y: block.y + block.h/2};
+}
+
+function hitTest(mx, my){
+  for(let i = blocks.length-1; i >= 0; i--){
+    const b = blocks[i];
+    if(mx >= b.x && mx <= b.x+b.w && my >= b.y && my <= b.y+b.h) return {type:'block', block:b, idx:i};
+    // output port
+    const op = getOutputPort(b);
+    if((mx-op.x)**2 + (my-op.y)**2 < (PORT_R+4)**2) return {type:'output', block:b};
+    // input port
+    const ip = getInputPort(b);
+    if((mx-ip.x)**2 + (my-ip.y)**2 < (PORT_R+4)**2) return {type:'input', block:b};
+  }
+  return null;
+}
+
+let mouseDown = false, hasDragged = false;
+canvas.addEventListener('mousedown', e => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  const hit = hitTest(mx, my);
+  if(!hit) return;
+  mouseDown = true; hasDragged = false;
+  if(hit.type === 'output'){
+    connectingFrom = hit.block;
+    connectingMouse = {x: mx, y: my};
+  } else if(hit.type === 'block'){
+    draggingBlock = hit.block;
+    dragOffset = {x: mx - hit.block.x, y: my - hit.block.y};
+  }
+});
+
+canvas.addEventListener('mousemove', e => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  if(connectingFrom){
+    connectingMouse = {x: mx, y: my};
+    hasDragged = true;
+  } else if(draggingBlock){
+    draggingBlock.x = mx - dragOffset.x;
+    draggingBlock.y = my - dragOffset.y;
+    hasDragged = true;
+  }
+});
+
+canvas.addEventListener('mouseup', e => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  if(connectingFrom){
+    const hit = hitTest(mx, my);
+    if(hit && hit.type === 'input' && hit.block !== connectingFrom){
+      const exists = connections.find(c => c.from.instanceId === connectingFrom.instanceId && c.to.instanceId === hit.block.instanceId);
+      if(!exists){
+        connections.push({from: connectingFrom, to: hit.block});
+      }
+    }
+    connectingFrom = null;
+  }
+  draggingBlock = null;
+  mouseDown = false;
+});
+
+// Double-click to remove
+canvas.addEventListener('dblclick', e => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  const hit = hitTest(mx, my);
+  if(hit && hit.type === 'block'){
+    connections = connections.filter(c => c.from !== hit.block && c.to !== hit.block);
+    blocks.splice(hit.idx, 1);
+  }
+});
+
+function draw(){
+  const w = canvas.getBoundingClientRect().width, h = canvas.getBoundingClientRect().height;
+  const dark = isDark();
+  ctx.clearRect(0,0,w,h);
+
+  // Grid
+  ctx.strokeStyle = dark ? '#1a1a2e' : '#eee';
+  ctx.lineWidth = 1;
+  for(let x = 0; x < w; x += 30){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke(); }
+  for(let y = 0; y < h; y += 30){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
+
+  // Connections
+  connections.forEach(conn => {
+    const from = getOutputPort(conn.from);
+    const to = getInputPort(conn.to);
+    const cpx = (from.x + to.x)/2;
+    ctx.strokeStyle = dark ? '#555' : '#bbb';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(from.x, from.y);
+    ctx.bezierCurveTo(from.x+60, from.y, to.x-60, to.y, to.x, to.y);
+    ctx.stroke();
+  });
+
+  // Particles along connections
+  particles.forEach(p => {
+    const conn = p.conn;
+    const from = getOutputPort(conn.from);
+    const to = getInputPort(conn.to);
+    const t = p.t;
+    // bezier point
+    const cx1 = from.x+60, cy1=from.y, cx2=to.x-60, cy2=to.y;
+    const mt = 1-t;
+    const px = mt*mt*mt*from.x + 3*mt*mt*t*cx1 + 3*mt*t*t*cx2 + t*t*t*to.x;
+    const py = mt*mt*mt*from.y + 3*mt*mt*t*cy1 + 3*mt*t*t*cy2 + t*t*t*to.y;
+    ctx.beginPath();
+    ctx.arc(px, py, 4, 0, Math.PI*2);
+    ctx.fillStyle = conn.from.color || '#ff6600';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(px, py, 6, 0, Math.PI*2);
+    ctx.fillStyle = (conn.from.color || '#ff6600') + '44';
+    ctx.fill();
+    p.t += p.speed;
+    if(p.t > 1) p.t = 0;
+  });
+
+  // Drawing connection line
+  if(connectingFrom){
+    const from = getOutputPort(connectingFrom);
+    ctx.strokeStyle = '#ff6600';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6,4]);
+    ctx.beginPath();
+    ctx.moveTo(from.x, from.y);
+    ctx.lineTo(connectingMouse.x, connectingMouse.y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Blocks
+  blocks.forEach(b => {
+    // Shadow
+    ctx.fillStyle = dark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.08)';
+    roundRect(ctx, b.x+2, b.y+2, b.w, b.h, 10); ctx.fill();
+    // Body
+    ctx.fillStyle = dark ? '#1e1e32' : '#fff';
+    roundRect(ctx, b.x, b.y, b.w, b.h, 10); ctx.fill();
+    ctx.strokeStyle = b.color;
+    ctx.lineWidth = 2;
+    roundRect(ctx, b.x, b.y, b.w, b.h, 10); ctx.stroke();
+    // Top accent line
+    ctx.fillStyle = b.color;
+    ctx.fillRect(b.x+10, b.y, b.w-20, 3);
+    // Label
+    ctx.fillStyle = dark ? '#e8e8f0' : '#1a1a2e';
+    ctx.font = "600 13px 'Space Grotesk'";
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(b.label, b.x + b.w/2, b.y + b.h/2);
+    // Ports
+    const ip = getInputPort(b), op = getOutputPort(b);
+    [ip, op].forEach(p => {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, PORT_R, 0, Math.PI*2);
+      ctx.fillStyle = dark ? '#2a2a3e' : '#f0f0f5';
+      ctx.fill();
+      ctx.strokeStyle = b.color;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    });
+    // port arrows
+    ctx.fillStyle = b.color;
+    ctx.font = '10px sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('◀', ip.x, ip.y);
+    ctx.fillText('▶', op.x, op.y);
+  });
+
+  requestAnimationFrame(draw);
+}
+
+function roundRect(ctx, x, y, w, h, r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y);
+  ctx.closePath();
+}
+
+function addLog(msg, type='info'){
+  const body = document.getElementById('logBody');
+  const time = new Date().toLocaleTimeString();
+  const div = document.createElement('div');
+  div.className = 'log-entry ' + type;
+  div.innerHTML = `<span class="time">${time}</span> ${msg}`;
+  body.appendChild(div);
+  body.scrollTop = body.scrollHeight;
+}
+
+document.getElementById('runBtn').addEventListener('click', async () => {
+  if(isRunning) return;
+  if(connections.length === 0){ addLog('No connections to run.','info'); return; }
+  isRunning = true;
+  document.getElementById('logStatus').textContent = 'Running...';
+  document.getElementById('logStatus').style.color = '#ff6600';
+  document.getElementById('logBody').innerHTML = '';
+  particles = [];
+
+  addLog('Starting workflow execution...', 'running');
+
+  // Topological execution
+  const executed = new Set();
+  const queue = [...connections];
+
+  for(let i = 0; i < queue.length; i++){
+    const conn = queue[i];
+    await new Promise(r => setTimeout(r, 800));
+    addLog(`Connecting ${conn.from.label} → ${conn.to.label}`, 'running');
+    // Add particles
+    for(let j = 0; j < 3; j++){
+      particles.push({conn, t: j*0.33, speed: 0.008});
+    }
+    await new Promise(r => setTimeout(r, 600));
+    addLog(`✓ Data flowing: ${conn.from.label} → ${conn.to.label}`, 'success');
+  }
+
+  await new Promise(r => setTimeout(r, 500));
+  addLog(`Workflow complete! ${connections.length} integrations active.`, 'success');
+  document.getElementById('logStatus').textContent = 'Complete';
+  document.getElementById('logStatus').style.color = '#2ecc71';
+  isRunning = false;
+});
+
+document.getElementById('clearBtn').addEventListener('click', () => {
+  blocks = []; connections = []; particles = [];
+  document.getElementById('logBody').innerHTML = '<div class="log-entry info"><span class="time">--:--:--</span> Waiting for workflow...</div>';
+  document.getElementById('logStatus').textContent = 'Idle';
+  document.getElementById('logStatus').style.color = 'var(--text2)';
+});
+
+// Place some initial blocks
+const cw = () => canvas.getBoundingClientRect().width;
+const ch = () => canvas.getBoundingClientRect().height;
+setTimeout(()=>{
+  addBlock(servicesDef[0], cw()*0.15, ch()*0.3); // Salesforce
+  addBlock(servicesDef[2], cw()*0.15, ch()*0.7); // Postgres
+  addBlock(servicesDef[1], cw()*0.5, ch()*0.2);  // Slack
+  addBlock(servicesDef[3], cw()*0.5, ch()*0.5);  // Stripe
+  addBlock(servicesDef[5], cw()*0.8, ch()*0.4);  // Email
+}, 100);
+
+draw();
+</script>
+</body>
+</html>

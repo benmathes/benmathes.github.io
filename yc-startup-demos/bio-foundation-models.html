@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Foundation Models for Biological Systems</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fafafa;--surface:#fff;--text:#1a1a2e;--text2:#555;--border:#e0e0e0;--accent:#ff6600;--card:#fff;--bg2:#f0f0f5;}
+@media(prefers-color-scheme:dark){:root{--bg:#0f0f1a;--surface:#1a1a2e;--text:#e8e8f0;--text2:#aaa;--border:#2a2a3e;--card:#1e1e32;--bg2:#16162a;}}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+a{color:var(--accent);text-decoration:none;}a:hover{text-decoration:underline;}
+.back{display:inline-block;padding:16px 24px;font-size:14px;font-weight:500;}
+header{text-align:center;padding:10px 20px 24px;}
+header h1{font-size:2rem;font-weight:700;margin-bottom:8px;}
+header p{color:var(--text2);max-width:650px;margin:0 auto;font-size:1rem;}
+.main{max-width:1100px;margin:0 auto;padding:0 20px 40px;display:flex;gap:20px;flex-wrap:wrap;}
+.canvas-panel{flex:2;min-width:400px;background:var(--surface);border-radius:16px;border:1px solid var(--border);padding:20px;}
+.controls-panel{flex:1;min-width:260px;background:var(--surface);border-radius:16px;border:1px solid var(--border);padding:20px;}
+canvas{width:100%;height:420px;border-radius:12px;background:var(--bg2);display:block;cursor:crosshair;}
+h2{font-size:1.2rem;font-weight:600;margin-bottom:16px;}
+.slider-group{margin-bottom:20px;}
+.slider-group label{display:flex;justify-content:space-between;font-size:0.85rem;margin-bottom:6px;color:var(--text2);}
+.slider-group label span{color:var(--accent);font-weight:600;}
+input[type=range]{width:100%;-webkit-appearance:none;height:6px;border-radius:3px;background:var(--border);outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--accent);cursor:pointer;}
+.energy-display{background:var(--bg2);border-radius:12px;padding:16px;text-align:center;margin-bottom:20px;}
+.energy-val{font-size:2rem;font-weight:700;color:var(--accent);}
+.energy-label{font-size:0.8rem;color:var(--text2);margin-top:4px;}
+.btn{display:block;width:100%;padding:12px;border:none;border-radius:10px;background:var(--accent);color:#fff;font-family:inherit;font-size:1rem;font-weight:600;cursor:pointer;margin-bottom:10px;transition:transform 0.1s;}
+.btn:hover{transform:scale(1.02);}
+.btn.secondary{background:var(--border);color:var(--text);}
+.prediction{background:var(--bg2);border-radius:12px;padding:16px;margin-top:16px;display:none;}
+.prediction h3{font-size:1rem;margin-bottom:10px;color:var(--accent);}
+.pred-bar{display:flex;align-items:center;margin-bottom:6px;font-size:0.85rem;}
+.pred-bar .bar-bg{flex:1;height:8px;background:var(--border);border-radius:4px;margin:0 8px;overflow:hidden;}
+.pred-bar .bar-fill{height:100%;border-radius:4px;background:var(--accent);transition:width 0.6s ease;}
+.pred-bar .pct{width:40px;text-align:right;font-weight:600;color:var(--accent);}
+.sequence-display{font-family:monospace;font-size:11px;color:var(--text2);word-break:break-all;margin-top:12px;padding:10px;background:var(--bg2);border-radius:8px;max-height:80px;overflow:auto;}
+</style>
+</head>
+<body>
+<a class="back" href="index.html">← Back to all demos</a>
+<header>
+<h1>Foundation Models for Biological Systems</h1>
+<p>Adjust biophysical parameters and watch a simplified amino acid chain fold in real time. Predict protein function from the resulting structure.</p>
+</header>
+<div class="main">
+<div class="canvas-panel">
+<h2>Protein Folding Simulation</h2>
+<canvas id="foldCanvas"></canvas>
+<div class="sequence-display" id="seqDisplay"></div>
+</div>
+<div class="controls-panel">
+<h2>Parameters</h2>
+<div class="slider-group">
+<label>Hydrophobicity <span id="hydroVal">0.5</span></label>
+<input type="range" id="hydro" min="0" max="100" value="50">
+</div>
+<div class="slider-group">
+<label>Charge Interaction <span id="chargeVal">0.5</span></label>
+<input type="range" id="charge" min="0" max="100" value="50">
+</div>
+<div class="slider-group">
+<label>Temperature (K) <span id="tempVal">310</span></label>
+<input type="range" id="temp" min="200" max="500" value="310">
+</div>
+<div class="energy-display">
+<div class="energy-val" id="energyVal">0.00</div>
+<div class="energy-label">Free Energy (kcal/mol)</div>
+</div>
+<button class="btn" id="foldBtn">Fold Protein</button>
+<button class="btn secondary" id="resetBtn">New Random Chain</button>
+<button class="btn" id="predictBtn" style="background:#2ecc71;">Predict Function</button>
+<div class="prediction" id="prediction">
+<h3>Function Prediction</h3>
+<div id="predBars"></div>
+</div>
+</div>
+</div>
+<script>
+const canvas = document.getElementById('foldCanvas');
+const ctx = canvas.getContext('2d');
+const aminoAcids = ['A','R','N','D','C','E','Q','G','H','I','L','K','M','F','P','S','T','W','Y','V'];
+const aaProps = {};
+aminoAcids.forEach((aa,i)=>{
+  aaProps[aa] = {
+    hydro: [1.8,-4.5,-3.5,-3.5,2.5,-3.5,-3.5,-0.4,-3.2,4.5,3.8,-3.9,1.9,2.8,-1.6,-0.8,-0.7,-0.9,-1.3,4.2][i]/4.5,
+    charge: [0,1,0,-1,0,-1,0,0,0.5,0,0,1,0,0,0,0,0,0,0,0][i],
+    color: ['#e74c3c','#3498db','#2ecc71','#e67e22','#f1c40f','#e67e22','#2ecc71','#95a5a6','#3498db','#e74c3c','#e74c3c','#3498db','#f1c40f','#9b59b6','#95a5a6','#2ecc71','#2ecc71','#9b59b6','#9b59b6','#e74c3c'][i]
+  };
+});
+
+let nodes = [], chainLength = 30, folding = false, energy = 0;
+
+function resizeCanvas(){
+  const r = canvas.getBoundingClientRect();
+  canvas.width = r.width * devicePixelRatio;
+  canvas.height = r.height * devicePixelRatio;
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+function generateChain(){
+  nodes = [];
+  const w = canvas.getBoundingClientRect().width, h = canvas.getBoundingClientRect().height;
+  const startX = 60, startY = h/2;
+  const spacing = (w - 120) / (chainLength - 1);
+  for(let i = 0; i < chainLength; i++){
+    const aa = aminoAcids[Math.floor(Math.random()*aminoAcids.length)];
+    nodes.push({
+      x: startX + i * spacing, y: startY + (Math.random()-0.5)*20,
+      vx: 0, vy: 0, aa, ...aaProps[aa], idx: i
+    });
+  }
+  updateSequence();
+  energy = 0;
+  document.getElementById('prediction').style.display = 'none';
+}
+
+function updateSequence(){
+  document.getElementById('seqDisplay').textContent = 'Sequence: ' + nodes.map(n=>n.aa).join('');
+}
+
+function getParams(){
+  return {
+    hydro: document.getElementById('hydro').value / 100,
+    charge: document.getElementById('charge').value / 100,
+    temp: +document.getElementById('temp').value
+  };
+}
+
+document.getElementById('hydro').oninput = e => document.getElementById('hydroVal').textContent = (e.target.value/100).toFixed(2);
+document.getElementById('charge').oninput = e => document.getElementById('chargeVal').textContent = (e.target.value/100).toFixed(2);
+document.getElementById('temp').oninput = e => document.getElementById('tempVal').textContent = e.target.value;
+
+function calcEnergy(){
+  const p = getParams();
+  let E = 0;
+  for(let i = 0; i < nodes.length; i++){
+    for(let j = i+2; j < nodes.length; j++){
+      const dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y;
+      const dist = Math.sqrt(dx*dx+dy*dy);
+      if(dist < 60){
+        // hydrophobic attraction
+        if(nodes[i].hydro > 0 && nodes[j].hydro > 0){
+          E -= nodes[i].hydro * nodes[j].hydro * p.hydro * (60-dist)/60 * 5;
+        }
+        // charge interaction
+        if(nodes[i].charge !== 0 && nodes[j].charge !== 0){
+          E -= nodes[i].charge * nodes[j].charge * p.charge * (60-dist)/60 * 3;
+        }
+      }
+    }
+  }
+  return E;
+}
+
+function foldStep(){
+  const p = getParams();
+  const w = canvas.getBoundingClientRect().width, h = canvas.getBoundingClientRect().height;
+  const cx = w/2, cy = h/2;
+  const tempFactor = p.temp / 310;
+
+  nodes.forEach((n, i) => {
+    let fx = 0, fy = 0;
+    // bond spring to neighbors
+    if(i > 0){
+      const prev = nodes[i-1];
+      const dx = prev.x - n.x, dy = prev.y - n.y;
+      const dist = Math.sqrt(dx*dx+dy*dy);
+      const targetDist = 20;
+      const f = (dist - targetDist) * 0.1;
+      fx += dx/dist * f; fy += dy/dist * f;
+    }
+    if(i < nodes.length-1){
+      const next = nodes[i+1];
+      const dx = next.x - n.x, dy = next.y - n.y;
+      const dist = Math.sqrt(dx*dx+dy*dy);
+      const targetDist = 20;
+      const f = (dist - targetDist) * 0.1;
+      fx += dx/dist * f; fy += dy/dist * f;
+    }
+    // non-bonded interactions
+    for(let j = 0; j < nodes.length; j++){
+      if(Math.abs(j-i) <= 1) continue;
+      const o = nodes[j];
+      const dx = o.x - n.x, dy = o.y - n.y;
+      const dist = Math.sqrt(dx*dx+dy*dy) || 1;
+      // repulsion at close range
+      if(dist < 15){
+        const f = (15 - dist) * 0.5;
+        fx -= dx/dist*f; fy -= dy/dist*f;
+      }
+      // hydrophobic attraction
+      if(n.hydro > 0 && o.hydro > 0 && dist < 80){
+        const f = n.hydro * o.hydro * p.hydro * 0.3;
+        fx += dx/dist*f; fy += dy/dist*f;
+      }
+      // charge
+      if(n.charge !== 0 && o.charge !== 0 && dist < 80){
+        const f = n.charge * o.charge * p.charge * 0.2;
+        fx += dx/dist*f; fy += dy/dist*f;
+      }
+    }
+    // centering force
+    fx += (cx - n.x) * 0.001;
+    fy += (cy - n.y) * 0.001;
+    // thermal noise
+    fx += (Math.random()-0.5) * tempFactor * 0.5;
+    fy += (Math.random()-0.5) * tempFactor * 0.5;
+
+    n.vx = (n.vx + fx) * 0.85;
+    n.vy = (n.vy + fy) * 0.85;
+  });
+
+  nodes.forEach(n => {
+    n.x += n.vx; n.y += n.vy;
+    n.x = Math.max(12, Math.min(w-12, n.x));
+    n.y = Math.max(12, Math.min(h-12, n.y));
+  });
+
+  energy = calcEnergy();
+  document.getElementById('energyVal').textContent = energy.toFixed(2);
+}
+
+function draw(){
+  const w = canvas.getBoundingClientRect().width, h = canvas.getBoundingClientRect().height;
+  const isDark = window.matchMedia('(prefers-color-scheme:dark)').matches;
+  ctx.clearRect(0,0,w,h);
+
+  // draw bonds
+  ctx.strokeStyle = isDark ? '#444' : '#ccc';
+  ctx.lineWidth = 2;
+  for(let i = 1; i < nodes.length; i++){
+    ctx.beginPath();
+    ctx.moveTo(nodes[i-1].x, nodes[i-1].y);
+    ctx.lineTo(nodes[i].x, nodes[i].y);
+    ctx.stroke();
+  }
+
+  // draw non-bonded interactions (faint lines)
+  for(let i = 0; i < nodes.length; i++){
+    for(let j = i+3; j < nodes.length; j++){
+      const dx = nodes[i].x-nodes[j].x, dy = nodes[i].y-nodes[j].y;
+      const dist = Math.sqrt(dx*dx+dy*dy);
+      if(dist < 35){
+        ctx.strokeStyle = 'rgba(255,102,0,0.15)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3,3]);
+        ctx.beginPath();
+        ctx.moveTo(nodes[i].x, nodes[i].y);
+        ctx.lineTo(nodes[j].x, nodes[j].y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+  }
+
+  // draw nodes
+  nodes.forEach(n => {
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, 10, 0, Math.PI*2);
+    ctx.fillStyle = n.color;
+    ctx.fill();
+    ctx.strokeStyle = isDark ? '#222' : '#fff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = '#fff';
+    ctx.font = "bold 8px 'Space Grotesk'";
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(n.aa, n.x, n.y);
+  });
+
+  if(folding) foldStep();
+  requestAnimationFrame(draw);
+}
+
+document.getElementById('foldBtn').addEventListener('click', () => { folding = !folding; document.getElementById('foldBtn').textContent = folding ? 'Pause Folding' : 'Fold Protein'; });
+document.getElementById('resetBtn').addEventListener('click', () => { folding = false; document.getElementById('foldBtn').textContent = 'Fold Protein'; generateChain(); });
+
+document.getElementById('predictBtn').addEventListener('click', () => {
+  const pred = document.getElementById('prediction');
+  pred.style.display = 'block';
+  // Calculate prediction based on folding structure
+  const compactness = calcCompactness();
+  const chargeBalance = nodes.reduce((s,n)=>s+Math.abs(n.charge),0)/nodes.length;
+  const hydroAvg = nodes.reduce((s,n)=>s+n.hydro,0)/nodes.length;
+
+  const scores = {
+    'Enzyme': Math.min(95, Math.max(5, 40 + compactness*30 + chargeBalance*20)),
+    'Structural': Math.min(95, Math.max(5, 30 + (1-compactness)*40 + hydroAvg*20)),
+    'Transport': Math.min(95, Math.max(5, 35 + hydroAvg*30 - chargeBalance*10)),
+    'Receptor': Math.min(95, Math.max(5, 25 + compactness*20 + chargeBalance*30))
+  };
+  // normalize
+  const total = Object.values(scores).reduce((a,b)=>a+b,0);
+  const bars = document.getElementById('predBars');
+  bars.innerHTML = '';
+  Object.entries(scores).sort((a,b)=>b[1]-a[1]).forEach(([name, score]) => {
+    const pct = Math.round(score/total*100);
+    const div = document.createElement('div');
+    div.className = 'pred-bar';
+    div.innerHTML = `<span style="width:70px">${name}</span><div class="bar-bg"><div class="bar-fill" style="width:0%"></div></div><span class="pct">${pct}%</span>`;
+    bars.appendChild(div);
+    setTimeout(()=>{ div.querySelector('.bar-fill').style.width = pct+'%'; }, 50);
+  });
+});
+
+function calcCompactness(){
+  let cx=0,cy=0;
+  nodes.forEach(n=>{cx+=n.x;cy+=n.y;});
+  cx/=nodes.length; cy/=nodes.length;
+  let avgDist = 0;
+  nodes.forEach(n=>{ avgDist += Math.sqrt((n.x-cx)**2+(n.y-cy)**2); });
+  avgDist /= nodes.length;
+  const maxPossible = 200;
+  return Math.max(0, Math.min(1, 1 - avgDist/maxPossible));
+}
+
+generateChain();
+draw();
+</script>
+</body>
+</html>

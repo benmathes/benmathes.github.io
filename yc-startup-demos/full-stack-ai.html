@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Full-Stack AI Companies</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f8f8;
+  --surface: #ffffff;
+  --text: #1a1a1a;
+  --text-secondary: #666;
+  --border: #e0e0e0;
+  --accent: #ff6600;
+  --accent-light: rgba(255, 102, 0, 0.15);
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --text: #e8e8e8;
+    --text-secondary: #999;
+    --border: #333;
+    --accent-light: rgba(255, 102, 0, 0.2);
+    --shadow: 0 2px 12px rgba(0,0,0,0.3);
+  }
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Space Grotesk', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+.back-link {
+  display: inline-block;
+  padding: 16px 24px;
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 14px;
+}
+.back-link:hover { opacity: 0.7; }
+.container { max-width: 1200px; margin: 0 auto; padding: 0 24px 48px; }
+h1 { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+.subtitle { color: var(--text-secondary); font-size: 14px; margin-bottom: 24px; }
+.badge { background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; vertical-align: middle; margin-left: 8px; }
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 24px;
+}
+@media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+}
+.card h2 { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+.org-chart {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  min-height: 400px;
+}
+.org-row {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+  position: relative;
+}
+.agent-node {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 16px;
+  text-align: center;
+  min-width: 120px;
+  position: relative;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+.agent-node:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: var(--shadow); }
+.agent-node.active { border-color: var(--accent); }
+.agent-icon { font-size: 28px; margin-bottom: 4px; }
+.agent-name { font-weight: 600; font-size: 13px; }
+.agent-cost { color: var(--text-secondary); font-size: 11px; }
+.agent-status {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #4caf50;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+.agent-status.idle { background: var(--text-secondary); }
+.work-item {
+  position: absolute;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  pointer-events: none;
+  z-index: 10;
+  transition: all 0.5s linear;
+}
+.remove-btn {
+  position: absolute;
+  top: -6px; right: -6px;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  border: none;
+  background: #f44336;
+  color: white;
+  font-size: 10px;
+  cursor: pointer;
+  display: none;
+  line-height: 18px;
+  text-align: center;
+}
+.agent-node:hover .remove-btn { display: block; }
+.add-agent-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 8px;
+}
+.add-btn {
+  padding: 6px 12px;
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.add-btn:hover { border-color: var(--accent); color: var(--accent); }
+canvas { width: 100%; display: block; border-radius: 8px; }
+.metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.metric-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  text-align: center;
+}
+.metric-val { font-size: 24px; font-weight: 700; color: var(--accent); }
+.metric-label { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+.metric-compare { font-size: 10px; color: #4caf50; }
+.connector {
+  width: 2px;
+  height: 12px;
+  background: var(--border);
+  margin: 0 auto;
+}
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">← Back to all demos</a>
+<div class="container">
+  <h1>Full-Stack AI Companies <span class="badge">Summer 2025</span></h1>
+  <p class="subtitle">Build an AI-staffed company and compare output metrics vs traditional human teams</p>
+  <div class="grid">
+    <div>
+      <div class="card">
+        <h2>AI Company Org Chart</h2>
+        <div class="org-chart" id="org-chart"></div>
+        <div class="add-agent-row" id="add-row"></div>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <h2>Capability Coverage</h2>
+        <canvas id="radar-canvas" height="260"></canvas>
+      </div>
+      <div class="card">
+        <h2>Monthly Metrics</h2>
+        <div class="metrics-grid" id="metrics-grid"></div>
+      </div>
+      <div class="card">
+        <h2>Cost Comparison</h2>
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-label">Human Team</div>
+            <div class="metric-val" id="human-cost">$0</div>
+            <div class="metric-label">/month</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">AI Team</div>
+            <div class="metric-val" id="ai-cost" style="color:#4caf50">$0</div>
+            <div class="metric-label">/month</div>
+            <div class="metric-compare" id="savings-pct"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const agentTypes = [
+  { role: 'CEO', icon: '🤖', humanCost: 15000, aiCost: 500, capabilities: { sales: 0.3, finance: 0.3, design: 0.1, engineering: 0.2, support: 0.1 }, metrics: { decisions: 200 } },
+  { role: 'Sales Rep', icon: '📞', humanCost: 8000, aiCost: 200, capabilities: { sales: 0.9, finance: 0.1, design: 0, engineering: 0, support: 0.2 }, metrics: { calls: 2000 } },
+  { role: 'Accountant', icon: '📊', humanCost: 7000, aiCost: 150, capabilities: { sales: 0, finance: 0.95, design: 0, engineering: 0, support: 0.1 }, metrics: { invoices: 500 } },
+  { role: 'Designer', icon: '🎨', humanCost: 9000, aiCost: 300, capabilities: { sales: 0.1, finance: 0, design: 0.95, engineering: 0.1, support: 0 }, metrics: { designs: 150 } },
+  { role: 'Developer', icon: '💻', humanCost: 12000, aiCost: 400, capabilities: { sales: 0, finance: 0, design: 0.1, engineering: 0.95, support: 0.1 }, metrics: { commits: 800 } },
+  { role: 'Support', icon: '🎧', humanCost: 5000, aiCost: 100, capabilities: { sales: 0.1, finance: 0, design: 0, engineering: 0, support: 0.95 }, metrics: { tickets: 3000 } },
+];
+
+let company = [
+  { ...agentTypes[0], id: 1 },
+  { ...agentTypes[1], id: 2 },
+  { ...agentTypes[4], id: 3 },
+];
+let nextId = 4;
+let workItems = [];
+
+function renderOrgChart() {
+  const chart = document.getElementById('org-chart');
+  const ceo = company.filter(a => a.role === 'CEO');
+  const others = company.filter(a => a.role !== 'CEO');
+
+  let html = '';
+  if (ceo.length > 0) {
+    html += '<div class="org-row">';
+    ceo.forEach(a => html += agentHTML(a));
+    html += '</div>';
+    if (others.length > 0) html += '<div class="connector"></div>';
+  }
+  if (others.length > 0) {
+    html += '<div class="org-row">';
+    others.forEach(a => html += agentHTML(a));
+    html += '</div>';
+  }
+  chart.innerHTML = html;
+
+  // Add row
+  const addRow = document.getElementById('add-row');
+  addRow.innerHTML = agentTypes.map(t =>
+    `<button class="add-btn" data-role="${t.role}">+ ${t.icon} ${t.role}</button>`
+  ).join('');
+  addRow.querySelectorAll('.add-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tpl = agentTypes.find(a => a.role === btn.dataset.role);
+      company.push({ ...tpl, id: nextId++ });
+      update();
+    });
+  });
+
+  // Remove buttons
+  chart.querySelectorAll('.remove-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const id = +btn.dataset.id;
+      company = company.filter(a => a.id !== id);
+      update();
+    });
+  });
+}
+
+function agentHTML(a) {
+  const busy = workItems.some(w => w.agentId === a.id);
+  return `<div class="agent-node ${busy ? 'active' : ''}">
+    <button class="remove-btn" data-id="${a.id}">x</button>
+    <div class="agent-icon">${a.icon}</div>
+    <div class="agent-name"><span class="agent-status ${busy ? '' : 'idle'}"></span>AI ${a.role}</div>
+    <div class="agent-cost">$${a.aiCost}/mo</div>
+  </div>`;
+}
+
+function drawRadar() {
+  const canvas = document.getElementById('radar-canvas');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.clientWidth;
+  const h = 260;
+  canvas.width = w * dpr; canvas.height = h * dpr;
+  canvas.style.height = h + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+
+  const cats = ['sales', 'finance', 'design', 'engineering', 'support'];
+  const labels = ['Sales', 'Finance', 'Design', 'Engineering', 'Support'];
+  const cx = w / 2, cy = h / 2, R = Math.min(w, h) / 2 - 30;
+
+  // Compute coverage
+  const coverage = {};
+  cats.forEach(c => {
+    coverage[c] = Math.min(1, company.reduce((sum, a) => sum + (a.capabilities[c] || 0), 0));
+  });
+
+  // Draw rings
+  const dm = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  for (let r = 0.2; r <= 1; r += 0.2) {
+    ctx.beginPath();
+    ctx.strokeStyle = dm ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= cats.length; i++) {
+      const angle = (Math.PI * 2 / cats.length) * i - Math.PI / 2;
+      const x = cx + Math.cos(angle) * R * r;
+      const y = cy + Math.sin(angle) * R * r;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.stroke();
+  }
+
+  // Axes
+  cats.forEach((c, i) => {
+    const angle = (Math.PI * 2 / cats.length) * i - Math.PI / 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(angle) * R, cy + Math.sin(angle) * R);
+    ctx.strokeStyle = dm ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+    ctx.stroke();
+    // Label
+    const lx = cx + Math.cos(angle) * (R + 18);
+    const ly = cy + Math.sin(angle) * (R + 18);
+    ctx.fillStyle = dm ? '#999' : '#666';
+    ctx.font = '11px Space Grotesk';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(labels[i], lx, ly);
+  });
+
+  // Fill area
+  ctx.beginPath();
+  cats.forEach((c, i) => {
+    const angle = (Math.PI * 2 / cats.length) * i - Math.PI / 2;
+    const val = coverage[c];
+    const x = cx + Math.cos(angle) * R * val;
+    const y = cy + Math.sin(angle) * R * val;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(255, 102, 0, 0.2)';
+  ctx.fill();
+  ctx.strokeStyle = '#ff6600';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Dots
+  cats.forEach((c, i) => {
+    const angle = (Math.PI * 2 / cats.length) * i - Math.PI / 2;
+    const val = coverage[c];
+    const x = cx + Math.cos(angle) * R * val;
+    const y = cy + Math.sin(angle) * R * val;
+    ctx.beginPath();
+    ctx.arc(x, y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#ff6600';
+    ctx.fill();
+  });
+}
+
+function updateMetrics() {
+  const grid = document.getElementById('metrics-grid');
+  const metricDefs = [
+    { key: 'tickets', label: 'Tickets/mo', icon: '🎧' },
+    { key: 'commits', label: 'Commits/mo', icon: '💻' },
+    { key: 'designs', label: 'Designs/mo', icon: '🎨' },
+    { key: 'calls', label: 'Sales Calls/mo', icon: '📞' },
+  ];
+  grid.innerHTML = metricDefs.map(m => {
+    const total = company.reduce((sum, a) => sum + (a.metrics[m.key] || 0), 0);
+    return `<div class="metric-card">
+      <div style="font-size:18px">${m.icon}</div>
+      <div class="metric-val">${total.toLocaleString()}</div>
+      <div class="metric-label">${m.label}</div>
+    </div>`;
+  }).join('');
+
+  const hCost = company.reduce((s, a) => s + a.humanCost, 0);
+  const aCost = company.reduce((s, a) => s + a.aiCost, 0);
+  document.getElementById('human-cost').textContent = '$' + hCost.toLocaleString();
+  document.getElementById('ai-cost').textContent = '$' + aCost.toLocaleString();
+  const pct = hCost > 0 ? Math.round((1 - aCost / hCost) * 100) : 0;
+  document.getElementById('savings-pct').textContent = pct + '% savings';
+}
+
+function spawnWorkItem() {
+  if (company.length < 2) return;
+  const from = company[Math.floor(Math.random() * company.length)];
+  let to = company[Math.floor(Math.random() * company.length)];
+  if (to.id === from.id && company.length > 1) {
+    to = company.find(a => a.id !== from.id) || to;
+  }
+  workItems.push({ agentId: from.id, targetId: to.id, progress: 0 });
+}
+
+function animateWork() {
+  workItems = workItems.filter(w => w.progress < 1);
+  workItems.forEach(w => w.progress += 0.02);
+  renderOrgChart();
+  setTimeout(animateWork, 100);
+}
+
+function update() {
+  renderOrgChart();
+  drawRadar();
+  updateMetrics();
+}
+
+update();
+setInterval(spawnWorkItem, 2000);
+animateWork();
+</script>
+</body>
+</html>

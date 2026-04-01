@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Retraining Workers for the AI Economy</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f8f8;
+  --surface: #ffffff;
+  --text: #1a1a1a;
+  --text-secondary: #666;
+  --border: #e0e0e0;
+  --accent: #ff6600;
+  --accent-light: rgba(255, 102, 0, 0.15);
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --green: #22c55e;
+  --red: #ef4444;
+  --blue: #3b82f6;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --text: #e8e8e8;
+    --text-secondary: #999;
+    --border: #333;
+    --accent-light: rgba(255, 102, 0, 0.2);
+    --shadow: 0 2px 12px rgba(0,0,0,0.3);
+  }
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Space Grotesk', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+.back-link {
+  display: inline-block;
+  padding: 16px 24px;
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 14px;
+  transition: opacity 0.2s;
+}
+.back-link:hover { opacity: 0.7; }
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px 48px;
+}
+h1 { font-size: 32px; font-weight: 700; margin-bottom: 8px; }
+.subtitle { color: var(--text-secondary); font-size: 16px; margin-bottom: 32px; }
+.badge { display: inline-block; background: var(--accent-light); color: var(--accent); padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; margin-bottom: 12px; }
+
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+@media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: var(--shadow);
+}
+.card h2 { font-size: 18px; margin-bottom: 16px; font-weight: 600; }
+.card h3 { font-size: 15px; margin-bottom: 12px; font-weight: 600; }
+
+select, button {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+select { width: 100%; margin-bottom: 16px; }
+button {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  font-weight: 600;
+  padding: 10px 20px;
+}
+button:hover { opacity: 0.85; }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+canvas { width: 100%; height: auto; }
+
+.target-jobs { display: flex; flex-direction: column; gap: 12px; }
+.job-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+.job-card:hover, .job-card.selected { border-color: var(--accent); background: var(--accent-light); }
+.job-card .job-title { font-weight: 600; font-size: 15px; }
+.job-card .job-salary { color: var(--green); font-weight: 600; font-size: 13px; }
+.job-card .job-match { color: var(--text-secondary); font-size: 13px; }
+.job-card .match-bar { height: 4px; border-radius: 2px; background: var(--border); margin-top: 8px; overflow: hidden; }
+.job-card .match-bar .fill { height: 100%; border-radius: 2px; background: var(--accent); transition: width 0.6s ease; }
+
+.timeline { margin-top: 16px; }
+.timeline-item {
+  display: flex; gap: 16px; padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+.timeline-item:last-child { border-bottom: none; }
+.timeline-step {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--accent-light); color: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 14px; flex-shrink: 0;
+}
+.timeline-step.completed { background: var(--green); color: #fff; }
+.timeline-content { flex: 1; }
+.timeline-content .course-name { font-weight: 600; font-size: 14px; }
+.timeline-content .course-meta { color: var(--text-secondary); font-size: 13px; margin-top: 2px; }
+
+.progress-section { margin-top: 24px; }
+.progress-bar-outer {
+  width: 100%; height: 24px; border-radius: 12px;
+  background: var(--border); overflow: hidden; margin: 8px 0;
+}
+.progress-bar-inner {
+  height: 100%; border-radius: 12px;
+  background: linear-gradient(90deg, var(--accent), var(--green));
+  transition: width 0.3s ease;
+  display: flex; align-items: center; justify-content: flex-end; padding-right: 8px;
+  color: #fff; font-size: 12px; font-weight: 700;
+  min-width: 0;
+}
+
+.salary-chart { margin-top: 16px; }
+.salary-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.salary-label { width: 80px; font-size: 13px; color: var(--text-secondary); }
+.salary-bar-outer { flex: 1; height: 20px; background: var(--border); border-radius: 6px; overflow: hidden; }
+.salary-bar-fill { height: 100%; border-radius: 6px; transition: width 0.8s ease; display: flex; align-items: center; padding-left: 8px; font-size: 12px; font-weight: 600; color: #fff; }
+.salary-bar-fill.current { background: var(--blue); }
+.salary-bar-fill.target { background: var(--green); }
+
+.full-width { grid-column: 1 / -1; }
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">← Back to all demos</a>
+<div class="container">
+  <span class="badge">Fall 2025</span>
+  <h1>Retraining Workers for the AI Economy</h1>
+  <p class="subtitle">Analyze your current skills, discover AI-economy career paths, and build a personalized training roadmap.</p>
+
+  <div class="grid">
+    <div class="card">
+      <h2>1. Select Your Current Role</h2>
+      <select id="roleSelect">
+        <option value="">— Choose a role —</option>
+        <option value="truck_driver">Truck Driver</option>
+        <option value="retail_clerk">Retail Clerk</option>
+        <option value="factory_worker">Factory Worker</option>
+        <option value="data_entry">Data Entry Specialist</option>
+        <option value="call_center">Call Center Agent</option>
+      </select>
+      <h3>Your Current Skills</h3>
+      <canvas id="radarChart" width="400" height="350"></canvas>
+    </div>
+
+    <div class="card">
+      <h2>2. AI-Economy Career Paths</h2>
+      <div id="targetJobs" class="target-jobs">
+        <p style="color:var(--text-secondary); font-size:14px;">Select a role to see matching careers.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>3. Skills Gap Analysis</h2>
+      <canvas id="gapChart" width="400" height="350"></canvas>
+      <p id="gapSummary" style="color:var(--text-secondary); font-size:13px; margin-top:12px;">Select a role and target job to see your skills gap.</p>
+    </div>
+
+    <div class="card">
+      <h2>4. Training Path</h2>
+      <div id="trainingPath">
+        <p style="color:var(--text-secondary); font-size:14px;">Select a target career to see your training plan.</p>
+      </div>
+    </div>
+
+    <div class="card full-width">
+      <h2>5. Training Simulation</h2>
+      <div class="grid" style="margin-bottom:0;">
+        <div>
+          <div class="progress-section">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-weight:600; font-size:14px;">Overall Progress</span>
+              <span id="progressPercent" style="font-weight:700; color:var(--accent);">0%</span>
+            </div>
+            <div class="progress-bar-outer">
+              <div id="progressBar" class="progress-bar-inner" style="width:0%;"></div>
+            </div>
+            <p id="progressStatus" style="color:var(--text-secondary); font-size:13px; margin-top:4px;">Click "Start Training" to begin simulation.</p>
+          </div>
+          <div style="margin-top:16px; display:flex; gap:12px;">
+            <button id="startBtn" disabled>Start Training</button>
+            <button id="resetBtn" style="background:var(--border); color:var(--text);">Reset</button>
+          </div>
+        </div>
+        <div>
+          <h3>Salary Projection</h3>
+          <div class="salary-chart">
+            <div class="salary-row">
+              <span class="salary-label">Current</span>
+              <div class="salary-bar-outer">
+                <div id="salaryBarCurrent" class="salary-bar-fill current" style="width:0%;"></div>
+              </div>
+            </div>
+            <div class="salary-row">
+              <span class="salary-label">After</span>
+              <div class="salary-bar-outer">
+                <div id="salaryBarTarget" class="salary-bar-fill target" style="width:0%;"></div>
+              </div>
+            </div>
+          </div>
+          <p id="salaryIncrease" style="font-size:14px; margin-top:8px; font-weight:600; color:var(--green);"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SKILLS = ['Communication', 'Technical', 'Analytical', 'Leadership', 'Digital Literacy', 'Problem Solving'];
+
+const ROLES = {
+  truck_driver: {
+    label: 'Truck Driver',
+    skills: [5, 3, 3, 4, 2, 5],
+    salary: 48000
+  },
+  retail_clerk: {
+    label: 'Retail Clerk',
+    skills: [7, 2, 3, 4, 3, 4],
+    salary: 32000
+  },
+  factory_worker: {
+    label: 'Factory Worker',
+    skills: [4, 5, 3, 3, 2, 6],
+    salary: 40000
+  },
+  data_entry: {
+    label: 'Data Entry Specialist',
+    skills: [4, 4, 5, 2, 5, 3],
+    salary: 35000
+  },
+  call_center: {
+    label: 'Call Center Agent',
+    skills: [8, 2, 4, 3, 4, 5],
+    salary: 34000
+  }
+};
+
+const TARGET_JOBS = {
+  ai_trainer: {
+    label: 'AI Trainer / Data Annotator',
+    skills: [6, 5, 7, 3, 7, 6],
+    salary: 62000,
+    courses: [
+      { name: 'Intro to Machine Learning Concepts', weeks: 4, cert: 'ML Foundations Certificate' },
+      { name: 'Data Annotation & Labeling Tools', weeks: 3, cert: 'Labelbox Certification' },
+      { name: 'Quality Assurance for AI Data', weeks: 3, cert: null },
+      { name: 'Prompt Engineering Basics', weeks: 2, cert: 'OpenAI Prompt Certificate' }
+    ]
+  },
+  prompt_engineer: {
+    label: 'Prompt Engineer',
+    skills: [7, 6, 8, 3, 8, 7],
+    salary: 85000,
+    courses: [
+      { name: 'Fundamentals of Large Language Models', weeks: 4, cert: 'LLM Foundations Certificate' },
+      { name: 'Advanced Prompt Engineering', weeks: 6, cert: 'Prompt Engineering Professional' },
+      { name: 'API Integration & Automation', weeks: 4, cert: null },
+      { name: 'Evaluation & Testing for AI Systems', weeks: 3, cert: 'AI QA Certificate' },
+      { name: 'Domain-Specific Prompt Design', weeks: 3, cert: null }
+    ]
+  },
+  robotics_tech: {
+    label: 'Robotics Technician',
+    skills: [5, 8, 6, 4, 6, 7],
+    salary: 72000,
+    courses: [
+      { name: 'Industrial Robotics Fundamentals', weeks: 6, cert: 'Robotics Technician Level 1' },
+      { name: 'PLC Programming & Automation', weeks: 5, cert: 'Siemens PLC Certificate' },
+      { name: 'Sensor Integration & IoT', weeks: 4, cert: null },
+      { name: 'Preventive Maintenance for Automated Systems', weeks: 3, cert: 'Maintenance Pro Certificate' }
+    ]
+  },
+  data_analyst: {
+    label: 'Data Analyst',
+    skills: [6, 6, 9, 4, 8, 8],
+    salary: 78000,
+    courses: [
+      { name: 'Statistics & Data Analysis with Python', weeks: 6, cert: 'Python Data Certificate' },
+      { name: 'SQL for Data Analytics', weeks: 4, cert: 'SQL Professional Certificate' },
+      { name: 'Data Visualization with Tableau/Power BI', weeks: 4, cert: 'Tableau Desktop Specialist' },
+      { name: 'Business Intelligence & Reporting', weeks: 3, cert: null },
+      { name: 'AI-Assisted Analytics Tools', weeks: 3, cert: 'AI Analytics Certificate' }
+    ]
+  }
+};
+
+let selectedRole = null;
+let selectedJob = null;
+let trainingInterval = null;
+
+const roleSelect = document.getElementById('roleSelect');
+const radarCanvas = document.getElementById('radarChart');
+const gapCanvas = document.getElementById('gapChart');
+
+function getCSS(prop) {
+  return getComputedStyle(document.documentElement).getPropertyValue(prop).trim();
+}
+
+function drawRadar(canvas, datasets, labels) {
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.clientWidth;
+  const h = canvas.clientHeight;
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  ctx.scale(dpr, dpr);
+
+  const cx = w / 2, cy = h / 2;
+  const r = Math.min(w, h) * 0.38;
+  const n = labels.length;
+  const angleStep = (Math.PI * 2) / n;
+  const startAngle = -Math.PI / 2;
+
+  ctx.clearRect(0, 0, w, h);
+
+  // Grid
+  for (let ring = 1; ring <= 5; ring++) {
+    const rr = (r / 5) * ring;
+    ctx.beginPath();
+    for (let i = 0; i <= n; i++) {
+      const a = startAngle + angleStep * (i % n);
+      const x = cx + Math.cos(a) * rr;
+      const y = cy + Math.sin(a) * rr;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = getCSS('--border');
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // Axes & labels
+  const textColor = getCSS('--text-secondary');
+  ctx.font = '12px Space Grotesk, sans-serif';
+  ctx.fillStyle = textColor;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  for (let i = 0; i < n; i++) {
+    const a = startAngle + angleStep * i;
+    const ex = cx + Math.cos(a) * r;
+    const ey = cy + Math.sin(a) * r;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(ex, ey);
+    ctx.strokeStyle = getCSS('--border');
+    ctx.stroke();
+    const lx = cx + Math.cos(a) * (r + 20);
+    const ly = cy + Math.sin(a) * (r + 20);
+    ctx.fillText(labels[i], lx, ly);
+  }
+
+  // Data
+  datasets.forEach(ds => {
+    ctx.beginPath();
+    ds.values.forEach((v, i) => {
+      const a = startAngle + angleStep * i;
+      const dr = (r / 10) * v;
+      const x = cx + Math.cos(a) * dr;
+      const y = cy + Math.sin(a) * dr;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.closePath();
+    ctx.fillStyle = ds.fill;
+    ctx.fill();
+    ctx.strokeStyle = ds.stroke;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Dots
+    ds.values.forEach((v, i) => {
+      const a = startAngle + angleStep * i;
+      const dr = (r / 10) * v;
+      const x = cx + Math.cos(a) * dr;
+      const y = cy + Math.sin(a) * dr;
+      ctx.beginPath();
+      ctx.arc(x, y, 4, 0, Math.PI * 2);
+      ctx.fillStyle = ds.stroke;
+      ctx.fill();
+    });
+  });
+}
+
+function updateRadarChart() {
+  if (!selectedRole) {
+    const ctx = radarCanvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    radarCanvas.width = radarCanvas.clientWidth * dpr;
+    radarCanvas.height = radarCanvas.clientHeight * dpr;
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, radarCanvas.clientWidth, radarCanvas.clientHeight);
+    ctx.font = '14px Space Grotesk';
+    ctx.fillStyle = getCSS('--text-secondary');
+    ctx.textAlign = 'center';
+    ctx.fillText('Select a role to see skills', radarCanvas.clientWidth / 2, radarCanvas.clientHeight / 2);
+    return;
+  }
+  const role = ROLES[selectedRole];
+  drawRadar(radarCanvas, [
+    { values: role.skills, fill: 'rgba(59,130,246,0.2)', stroke: '#3b82f6' }
+  ], SKILLS);
+}
+
+function updateTargetJobs() {
+  const container = document.getElementById('targetJobs');
+  if (!selectedRole) {
+    container.innerHTML = '<p style="color:var(--text-secondary); font-size:14px;">Select a role to see matching careers.</p>';
+    return;
+  }
+  const role = ROLES[selectedRole];
+  container.innerHTML = '';
+  Object.entries(TARGET_JOBS).forEach(([key, job]) => {
+    const matchScore = Math.round(SKILLS.reduce((sum, _, i) => {
+      return sum + Math.max(0, 10 - Math.abs(job.skills[i] - role.skills[i])) * 10;
+    }, 0) / SKILLS.length);
+    const salaryIncrease = Math.round(((job.salary - role.salary) / role.salary) * 100);
+    const div = document.createElement('div');
+    div.className = 'job-card' + (selectedJob === key ? ' selected' : '');
+    div.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span class="job-title">${job.label}</span>
+        <span class="job-salary">$${job.salary.toLocaleString()}/yr (+${salaryIncrease}%)</span>
+      </div>
+      <span class="job-match">Skill match: ${matchScore}%</span>
+      <div class="match-bar"><div class="fill" style="width:${matchScore}%"></div></div>
+    `;
+    div.onclick = () => { selectedJob = key; render(); };
+    container.appendChild(div);
+  });
+}
+
+function updateGapChart() {
+  if (!selectedRole || !selectedJob) {
+    const ctx = gapCanvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    gapCanvas.width = gapCanvas.clientWidth * dpr;
+    gapCanvas.height = gapCanvas.clientHeight * dpr;
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, gapCanvas.clientWidth, gapCanvas.clientHeight);
+    ctx.font = '14px Space Grotesk';
+    ctx.fillStyle = getCSS('--text-secondary');
+    ctx.textAlign = 'center';
+    ctx.fillText('Select role & target to see gap', gapCanvas.clientWidth / 2, gapCanvas.clientHeight / 2);
+    return;
+  }
+  const role = ROLES[selectedRole];
+  const job = TARGET_JOBS[selectedJob];
+  drawRadar(gapCanvas, [
+    { values: job.skills, fill: 'rgba(34,197,94,0.15)', stroke: '#22c55e' },
+    { values: role.skills, fill: 'rgba(59,130,246,0.2)', stroke: '#3b82f6' }
+  ], SKILLS);
+  const gaps = SKILLS.map((s, i) => ({ skill: s, gap: Math.max(0, job.skills[i] - role.skills[i]) }))
+    .filter(g => g.gap > 0)
+    .sort((a, b) => b.gap - a.gap);
+  document.getElementById('gapSummary').innerHTML = gaps.length
+    ? `<strong>Biggest gaps:</strong> ${gaps.map(g => `${g.skill} (+${g.gap})`).join(', ')}. <span style="color:var(--accent);">Blue = you now, Green = target.</span>`
+    : '<span style="color:var(--green);">No significant gaps! You are well-positioned.</span>';
+}
+
+function updateTrainingPath() {
+  const container = document.getElementById('trainingPath');
+  if (!selectedJob) {
+    container.innerHTML = '<p style="color:var(--text-secondary); font-size:14px;">Select a target career to see your training plan.</p>';
+    return;
+  }
+  const job = TARGET_JOBS[selectedJob];
+  let totalWeeks = 0;
+  let html = '<div class="timeline">';
+  job.courses.forEach((c, i) => {
+    totalWeeks += c.weeks;
+    html += `
+      <div class="timeline-item" data-step="${i}">
+        <div class="timeline-step" id="step${i}">${i + 1}</div>
+        <div class="timeline-content">
+          <div class="course-name">${c.name}</div>
+          <div class="course-meta">${c.weeks} weeks${c.cert ? ' · 🏅 ' + c.cert : ''}</div>
+        </div>
+      </div>`;
+  });
+  html += '</div>';
+  html += `<p style="margin-top:12px; font-size:14px; color:var(--text-secondary);">Total training time: <strong style="color:var(--accent);">${totalWeeks} weeks (~${Math.round(totalWeeks / 4)} months)</strong></p>`;
+  container.innerHTML = html;
+  document.getElementById('startBtn').disabled = false;
+}
+
+function updateSalaryBars() {
+  const curBar = document.getElementById('salaryBarCurrent');
+  const tgtBar = document.getElementById('salaryBarTarget');
+  const incEl = document.getElementById('salaryIncrease');
+  if (!selectedRole || !selectedJob) {
+    curBar.style.width = '0%';
+    tgtBar.style.width = '0%';
+    incEl.textContent = '';
+    return;
+  }
+  const role = ROLES[selectedRole];
+  const job = TARGET_JOBS[selectedJob];
+  const max = Math.max(role.salary, job.salary);
+  curBar.style.width = (role.salary / max * 100) + '%';
+  curBar.textContent = '$' + role.salary.toLocaleString();
+  tgtBar.style.width = (job.salary / max * 100) + '%';
+  tgtBar.textContent = '$' + job.salary.toLocaleString();
+  const inc = Math.round(((job.salary - role.salary) / role.salary) * 100);
+  incEl.textContent = `+${inc}% salary increase (+$${(job.salary - role.salary).toLocaleString()}/yr)`;
+}
+
+function render() {
+  updateRadarChart();
+  updateTargetJobs();
+  updateGapChart();
+  updateTrainingPath();
+  updateSalaryBars();
+  resetTraining();
+}
+
+function resetTraining() {
+  if (trainingInterval) clearInterval(trainingInterval);
+  trainingInterval = null;
+  document.getElementById('progressBar').style.width = '0%';
+  document.getElementById('progressPercent').textContent = '0%';
+  document.getElementById('progressStatus').textContent = 'Click "Start Training" to begin simulation.';
+  document.querySelectorAll('.timeline-step').forEach(el => el.classList.remove('completed'));
+}
+
+document.getElementById('startBtn').addEventListener('click', function() {
+  if (!selectedJob) return;
+  resetTraining();
+  this.disabled = true;
+  const job = TARGET_JOBS[selectedJob];
+  const totalSteps = job.courses.length;
+  let progress = 0;
+  const stepSize = 100 / (totalSteps * 20);
+  let currentStep = 0;
+
+  trainingInterval = setInterval(() => {
+    progress += stepSize;
+    if (progress >= 100) progress = 100;
+    document.getElementById('progressBar').style.width = progress + '%';
+    document.getElementById('progressPercent').textContent = Math.round(progress) + '%';
+
+    const newStep = Math.min(Math.floor(progress / (100 / totalSteps)), totalSteps - 1);
+    for (let i = 0; i <= newStep; i++) {
+      const el = document.getElementById('step' + i);
+      if (el && progress > ((i + 1) * (100 / totalSteps))) {
+        el.classList.add('completed');
+        el.textContent = '✓';
+      }
+    }
+
+    if (newStep !== currentStep) {
+      currentStep = newStep;
+      document.getElementById('progressStatus').textContent = `Training: ${job.courses[currentStep].name}...`;
+    }
+
+    if (progress >= 100) {
+      clearInterval(trainingInterval);
+      document.querySelectorAll('.timeline-step').forEach(el => { el.classList.add('completed'); el.textContent = '✓'; });
+      document.getElementById('progressStatus').innerHTML = '<span style="color:var(--green); font-weight:600;">Training complete! You are ready for your new career.</span>';
+      document.getElementById('startBtn').disabled = false;
+    }
+  }, 80);
+});
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  resetTraining();
+  document.getElementById('startBtn').disabled = !selectedJob;
+});
+
+roleSelect.addEventListener('change', () => {
+  selectedRole = roleSelect.value || null;
+  selectedJob = null;
+  render();
+});
+
+window.addEventListener('resize', render);
+render();
+</script>
+</body>
+</html>
