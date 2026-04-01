@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Voice AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f8f8;
+  --surface: #ffffff;
+  --text: #1a1a1a;
+  --text-secondary: #666;
+  --border: #e0e0e0;
+  --accent: #ff6600;
+  --accent-light: rgba(255, 102, 0, 0.15);
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --text: #e8e8e8;
+    --text-secondary: #999;
+    --border: #333;
+    --accent-light: rgba(255, 102, 0, 0.2);
+    --shadow: 0 2px 12px rgba(0,0,0,0.3);
+  }
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Space Grotesk', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+.back-link {
+  display: inline-block;
+  padding: 16px 24px;
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 14px;
+}
+.back-link:hover { opacity: 0.7; }
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px 48px; }
+h1 { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+.subtitle { color: var(--text-secondary); font-size: 14px; margin-bottom: 24px; }
+.badge { background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; vertical-align: middle; }
+.grid {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 24px;
+}
+@media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+}
+.card h2 { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+/* Phone UI */
+.phone-frame {
+  background: var(--surface);
+  border: 3px solid var(--border);
+  border-radius: 28px;
+  max-width: 340px;
+  margin: 0 auto;
+  overflow: hidden;
+}
+.phone-header {
+  background: var(--accent);
+  color: white;
+  padding: 20px;
+  text-align: center;
+}
+.phone-header .caller-name { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+.phone-header .call-status { font-size: 13px; opacity: 0.85; }
+.phone-header .call-timer { font-size: 24px; font-weight: 300; margin-top: 8px; }
+.viz-container {
+  padding: 16px 20px;
+  background: var(--bg);
+}
+canvas#waveform {
+  width: 100%;
+  height: 60px;
+  display: block;
+  border-radius: 8px;
+}
+.phone-body { padding: 16px; }
+.scenario-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.scn-btn {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.scn-btn:hover, .scn-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+.input-row {
+  display: flex;
+  gap: 8px;
+}
+.input-row input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-family: inherit;
+  font-size: 13px;
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+}
+.input-row input:focus { border-color: var(--accent); }
+.send-btn {
+  width: 40px; height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.send-btn:hover { opacity: 0.85; }
+.phone-actions {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  padding: 16px;
+  border-top: 1px solid var(--border);
+}
+.action-btn {
+  width: 48px; height: 48px;
+  border: none;
+  border-radius: 50%;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.action-btn.call { background: #4caf50; color: white; }
+.action-btn.end { background: #f44336; color: white; }
+.action-btn.mic { background: var(--bg); border: 2px solid var(--border); color: var(--text); }
+.action-btn.mic.active { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+/* Transcript */
+.transcript {
+  max-height: 400px;
+  overflow-y: auto;
+}
+.msg {
+  margin-bottom: 12px;
+  animation: msgIn 0.3s ease;
+}
+@keyframes msgIn { from { opacity: 0; transform: translateY(8px); } }
+.msg-bubble {
+  display: inline-block;
+  max-width: 85%;
+  padding: 10px 14px;
+  border-radius: 16px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.msg.user { text-align: right; }
+.msg.user .msg-bubble {
+  background: var(--accent);
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+.msg.ai .msg-bubble {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-bottom-left-radius: 4px;
+}
+.msg-label { font-size: 10px; color: var(--text-secondary); margin-bottom: 2px; }
+/* Metrics */
+.metrics-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+.metric-card {
+  text-align: center;
+  padding: 14px;
+  background: var(--bg);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+.metric-val { font-size: 22px; font-weight: 700; color: var(--accent); }
+.metric-label { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+.sentiment-bar {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--border);
+  overflow: hidden;
+  margin-top: 8px;
+}
+.sentiment-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s;
+  background: linear-gradient(90deg, #f44336, #ff9800, #4caf50);
+}
+.speech-note {
+  background: var(--accent-light);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 11px;
+  margin-top: 12px;
+  color: var(--text-secondary);
+}
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">← Back to all demos</a>
+<div class="container">
+  <h1>Voice AI <span class="badge">Summer 2025</span></h1>
+  <p class="subtitle">Interactive voice AI agent demo with real-time conversation and analytics</p>
+  <div class="grid">
+    <div>
+      <div class="phone-frame">
+        <div class="phone-header">
+          <div class="caller-name">AI Agent</div>
+          <div class="call-status" id="call-status">Ready</div>
+          <div class="call-timer" id="call-timer">0:00</div>
+        </div>
+        <div class="viz-container">
+          <canvas id="waveform"></canvas>
+        </div>
+        <div class="phone-body">
+          <div class="scenario-btns">
+            <button class="scn-btn active" data-scn="restaurant">Restaurant</button>
+            <button class="scn-btn" data-scn="appointment">Appointment</button>
+            <button class="scn-btn" data-scn="support">Support</button>
+          </div>
+          <div class="input-row">
+            <input type="text" id="user-input" placeholder="Type or speak your message..." />
+            <button class="send-btn" id="send-btn">→</button>
+          </div>
+        </div>
+        <div class="phone-actions">
+          <button class="action-btn mic" id="mic-btn" title="Microphone">🎤</button>
+          <button class="action-btn call" id="call-btn" title="Start Call">📞</button>
+          <button class="action-btn end" id="end-btn" title="End Call">✕</button>
+        </div>
+      </div>
+      <div class="speech-note" id="speech-note" style="display:none"></div>
+    </div>
+    <div>
+      <div class="card">
+        <h2>Conversation Transcript</h2>
+        <div class="transcript" id="transcript"></div>
+      </div>
+      <div class="card">
+        <h2>Call Analytics</h2>
+        <div class="metrics-row">
+          <div class="metric-card">
+            <div class="metric-val" id="m-duration">0:00</div>
+            <div class="metric-label">Duration</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-val" id="m-resolution">--</div>
+            <div class="metric-label">Resolution</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-val" id="m-turns">0</div>
+            <div class="metric-label">Turns</div>
+          </div>
+        </div>
+        <div style="margin-top:12px;">
+          <div style="display:flex;justify-content:space-between;font-size:12px;">
+            <span>Sentiment</span>
+            <span id="sentiment-label" style="font-weight:600;color:var(--text-secondary)">Neutral</span>
+          </div>
+          <div class="sentiment-bar">
+            <div class="sentiment-fill" id="sentiment-fill" style="width:50%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const scenarios = {
+  restaurant: {
+    greeting: "Hi, thank you for calling Bella's Italian Kitchen! How can I help you today?",
+    responses: {
+      'reservation': "I'd be happy to help with a reservation! For how many guests, and what date and time were you thinking?",
+      'table': "Great! Let me check availability. We have tables for 2, 4, or 6. What size do you need?",
+      'menu': "Our specials today are: Truffle Risotto ($28), Osso Buco ($34), and our house-made Pappardelle ($22). Would you like to make a reservation to try them?",
+      'tonight': "Let me check tonight's availability... I have a table for two at 7:30 PM or 9:00 PM. Which works better for you?",
+      '7': "Perfect! I've booked a table for you tonight at 7:30 PM. Can I get a name for the reservation?",
+      'book': "Wonderful! Your reservation is confirmed. We'll see you then! Is there anything else I can help with?",
+      'thanks': "You're welcome! We look forward to seeing you. Have a great day!",
+      'allergy': "We take allergies very seriously. Our kitchen can accommodate gluten-free, nut-free, and dairy-free requests. Just let your server know when you arrive.",
+      'hours': "We're open Tuesday through Sunday, 5 PM to 10 PM. We're closed on Mondays.",
+      'parking': "We have a valet service available for $10, and there's also a public parking garage just one block east.",
+      'default': "I appreciate your question! Let me help you with that. Would you like to make a reservation, hear about our menu specials, or ask about something else?"
+    }
+  },
+  appointment: {
+    greeting: "Hello! You've reached Dr. Chen's office. How may I assist you?",
+    responses: {
+      'appointment': "I'd be happy to schedule an appointment. Are you a new patient or an existing patient?",
+      'new': "Welcome! For new patients, we'll need about an hour for your first visit. We have openings this Thursday at 2 PM or next Monday at 10 AM. Which works for you?",
+      'existing': "Great to hear from you again! What type of appointment do you need - routine checkup, follow-up, or something specific?",
+      'checkup': "For a routine checkup, we have openings this week on Wednesday at 3 PM and Friday at 11 AM. Would either of those work?",
+      'wednesday': "Wednesday at 3 PM is confirmed! We'll send you a reminder text the day before. Please arrive 10 minutes early.",
+      'thursday': "Thursday at 2 PM is confirmed! We'll email you the new patient forms to fill out ahead of time.",
+      'cancel': "I can help you cancel or reschedule. Can you give me your name so I can pull up your appointment?",
+      'insurance': "We accept most major insurance plans including Blue Cross, Aetna, Cigna, and UnitedHealthcare. Would you like me to verify your specific plan?",
+      'thanks': "You're welcome! See you at your appointment. Don't hesitate to call if anything changes!",
+      'default': "I can help you with scheduling, rescheduling, or general questions about the practice. What would you like to do?"
+    }
+  },
+  support: {
+    greeting: "Thank you for calling TechCo Support. My name is Aria, your AI support agent. How can I help you today?",
+    responses: {
+      'not working': "I'm sorry to hear that! Can you describe what's happening? Is it a hardware issue, software error, or connectivity problem?",
+      'internet': "Let's troubleshoot your internet connection. First, have you tried restarting your router by unplugging it for 30 seconds?",
+      'restart': "Great, after restarting, please wait about 2 minutes for it to fully boot up. Are you seeing any lights on the router?",
+      'slow': "For slow internet, let me run a diagnostic. Can you go to speedtest.net and tell me your download and upload speeds?",
+      'error': "I see. Can you tell me the exact error message you're seeing? That will help me pinpoint the issue.",
+      'bill': "I can help with billing questions. I'm pulling up your account now. Are you asking about a specific charge or your overall plan?",
+      'cancel': "I understand you'd like to cancel. Before we proceed, may I ask what prompted this decision? We may be able to address your concerns.",
+      'upgrade': "Great choice! I can see your current plan and available upgrades. Our premium plan offers 2x the speed for just $15 more per month.",
+      'password': "I can help you reset your password. For security, I'll need to verify your identity first. Can you confirm the email address on your account?",
+      'thanks': "You're welcome! Your issue has been documented as ticket #" + Math.floor(10000 + Math.random() * 90000) + ". Is there anything else I can help with?",
+      'default': "I want to make sure I understand your issue correctly. Could you provide a bit more detail so I can assist you better?"
+    }
+  }
+};
+
+let currentScenario = 'restaurant';
+let callActive = false;
+let callStartTime = null;
+let callInterval = null;
+let turns = 0;
+let sentiment = 50;
+let speechAvailable = false;
+let recognition = null;
+let typing = false;
+
+// Check Speech API
+try {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (SR) {
+    recognition = new SR();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+    speechAvailable = true;
+    document.getElementById('speech-note').style.display = 'block';
+    document.getElementById('speech-note').textContent = 'Speech recognition available! Click the microphone button to speak.';
+  }
+} catch (e) {}
+
+if (!speechAvailable) {
+  document.getElementById('speech-note').style.display = 'block';
+  document.getElementById('speech-note').textContent = 'Speech recognition not available in this browser. Type your messages instead.';
+}
+
+// Waveform
+const waveCanvas = document.getElementById('waveform');
+const wCtx = waveCanvas.getContext('2d');
+const dm = window.matchMedia('(prefers-color-scheme: dark)').matches;
+let waveData = new Array(60).fill(0);
+let waveActive = false;
+
+function resizeWave() {
+  const r = waveCanvas.parentElement.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  waveCanvas.width = r.width * dpr;
+  waveCanvas.height = 60 * dpr;
+  wCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+resizeWave();
+window.addEventListener('resize', resizeWave);
+
+function drawWave() {
+  const w = waveCanvas.clientWidth;
+  const h = 60;
+  wCtx.clearRect(0, 0, w, h);
+
+  // Update data
+  if (waveActive) {
+    waveData = waveData.map(() => Math.random() * 0.6 + 0.2);
+  } else {
+    waveData = waveData.map(v => v * 0.9);
+  }
+
+  const barW = w / waveData.length;
+  waveData.forEach((v, i) => {
+    const barH = v * h * 0.8;
+    const x = i * barW;
+    const y = (h - barH) / 2;
+    wCtx.fillStyle = waveActive ? '#ff6600' : (dm ? '#444' : '#ccc');
+    wCtx.beginPath();
+    wCtx.roundRect(x + 1, y, barW - 2, barH, 2);
+    wCtx.fill();
+  });
+
+  requestAnimationFrame(drawWave);
+}
+drawWave();
+
+function startCall() {
+  callActive = true;
+  callStartTime = Date.now();
+  turns = 0;
+  sentiment = 50;
+  document.getElementById('call-status').textContent = 'Connected';
+  document.getElementById('transcript').innerHTML = '';
+
+  callInterval = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - callStartTime) / 1000);
+    const mins = Math.floor(elapsed / 60);
+    const secs = elapsed % 60;
+    const str = mins + ':' + String(secs).padStart(2, '0');
+    document.getElementById('call-timer').textContent = str;
+    document.getElementById('m-duration').textContent = str;
+  }, 1000);
+
+  // AI greeting
+  setTimeout(() => {
+    addMessage('ai', scenarios[currentScenario].greeting);
+    waveActive = true;
+    setTimeout(() => { waveActive = false; }, 2000);
+  }, 500);
+
+  updateMetrics();
+}
+
+function endCall() {
+  callActive = false;
+  if (callInterval) clearInterval(callInterval);
+  document.getElementById('call-status').textContent = 'Call Ended';
+  document.getElementById('m-resolution').textContent = turns > 2 ? 'Resolved' : 'Dropped';
+  document.getElementById('m-resolution').style.color = turns > 2 ? '#4caf50' : '#f44336';
+  waveActive = false;
+}
+
+function addMessage(role, text) {
+  const transcript = document.getElementById('transcript');
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  const label = role === 'user' ? 'You' : 'AI Agent';
+  div.innerHTML = `<div class="msg-label">${label}</div><div class="msg-bubble"></div>`;
+  transcript.appendChild(div);
+  transcript.scrollTop = transcript.scrollHeight;
+
+  const bubble = div.querySelector('.msg-bubble');
+
+  if (role === 'ai') {
+    // Typewriter effect
+    typing = true;
+    let i = 0;
+    function typeChar() {
+      if (i < text.length) {
+        bubble.textContent += text[i];
+        i++;
+        transcript.scrollTop = transcript.scrollHeight;
+        setTimeout(typeChar, 20 + Math.random() * 20);
+      } else {
+        typing = false;
+      }
+    }
+    typeChar();
+  } else {
+    bubble.textContent = text;
+  }
+}
+
+function findResponse(input) {
+  const lower = input.toLowerCase();
+  const responses = scenarios[currentScenario].responses;
+  let bestMatch = 'default';
+  let bestScore = 0;
+  for (const key of Object.keys(responses)) {
+    if (key === 'default') continue;
+    if (lower.includes(key)) {
+      if (key.length > bestScore) {
+        bestScore = key.length;
+        bestMatch = key;
+      }
+    }
+  }
+  return responses[bestMatch];
+}
+
+function handleUserInput(text) {
+  if (!callActive || !text.trim() || typing) return;
+  addMessage('user', text.trim());
+  turns++;
+
+  // Sentiment analysis (simple)
+  const positive = /thank|great|perfect|yes|good|wonderful|love|happy/i.test(text);
+  const negative = /bad|terrible|angry|worst|cancel|hate|frustrated|problem/i.test(text);
+  if (positive) sentiment = Math.min(100, sentiment + 15);
+  if (negative) sentiment = Math.max(0, sentiment - 15);
+
+  updateMetrics();
+
+  // AI response with delay
+  waveActive = true;
+  setTimeout(() => {
+    const response = findResponse(text);
+    addMessage('ai', response);
+    setTimeout(() => { waveActive = false; }, 2000);
+  }, 800 + Math.random() * 600);
+}
+
+function updateMetrics() {
+  document.getElementById('m-turns').textContent = turns;
+  document.getElementById('sentiment-fill').style.width = sentiment + '%';
+  const label = sentiment > 70 ? 'Positive' : sentiment > 40 ? 'Neutral' : 'Negative';
+  const color = sentiment > 70 ? '#4caf50' : sentiment > 40 ? '#ff9800' : '#f44336';
+  document.getElementById('sentiment-label').textContent = label;
+  document.getElementById('sentiment-label').style.color = color;
+}
+
+// Event listeners
+document.getElementById('call-btn').addEventListener('click', () => {
+  if (!callActive) startCall();
+});
+
+document.getElementById('end-btn').addEventListener('click', () => {
+  if (callActive) endCall();
+});
+
+document.getElementById('send-btn').addEventListener('click', () => {
+  const input = document.getElementById('user-input');
+  handleUserInput(input.value);
+  input.value = '';
+});
+
+document.getElementById('user-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    handleUserInput(e.target.value);
+    e.target.value = '';
+  }
+});
+
+// Scenario selection
+document.querySelectorAll('.scn-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.scn-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentScenario = btn.dataset.scn;
+    if (callActive) {
+      endCall();
+      setTimeout(startCall, 300);
+    }
+  });
+});
+
+// Microphone
+document.getElementById('mic-btn').addEventListener('click', () => {
+  if (!speechAvailable || !callActive) return;
+  const micBtn = document.getElementById('mic-btn');
+  if (micBtn.classList.contains('active')) {
+    recognition.stop();
+    micBtn.classList.remove('active');
+    return;
+  }
+  micBtn.classList.add('active');
+  waveActive = true;
+  recognition.start();
+  recognition.onresult = e => {
+    const text = e.results[0][0].transcript;
+    handleUserInput(text);
+    micBtn.classList.remove('active');
+    waveActive = false;
+  };
+  recognition.onerror = () => {
+    micBtn.classList.remove('active');
+    waveActive = false;
+  };
+  recognition.onend = () => {
+    micBtn.classList.remove('active');
+  };
+});
+</script>
+</body>
+</html>
