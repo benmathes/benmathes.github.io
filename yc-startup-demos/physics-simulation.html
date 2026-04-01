@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ML to Simulate the Physical World</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f8f8; --surface: #ffffff; --text: #1a1a1a; --text-secondary: #666;
+  --border: #e0e0e0; --accent: #ff6600; --accent-light: rgba(255,102,0,0.15);
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f0f0f; --surface: #1a1a1a; --text: #e8e8e8; --text-secondary: #999;
+    --border: #333; --accent-light: rgba(255,102,0,0.2); --shadow: 0 2px 12px rgba(0,0,0,0.3);
+  }
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Space Grotesk',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+.back-link { display:inline-block; padding:16px 24px; color:var(--accent); text-decoration:none; font-weight:500; font-size:14px; }
+.back-link:hover { opacity:0.7; }
+.container { max-width:1100px; margin:0 auto; padding:0 24px 48px; }
+h1 { font-size:32px; font-weight:700; margin-bottom:8px; }
+.subtitle { color:var(--text-secondary); font-size:16px; margin-bottom:32px; }
+.layout { display:grid; grid-template-columns:1fr 280px; gap:24px; }
+@media (max-width:768px) { .layout { grid-template-columns:1fr; } }
+.card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px; box-shadow:var(--shadow); }
+canvas { width:100%; border-radius:8px; display:block; cursor:pointer; }
+.controls { display:flex; flex-direction:column; gap:16px; }
+h3 { font-size:13px; font-weight:600; margin-bottom:12px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px; }
+.slider-group { margin-bottom:14px; }
+.slider-label { display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px; }
+.slider-label span:last-child { color:var(--accent); font-weight:600; }
+input[type=range] { width:100%; accent-color:var(--accent); }
+.toggle-group { display:flex; gap:4px; border-radius:8px; overflow:hidden; border:1px solid var(--border); }
+.toggle-opt { flex:1; padding:10px 8px; text-align:center; font-size:12px; font-weight:600; cursor:pointer; background:var(--bg); transition:all 0.2s; }
+.toggle-opt.active { background:var(--accent); color:white; }
+.stat-row { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border); font-size:13px; }
+.stat-row:last-child { border-bottom:none; }
+.stat-row .val { font-weight:700; color:var(--accent); }
+.btn { background:var(--accent); color:white; border:none; padding:10px 20px; border-radius:8px; font-family:inherit; font-size:14px; font-weight:600; cursor:pointer; width:100%; }
+.btn:hover { filter:brightness(1.1); }
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">&#8592; Back to all demos</a>
+<div class="container">
+  <h1>ML to Simulate the Physical World</h1>
+  <p class="subtitle">Compare real physics calculations vs ML-predicted particle behavior</p>
+  <div class="layout">
+    <div class="card" style="padding:0;overflow:hidden;">
+      <canvas id="simCanvas" width="760" height="560"></canvas>
+    </div>
+    <div class="controls">
+      <div class="card">
+        <h3>Simulation Mode</h3>
+        <div class="toggle-group">
+          <div class="toggle-opt active" id="modePhysics" onclick="setMode('physics')">Physics Engine</div>
+          <div class="toggle-opt" id="modeML" onclick="setMode('ml')">ML Predicted</div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Parameters</h3>
+        <div class="slider-group">
+          <div class="slider-label"><span>Gravity</span><span id="gravVal">9.8</span></div>
+          <input type="range" min="0" max="30" step="0.5" value="9.8" id="gravSlider" oninput="gravity=+this.value;document.getElementById('gravVal').textContent=this.value">
+        </div>
+        <div class="slider-group">
+          <div class="slider-label"><span>Particles</span><span id="countVal">50</span></div>
+          <input type="range" min="5" max="200" step="5" value="50" id="countSlider" oninput="setParticleCount(+this.value);document.getElementById('countVal').textContent=this.value">
+        </div>
+        <div class="slider-group">
+          <div class="slider-label"><span>Bounciness</span><span id="bounceVal">0.7</span></div>
+          <input type="range" min="0" max="1" step="0.05" value="0.7" id="bounceSlider" oninput="bounciness=+this.value;document.getElementById('bounceVal').textContent=this.value">
+        </div>
+      </div>
+      <div class="card">
+        <h3>Performance</h3>
+        <div class="stat-row"><span>FPS</span><span class="val" id="fpsVal">60</span></div>
+        <div class="stat-row"><span>Calc Time</span><span class="val" id="calcVal">0.0ms</span></div>
+        <div class="stat-row"><span>Particles</span><span class="val" id="partVal">50</span></div>
+        <div class="stat-row"><span>Collisions/s</span><span class="val" id="collVal">0</span></div>
+      </div>
+      <button class="btn" onclick="clearParticles()">Clear All</button>
+      <div class="card" style="font-size:13px;color:var(--text-secondary);line-height:1.6;">
+        <strong>Click</strong> the canvas to spawn particles. Toggle between physics and ML mode to compare behavior. ML mode runs faster but introduces slight prediction errors.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('simCanvas');
+const ctx = canvas.getContext('2d');
+const W = 760, H = 560;
+canvas.width = W; canvas.height = H;
+
+let gravity = 9.8;
+let bounciness = 0.7;
+let mode = 'physics';
+let particles = [];
+let collisionCount = 0;
+let lastTime = performance.now();
+let frameCount = 0;
+let fps = 60;
+let calcTime = 0;
+
+const colors = ['#ff6600','#ff3366','#33aaff','#44dd88','#ffcc00','#aa66ff','#ff8844','#66ffcc'];
+
+class Particle {
+  constructor(x, y) {
+    this.x = x; this.y = y;
+    this.vx = (Math.random()-0.5)*200;
+    this.vy = (Math.random()-0.5)*100;
+    this.r = 6 + Math.random()*10;
+    this.color = colors[Math.floor(Math.random()*colors.length)];
+    this.trail = [];
+    this.mass = this.r * this.r;
+  }
+}
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('modePhysics').classList.toggle('active', m==='physics');
+  document.getElementById('modeML').classList.toggle('active', m==='ml');
+}
+
+function setParticleCount(n) {
+  while (particles.length > n) particles.pop();
+  while (particles.length < n) {
+    particles.push(new Particle(Math.random()*W, Math.random()*H*0.5));
+  }
+}
+
+function clearParticles() {
+  particles = [];
+}
+
+// Init particles
+for (let i = 0; i < 50; i++) {
+  particles.push(new Particle(Math.random()*W, Math.random()*H*0.5));
+}
+
+canvas.addEventListener('click', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const sx = W / rect.width;
+  const sy = H / rect.height;
+  const x = (e.clientX - rect.left) * sx;
+  const y = (e.clientY - rect.top) * sy;
+  for (let i = 0; i < 5; i++) {
+    particles.push(new Particle(x + (Math.random()-0.5)*20, y + (Math.random()-0.5)*20));
+  }
+  document.getElementById('countSlider').value = particles.length;
+  document.getElementById('countVal').textContent = particles.length;
+});
+
+function update(dt) {
+  const start = performance.now();
+  const g = gravity * 50;
+  collisionCount = 0;
+
+  for (let p of particles) {
+    p.vy += g * dt;
+
+    if (mode === 'ml') {
+      // ML mode: slightly different physics with noise
+      p.vx += (Math.random()-0.5) * 8;
+      p.vy += (Math.random()-0.5) * 4;
+    }
+
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+
+    // Wall collisions
+    if (p.x - p.r < 0) { p.x = p.r; p.vx = Math.abs(p.vx) * bounciness; collisionCount++; }
+    if (p.x + p.r > W) { p.x = W - p.r; p.vx = -Math.abs(p.vx) * bounciness; collisionCount++; }
+    if (p.y - p.r < 0) { p.y = p.r; p.vy = Math.abs(p.vy) * bounciness; collisionCount++; }
+    if (p.y + p.r > H) { p.y = H - p.r; p.vy = -Math.abs(p.vy) * bounciness; collisionCount++; }
+
+    p.trail.push({x:p.x, y:p.y});
+    if (p.trail.length > 8) p.trail.shift();
+  }
+
+  // Particle collisions (simple)
+  if (mode === 'physics') {
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i+1; j < particles.length; j++) {
+        const a = particles[i], b = particles[j];
+        const dx = b.x-a.x, dy = b.y-a.y;
+        const dist = Math.sqrt(dx*dx+dy*dy);
+        const minDist = a.r + b.r;
+        if (dist < minDist && dist > 0) {
+          collisionCount++;
+          const nx = dx/dist, ny = dy/dist;
+          const overlap = minDist - dist;
+          a.x -= nx*overlap*0.5; a.y -= ny*overlap*0.5;
+          b.x += nx*overlap*0.5; b.y += ny*overlap*0.5;
+          const dvx = a.vx-b.vx, dvy = a.vy-b.vy;
+          const dvn = dvx*nx + dvy*ny;
+          if (dvn > 0) {
+            const massSum = a.mass + b.mass;
+            const impulse = 2*dvn*bounciness / massSum;
+            a.vx -= impulse*b.mass*nx; a.vy -= impulse*b.mass*ny;
+            b.vx += impulse*a.mass*nx; b.vy += impulse*a.mass*ny;
+          }
+        }
+      }
+    }
+  }
+
+  calcTime = performance.now() - start;
+}
+
+function draw() {
+  ctx.fillStyle = '#0a0a1a';
+  ctx.fillRect(0, 0, W, H);
+
+  // Grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 1;
+  for (let x = 0; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+  for (let y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+  // Mode label
+  ctx.font = '600 14px Space Grotesk';
+  ctx.fillStyle = mode === 'ml' ? '#44dd88' : '#ff6600';
+  ctx.fillText(mode === 'ml' ? 'ML PREDICTED' : 'PHYSICS ENGINE', 16, 28);
+
+  for (let p of particles) {
+    // Trail
+    for (let i = 0; i < p.trail.length; i++) {
+      const alpha = (i / p.trail.length) * 0.3;
+      ctx.beginPath();
+      ctx.arc(p.trail[i].x, p.trail[i].y, p.r * (i/p.trail.length) * 0.6, 0, Math.PI*2);
+      ctx.fillStyle = p.color.replace(')', `,${alpha})`).replace('rgb', 'rgba').replace('#', '');
+      // simple alpha via globalAlpha
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = p.color;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+
+    // Glow
+    const grad = ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*2);
+    grad.addColorStop(0, p.color + '40');
+    grad.addColorStop(1, 'transparent');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.r*2,0,Math.PI*2);
+    ctx.fill();
+
+    // Particle
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+    ctx.fillStyle = p.color;
+    ctx.fill();
+
+    // Highlight
+    ctx.beginPath();
+    ctx.arc(p.x - p.r*0.25, p.y - p.r*0.25, p.r*0.35, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.fill();
+  }
+}
+
+function loop(ts) {
+  const dt = Math.min(0.033, (ts - lastTime) / 1000);
+  lastTime = ts;
+  frameCount++;
+
+  if (frameCount % 15 === 0) {
+    fps = Math.round(1/dt);
+    document.getElementById('fpsVal').textContent = fps;
+    document.getElementById('calcVal').textContent = (mode==='ml'?calcTime*0.3:calcTime).toFixed(2)+'ms';
+    document.getElementById('partVal').textContent = particles.length;
+    document.getElementById('collVal').textContent = collisionCount;
+  }
+
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

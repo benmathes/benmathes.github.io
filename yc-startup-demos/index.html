@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YC Request for Startups - Interactive Demos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #fafafa;
+            --bg-secondary: #f0f0f0;
+            --bg-card: #fff;
+            --text: #1a1a1a;
+            --text-muted: #666;
+            --accent: #ff6600;
+            --accent-hover: #e55b00;
+            --border: #e0e0e0;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #111;
+                --bg-secondary: #1a1a1a;
+                --bg-card: #1e1e1e;
+                --text: #f0f0f0;
+                --text-muted: #999;
+                --accent: #ff8533;
+                --accent-hover: #ffad70;
+                --border: #333;
+            }
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Space Grotesk', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 60px 24px;
+        }
+
+        header {
+            margin-bottom: 48px;
+        }
+
+        .back-link {
+            display: inline-block;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            margin-bottom: 24px;
+            transition: color 0.2s;
+        }
+        .back-link:hover { color: var(--accent); }
+
+        h1 {
+            font-size: clamp(2rem, 5vw, 3rem);
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+            margin-bottom: 12px;
+        }
+
+        h1 .yc { color: var(--accent); }
+
+        .subtitle {
+            font-size: 1.05rem;
+            color: var(--text-muted);
+            max-width: 600px;
+        }
+
+        .subtitle a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        /* Batch filter */
+        .batch-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 32px;
+        }
+
+        .batch-btn {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 6px 14px;
+            border-radius: 100px;
+            font-family: inherit;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .batch-btn:hover, .batch-btn.active {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+
+        /* Demo grid */
+        .demos {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1px;
+            background: var(--border);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .demo-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px 20px;
+            background: var(--bg-card);
+            text-decoration: none;
+            color: var(--text);
+            transition: background 0.15s, padding-left 0.2s;
+        }
+
+        .demo-item:hover {
+            background: var(--bg-secondary);
+            padding-left: 28px;
+        }
+
+        .demo-number {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            min-width: 28px;
+            text-align: right;
+        }
+
+        .demo-info {
+            flex: 1;
+        }
+
+        .demo-title {
+            font-size: 1rem;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+
+        .demo-desc {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .demo-batch {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            padding: 3px 10px;
+            border-radius: 100px;
+            background: var(--bg-secondary);
+            color: var(--text-muted);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .demo-arrow {
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            opacity: 0;
+            transition: opacity 0.15s;
+            flex-shrink: 0;
+        }
+
+        .demo-item:hover .demo-arrow {
+            opacity: 1;
+            color: var(--accent);
+        }
+
+        .demo-item.hidden { display: none; }
+
+        footer {
+            margin-top: 48px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="/" class="back-link">&larr; Back to benmathes.github.io</a>
+            <h1><span class="yc">YC</span> Request for Startups</h1>
+            <p class="subtitle">Interactive demos for every <a href="https://www.ycombinator.com/rfs">YC Request for Startups</a> category. Each link is a standalone single-page app.</p>
+        </header>
+
+        <div class="batch-filters">
+            <button class="batch-btn active" data-batch="all">All</button>
+            <button class="batch-btn" data-batch="S24">Summer 2024</button>
+            <button class="batch-btn" data-batch="W25">Winter 2025</button>
+            <button class="batch-btn" data-batch="Su25">Summer 2025</button>
+            <button class="batch-btn" data-batch="F25">Fall 2025</button>
+            <button class="batch-btn" data-batch="Sp26">Spring 2026</button>
+        </div>
+
+        <div class="demos" id="demos">
+            <!-- Summer 2024 -->
+            <a class="demo-item" data-batch="S24" href="ml-robotics.html">
+                <span class="demo-number">01</span>
+                <div class="demo-info">
+                    <div class="demo-title">Applying ML to Robotics</div>
+                    <div class="demo-desc">Train a robot arm to reach targets using reinforcement learning</div>
+                </div>
+                <span class="demo-batch">S24</span>
+                <span class="demo-arrow">&rarr;</span>
+            </a>
+            <a class="demo-item" data-batch="S24" href="physics-simulation.html">
+                <span class="demo-number">02</span>
+                <div class="demo-info">
+                    <div class="demo-title">ML to Simulate the Physical World</div>
+                    <div class="demo-desc">Watch ML predict particle physics in real time</div>
+                </div>
+                <span class="demo-batch">S24</span>
+                <span class="demo-arrow">&rarr;</span>
+            </a>
+            <a class="demo-item" data-batch="S24" href="defense-tech.html">
+                <span class="demo-number">03</span>
+                <div class="demo-info">
+                    <div class="demo-title">New Defense Technology</div>
+                    <div class="demo-desc">Threat detection and response coordination dashboard</div>
+                </div>
+                <span class="demo-batch">S24</span>
+                <span class="demo-arrow">&rarr;</span>
+            </a>
+            <a class="demo-item" data-batch="S24" href="us-manufacturing.html">
+                <span class="demo-number">04</span>
+                <div class="demo-info">
+                    <div class="demo-title">Bring Manufacturing Back to America</div>
+                    <div class="demo-desc">Supply chain reshoring cost/benefit calculator</div>
+                </div>
+                <span class="demo-batch">S24</span>
+                <span class="demo-arrow">&rarr;</span>
+            </a>
+            <a class="demo-item" data-batch="S24" href="space-companies.html">
+                <span class="demo-number">05</span>
+                <div class="demo-info">
+                    <div class="demo-title">New Space Companies</div>
+                    <div class="demo-desc">Orbital launch trajectory planner</div>
+                </div>
+                <span class="demo-batch">S24</span>
+                <span class="demo-arrow">&rarr;</span>
+            </a>
+            <a class="demo-item" data-batch="S24" href="climate-tech.html">
+                <span class="demo-number">06</span>
+                <div class="demo-info">
+                    <div class="demo-title">Climate Tech</div>
+                    <div class="demo-desc">Carbon emissions pathway simulator</div>
+                </div>
+                <span class="demo-batch">S24</span>
+                <span class="demo-arrow">&rarr;</span>
+            </a>
+            <a class="demo-item" data-batch="S24" href="commercial-oss.html">
+                <span class="demo-number">07</span>
+                <div class="demo-info">
+                    <div class="demo-title">Commercial Open Source Companies</div>
+                    <div class="demo-desc">Open source business model explorer and revenue simulator</div>
+                </div>
+                <span class="demo-batch">S24</span>
+                <span class="demo-arrow">&rarr;</span>
+            </a>
+            <a class="demo-item" data-batch="S24" href="spatial-computing.html">
+                <span class="demo-number">08</span>
+                <div class="demo-info">
+                    <div class="demo-title">Spatial Computing</div>
+                    <div class="demo-desc">Interactive 3D spatial interface playground</div>
+                </div>
+                <span class="demo-batch">S24</span>
+                <span class="demo-arrow">&rarr;</span>
+            </a>
+            <a class="demo-item" data-batch="S24" href="new-erps.html">
+                <span class="demo-number">09</span>
+                <div class="demo-info">
+                    <div class="demo-title">New Enterprise Resource Planning Software</div>
+                    <div class="demo-desc">Next-gen ERP dashboard with AI-powered insights</div>
+                </div>
+                <span class="demo-batch">S24</span>
+                <span class="demo-arrow">&rarr;</span>
+            </a>
+            <a class="demo-item" data-batch="S24" href="dev-tools.html">
+                <span class="demo-number">10</span>
+                <div class="demo-info">
+                    <div class="demo-title">Developer Tools from Internal Tools</div>
+                    <div class="demo-desc">Turn internal scripts into polished developer tools</div>
+                </div>
+                <span class="demo-batch">S24</span>
+                <span class="demo-arrow">&rarr;</span>
+            </a>
+            <a class="demo-item" data-batch="S24" href="explainable-ai.html">
+                <span class="demo-number">11</span>
+                <div class="demo-info">
+                    <div class="demo-title">Explainable AI</div>
+                    <div class="demo-desc">See inside a neural network's decision-making process</div>
+                </div>
+                <span class="demo-batch">S24</span>
+                <span class="demo-arrow">&rarr;</span>
+            </a>
+            <a class="demo-item" data-batch="S24" href="llm-back-office.html">
+                <span class="demo-number">12</span>
+                <div class="demo-info">
+                    <div class="demo-title">LLMs for Back Office Processes</div>
+                    <div class="demo-desc">Automate document processing workflows with AI</div>
+                </div>
+                <span class="demo-batch">S24</span>
+                <span class="demo-arrow">&rarr;</span>
+            </a>
+            <a class="demo-item" data-batch="S24" href="ai-enterprise-software.html">
+                <span class="demo-number">13</span>
+                <div class="demo-info">
+                    <div class="demo-title">AI to Build Enterprise Software</div>
+                    <div class="demo-desc">Describe an app in words, watch it get built</div>
+                </div>
+                <span class="demo-batch">S24</span>
+                <span class="demo-arrow">&rarr;</span>
+            </a>
+            <a class="demo-item" data-batch="S24" href="stablecoin-finance.html">
+                <span class="demo-number">14</span>
+                <div class="demo-info">
+                    <div class="demo-title">Stablecoin Finance</div>
+                    <div class="demo-desc">Cross-border stablecoin payment flow simulator</div>
+                </div>
+                <span class="demo-batch">S24</span>
+                <span class="demo-arrow">&rarr;</span>
+            </a>
+            <a class="demo-item" data-batch="S24" href="end-cancer.html">
+                <span class="demo-number">15</span>
+                <div class="demo-info">
+                    <div class="demo-title">A Way to End Cancer</div>
+                    <div class="demo-desc">Mutation landscape explorer and drug target visualizer</div>
+                </div>
+                <span class="demo-batch">S24</span>
+                <span class="demo-arrow">&rarr;</span>
+            </a>
+            <a class="demo-item" data-batch="S24" href="bio-foundation-models.html">
+                <span class="demo-number">16</span>
+                <div class="demo-info">
+                    <div class="demo-title">Foundation Models for Biological Systems</div>
+                    <div class="demo-desc">Protein structure prediction playground</div>
+                </div>
+                <span class="demo-batch">S24</span>
+                <span class="demo-arrow">&rarr;</span>
+            </a>
+            <a class="demo-item" data-batch="S24" href="healthcare-mso.html">
+                <span class="demo-number">17</span>
+                <div class="demo-info">
+                    <div class="demo-title">Managed Service Organizations for Healthcare</div>
+                    <div class="demo-desc">Healthcare network optimization simulator</div>
+                </div>
+                <span class="demo-batch">S24</span>
+                <span class="demo-arrow">&rarr;</span>
+            </a>
+            <a class="demo-item" data-batch="S24" href="healthcare-middlemen.html">
+                <span class="demo-number">18</span>
+                <div class="demo-info">
+                    <div class="demo-title">Eliminating Middlemen in Healthcare</div>
+                    <div class="demo-desc">Healthcare cost transparency breakdown tool</div>
+                </div>
+                <span class="demo-batch">S24</span>
+                <span class="demo-arrow">&rarr;</span>
+            </a>
+            <a class="demo-item" data-batch="S24" href="enterprise-glue.html">
+                <span class="demo-number">19</span>
+                <div class="demo-info">
+                    <div class="demo-title">Better Enterprise Glue</div>
+                    <div class="demo-desc">Visual API integration workflow builder</div>
+                </div>
+                <span class="demo-batch">S24</span>
+                <span class="demo-arrow">&rarr;</span>
+            </a>
+            <a class="demo-item" data-batch="S24" href="small-models.html">
+                <span class="demo-number">20</span>
+                <div class="demo-info">
+                    <div class="demo-title">Small Fine-Tuned Models vs Giant Generic Ones</div>
+                    <div class="demo-desc">Compare model size, speed, cost, and accuracy tradeoffs</div>
+                </div>
+                <span class="demo-batch">S24</span>
+                <span class="demo-arrow">&rarr;</span>
+            </a>
+
+            <!-- Winter 2025 -->
+            <a class="demo-item" data-batch="W25" href="chip-design.html">
+                <span class="demo-number">21</span>
+                <div class="demo-info">
+                    <div class="demo-title">LLMs for Chip Design</div>
+                    <div class="demo-desc">Logic gate circuit designer with AI optimization</div>
+                </div>
+                <span class="demo-batch">W25</span>
+                <span class="demo-arrow">&rarr;</span>
+            </a>
+            <a class="demo-item" data-batch="W25" href="next-gen-construction.html">
+                <span class="demo-number">22</span>
+                <div class="demo-info">
+                    <div class="demo-title">Next-Generation Construction</div>
+                    <div class="demo-desc">AI-assisted building project estimator</div>
+                </div>
+                <span class="demo-batch">W25</span>
+                <span class="demo-arrow">&rarr;</span>
+            </a>
+            <a class="demo-item" data-batch="W25" href="public-safety.html">
+                <span class="demo-number">23</span>
+                <div class="demo-info">
+                    <div class="demo-title">Public Safety Technologies</div>
+                    <div class="demo-desc">Emergency response coordination dashboard</div>
+                </div>
+                <span class="demo-batch">W25</span>
+                <span class="demo-arrow">&rarr;</span>
+            </a>
+
+            <!-- Summer 2025 -->
+            <a class="demo-item" data-batch="Su25" href="full-stack-ai.html">
+                <span class="demo-number">24</span>
+                <div class="demo-info">
+                    <div class="demo-title">Full-Stack AI Companies</div>
+                    <div class="demo-desc">Build an AI-staffed company org chart simulator</div>
+                </div>
+                <span class="demo-batch">Su25</span>
+                <span class="demo-arrow">&rarr;</span>
+            </a>
+            <a class="demo-item" data-batch="Su25" href="design-founders.html">
+                <span class="demo-number">25</span>
+                <div class="demo-info">
+                    <div class="demo-title">More Design Founders</div>
+                    <div class="demo-desc">Design-to-prototype pipeline demo</div>
+                </div>
+                <span class="demo-batch">Su25</span>
+                <span class="demo-arrow">&rarr;</span>
+            </a>
+            <a class="demo-item" data-batch="Su25" href="voice-ai.html">
+                <span class="demo-number">26</span>
+                <div class="demo-info">
+                    <div class="demo-title">Voice AI</div>
+                    <div class="demo-desc">Interactive voice command agent demo</div>
+                </div>
+                <span class="demo-batch">Su25</span>
+                <span class="demo-arrow">&rarr;</span>
+            </a>
+
+            <!-- Fall 2025 -->
+            <a class="demo-item" data-batch="F25" href="retrain-workers.html">
+                <span class="demo-number">27</span>
+                <div class="demo-info">
+                    <div class="demo-title">Retraining Workers for the AI Economy</div>
+                    <div class="demo-desc">Skills gap analyzer and AI career path builder</div>
+                </div>
+                <span class="demo-batch">F25</span>
+                <span class="demo-arrow">&rarr;</span>
+            </a>
+            <a class="demo-item" data-batch="F25" href="video-generation.html">
+                <span class="demo-number">28</span>
+                <div class="demo-info">
+                    <div class="demo-title">Video Generation</div>
+                    <div class="demo-desc">Storyboard-to-video scene builder</div>
+                </div>
+                <span class="demo-batch">F25</span>
+                <span class="demo-arrow">&rarr;</span>
+            </a>
+            <a class="demo-item" data-batch="F25" href="multi-agent.html">
+                <span class="demo-number">29</span>
+                <div class="demo-info">
+                    <div class="demo-title">Multi-Agent System Infrastructure</div>
+                    <div class="demo-desc">Visualize AI agents collaborating on tasks</div>
+                </div>
+                <span class="demo-batch">F25</span>
+                <span class="demo-arrow">&rarr;</span>
+            </a>
+            <a class="demo-item" data-batch="F25" href="ten-person-100b.html">
+                <span class="demo-number">30</span>
+                <div class="demo-info">
+                    <div class="demo-title">The 10-Person, $100B Company</div>
+                    <div class="demo-desc">Company scaling simulator: humans vs AI leverage</div>
+                </div>
+                <span class="demo-batch">F25</span>
+                <span class="demo-arrow">&rarr;</span>
+            </a>
+
+            <!-- Spring 2026 -->
+            <a class="demo-item" data-batch="Sp26" href="ai-product-management.html">
+                <span class="demo-number">31</span>
+                <div class="demo-info">
+                    <div class="demo-title">Cursor for Product Managers</div>
+                    <div class="demo-desc">AI-powered feature prioritization and PRD generator</div>
+                </div>
+                <span class="demo-batch">Sp26</span>
+                <span class="demo-arrow">&rarr;</span>
+            </a>
+            <a class="demo-item" data-batch="Sp26" href="ai-hedge-funds.html">
+                <span class="demo-number">32</span>
+                <div class="demo-info">
+                    <div class="demo-title">AI-Native Hedge Funds</div>
+                    <div class="demo-desc">AI trading strategy backtester</div>
+                </div>
+                <span class="demo-batch">Sp26</span>
+                <span class="demo-arrow">&rarr;</span>
+            </a>
+            <a class="demo-item" data-batch="Sp26" href="ai-agencies.html">
+                <span class="demo-number">33</span>
+                <div class="demo-info">
+                    <div class="demo-title">AI-Native Agencies</div>
+                    <div class="demo-desc">Agency scaling: headcount vs AI leverage simulator</div>
+                </div>
+                <span class="demo-batch">Sp26</span>
+                <span class="demo-arrow">&rarr;</span>
+            </a>
+            <a class="demo-item" data-batch="Sp26" href="ai-government.html">
+                <span class="demo-number">34</span>
+                <div class="demo-info">
+                    <div class="demo-title">AI for Government</div>
+                    <div class="demo-desc">Government form processing automation demo</div>
+                </div>
+                <span class="demo-batch">Sp26</span>
+                <span class="demo-arrow">&rarr;</span>
+            </a>
+            <a class="demo-item" data-batch="Sp26" href="modern-metal-mills.html">
+                <span class="demo-number">35</span>
+                <div class="demo-info">
+                    <div class="demo-title">Modern Metal Mills</div>
+                    <div class="demo-desc">Software-defined steel production optimizer</div>
+                </div>
+                <span class="demo-batch">Sp26</span>
+                <span class="demo-arrow">&rarr;</span>
+            </a>
+            <a class="demo-item" data-batch="Sp26" href="ai-physical-work.html">
+                <span class="demo-number">36</span>
+                <div class="demo-info">
+                    <div class="demo-title">AI Guidance for Physical Work</div>
+                    <div class="demo-desc">Real-time AR-style work instruction overlay</div>
+                </div>
+                <span class="demo-batch">Sp26</span>
+                <span class="demo-arrow">&rarr;</span>
+            </a>
+            <a class="demo-item" data-batch="Sp26" href="govt-fraud.html">
+                <span class="demo-number">37</span>
+                <div class="demo-info">
+                    <div class="demo-title">Government Fraud Investigation</div>
+                    <div class="demo-desc">Spending anomaly detection and investigation tool</div>
+                </div>
+                <span class="demo-batch">Sp26</span>
+                <span class="demo-arrow">&rarr;</span>
+            </a>
+        </div>
+
+        <footer>
+            <p>Inspired by <a href="https://www.ycombinator.com/rfs" style="color:var(--accent);text-decoration:none;">YC's Request for Startups</a>. These are concept demos, not real products.</p>
+        </footer>
+    </div>
+
+    <script>
+        const btns = document.querySelectorAll('.batch-btn');
+        const items = document.querySelectorAll('.demo-item');
+
+        btns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                btns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const batch = btn.dataset.batch;
+                items.forEach(item => {
+                    item.classList.toggle('hidden', batch !== 'all' && item.dataset.batch !== batch);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

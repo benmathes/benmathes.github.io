@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spatial Computing | YC Startup Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#f5f5f5;--fg:#1a1a1a;--card:#fff;--card-border:#e0e0e0;--accent:#ff6600;--shadow:rgba(0,0,0,0.15);--depth-shadow:rgba(0,0,0,0.25)}
+@media(prefers-color-scheme:dark){:root{--bg:#111;--fg:#e8e8e8;--card:#1e1e1e;--card-border:#333;--shadow:rgba(0,0,0,0.4);--depth-shadow:rgba(0,0,0,0.6)}}
+body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--fg);overflow:hidden;height:100vh;width:100vw}
+a.back{position:fixed;top:16px;left:16px;color:var(--accent);text-decoration:none;font-size:14px;z-index:1000;font-weight:500}
+a.back:hover{text-decoration:underline}
+.mode-toggle{position:fixed;top:16px;right:16px;z-index:1000;display:flex;gap:8px;align-items:center}
+.mode-toggle label{font-size:13px;font-weight:500;cursor:pointer}
+.mode-toggle input{display:none}
+.toggle-track{width:48px;height:26px;background:var(--card-border);border-radius:13px;position:relative;cursor:pointer;transition:background .3s}
+.toggle-track.active{background:var(--accent)}
+.toggle-thumb{width:22px;height:22px;background:#fff;border-radius:50%;position:absolute;top:2px;left:2px;transition:transform .3s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.toggle-track.active .toggle-thumb{transform:translateX(22px)}
+h1.title{position:fixed;top:16px;left:50%;transform:translateX(-50%);font-size:18px;font-weight:600;z-index:1000;text-align:center;white-space:nowrap}
+h1.title span{color:var(--accent)}
+.scene{width:100vw;height:100vh;perspective:1200px;position:relative}
+.world{width:100%;height:100%;transform-style:preserve-3d;position:relative;transition:transform .1s ease-out}
+.panel{position:absolute;background:var(--card);border:1px solid var(--card-border);border-radius:12px;cursor:grab;transform-style:preserve-3d;transition:box-shadow .2s;overflow:hidden;display:flex;flex-direction:column;min-width:200px;min-height:150px}
+.panel:active{cursor:grabbing}
+.panel.selected{border-color:var(--accent)}
+.panel-header{padding:10px 14px;background:var(--card-border);display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:600;user-select:none}
+.panel-header .dots{display:flex;gap:5px}
+.panel-header .dot{width:10px;height:10px;border-radius:50%}
+.panel-header .dot.r{background:#ff5f57}.panel-header .dot.y{background:#ffbd2e}.panel-header .dot.g{background:#28c940}
+.panel-body{padding:14px;flex:1;overflow:auto;font-size:13px;line-height:1.5}
+.resize-handle{position:absolute;bottom:0;right:0;width:18px;height:18px;cursor:nwse-resize;opacity:0.4}
+.resize-handle::after{content:'';position:absolute;bottom:4px;right:4px;width:8px;height:8px;border-right:2px solid var(--fg);border-bottom:2px solid var(--fg)}
+.grid{position:absolute;inset:0;opacity:0.06;background-image:radial-gradient(circle,var(--fg) 1px,transparent 1px);background-size:40px 40px}
+.depth-indicator{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);font-size:12px;color:var(--fg);opacity:0.5;z-index:1000}
+.mini-chart{display:flex;align-items:flex-end;gap:3px;height:60px;margin-top:8px}
+.mini-chart .bar{width:12px;background:var(--accent);border-radius:3px 3px 0 0;transition:height .5s}
+.stat{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--card-border)}
+.stat:last-child{border:none}
+.code-block{background:var(--bg);border-radius:6px;padding:8px;font-family:monospace;font-size:11px;white-space:pre;overflow-x:auto;margin-top:8px}
+.task-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--card-border)}
+.task-check{width:16px;height:16px;border-radius:4px;border:2px solid var(--accent);cursor:pointer;flex-shrink:0}
+.task-check.done{background:var(--accent)}
+.img-placeholder{width:100%;aspect-ratio:16/9;background:linear-gradient(135deg,var(--accent)22,#ff990022);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;opacity:0.7;margin-bottom:8px}
+</style>
+</head>
+<body>
+<a class="back" href="index.html">&larr; Back to all demos</a>
+<h1 class="title"><span>Spatial</span> Computing</h1>
+<div class="mode-toggle">
+<label>Desktop</label>
+<div class="toggle-track" id="modeToggle"><div class="toggle-thumb"></div></div>
+<label>Spatial</label>
+</div>
+<div class="depth-indicator" id="depthInfo">Move mouse to look around &middot; Drag panels to reposition &middot; Scroll to zoom</div>
+<div class="scene" id="scene">
+<div class="grid"></div>
+<div class="world" id="world"></div>
+</div>
+<script>
+const world=document.getElementById('world'),scene=document.getElementById('scene'),modeToggle=document.getElementById('modeToggle');
+let spatial=false,mouseX=0,mouseY=0,zoom=1,panels=[];
+const panelData=[
+{title:'Analytics Dashboard',x:80,y:100,z:0,w:340,h:280,content:`
+<div style="font-size:22px;font-weight:700;color:var(--accent)">$128,450</div>
+<div style="font-size:11px;opacity:0.6;margin-bottom:12px">Monthly Revenue</div>
+<div class="mini-chart" id="chart1"></div>
+<div style="margin-top:12px">
+<div class="stat"><span>Users</span><b>12,847</b></div>
+<div class="stat"><span>Conv. Rate</span><b>3.2%</b></div>
+<div class="stat"><span>Avg Order</span><b>$84</b></div>
+</div>`},
+{title:'Code Editor',x:460,y:80,z:20,w:360,h:300,content:`
+<div class="code-block">function deployService(env) {
+  const config = loadConfig(env);
+  await buildArtifacts();
+  await pushToRegistry(config);
+  await rollout(config, {
+    strategy: 'canary',
+    percentage: 10
+  });
+  return monitorHealth();
+}</div>
+<div style="margin-top:10px;font-size:11px;opacity:0.7">deploy.ts &mdash; Last edited 2 min ago</div>`},
+{title:'Tasks',x:140,y:420,z:-20,w:300,h:250,content:`
+<div class="task-item"><div class="task-check done"></div><span style="text-decoration:line-through;opacity:0.5">Setup CI pipeline</span></div>
+<div class="task-item"><div class="task-check done"></div><span style="text-decoration:line-through;opacity:0.5">Deploy staging env</span></div>
+<div class="task-item"><div class="task-check"></div><span>Review PR #482</span></div>
+<div class="task-item"><div class="task-check"></div><span>Update API docs</span></div>
+<div class="task-item"><div class="task-check"></div><span>Performance audit</span></div>`},
+{title:'Media Preview',x:500,y:380,z:40,w:320,h:240,content:`
+<div class="img-placeholder">16:9 Preview</div>
+<div style="font-size:11px;opacity:0.7">product-hero-v3.png &mdash; 2.4 MB</div>
+<div style="margin-top:8px;display:flex;gap:6px">
+<span style="padding:3px 8px;background:var(--accent);color:#fff;border-radius:4px;font-size:11px">Approved</span>
+<span style="padding:3px 8px;background:var(--card-border);border-radius:4px;font-size:11px">v3</span>
+</div>`},
+{title:'System Monitor',x:860,y:120,z:-10,w:280,h:260,content:`
+<div style="text-align:center;margin-bottom:10px">
+<div style="font-size:36px;font-weight:700;color:var(--accent)">99.9%</div>
+<div style="font-size:11px;opacity:0.6">Uptime</div>
+</div>
+<div class="stat"><span>CPU</span><b>24%</b></div>
+<div class="stat"><span>Memory</span><b>6.2 / 16 GB</b></div>
+<div class="stat"><span>Disk</span><b>142 GB free</b></div>
+<div class="stat"><span>Network</span><b>1.2 Gbps</b></div>
+<div class="mini-chart" id="chart2"></div>`},
+{title:'Chat',x:880,y:420,z:30,w:280,h:220,content:`
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="align-self:flex-start;background:var(--card-border);padding:6px 10px;border-radius:10px;font-size:12px">Hey, is the deploy ready?</div>
+<div style="align-self:flex-end;background:var(--accent);color:#fff;padding:6px 10px;border-radius:10px;font-size:12px">Yes! Canary is at 10%</div>
+<div style="align-self:flex-start;background:var(--card-border);padding:6px 10px;border-radius:10px;font-size:12px">Great, bump to 50% 🚀</div>
+</div>`}
+];
+
+function createPanels(){
+world.innerHTML='';panels=[];
+panelData.forEach((d,i)=>{
+const p=document.createElement('div');p.className='panel';
+p.style.width=d.w+'px';p.style.height=d.h+'px';
+p.innerHTML=`<div class="panel-header"><span>${d.title}</span><div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div></div><div class="panel-body">${d.content}</div><div class="resize-handle"></div>`;
+world.appendChild(p);
+panels.push({el:p,x:d.x,y:d.y,z:d.z,w:d.w,h:d.h,origX:d.x,origY:d.y,origZ:d.z});
+updatePanelTransform(panels[i]);
+});
+buildCharts();
+}
+
+function buildCharts(){
+['chart1','chart2'].forEach(id=>{
+const c=document.getElementById(id);if(!c)return;
+c.innerHTML='';
+for(let i=0;i<12;i++){const b=document.createElement('div');b.className='bar';b.style.height=Math.random()*50+10+'px';c.appendChild(b)}
+});
+}
+
+function updatePanelTransform(p){
+const depth=spatial?p.z:0;
+const s=spatial?1+depth/800:1;
+const shadow=spatial?Math.max(5,20+depth/3):5;
+const blur=spatial?Math.max(5,15+depth/5):10;
+p.el.style.transform=`translate3d(${p.x}px,${p.y}px,${depth}px) scale(${s})`;
+p.el.style.boxShadow=`0 ${shadow}px ${blur}px var(--shadow)`;
+p.el.style.zIndex=Math.round(1000+depth);
+}
+
+let dragging=null,resizing=null,dragOff={x:0,y:0};
+
+world.addEventListener('mousedown',e=>{
+const handle=e.target.closest('.resize-handle');
+const panel=e.target.closest('.panel');
+if(!panel)return;
+const idx=[...world.children].indexOf(panel);
+if(idx<0)return;
+panels.forEach(p=>p.el.classList.remove('selected'));
+panels[idx].el.classList.add('selected');
+if(handle){
+resizing=panels[idx];
+dragOff.x=e.clientX;dragOff.y=e.clientY;
+}else if(e.target.closest('.panel-header')){
+dragging=panels[idx];
+dragOff.x=e.clientX-dragging.x;dragOff.y=e.clientY-dragging.y;
+}
+});
+
+window.addEventListener('mousemove',e=>{
+mouseX=(e.clientX/window.innerWidth-0.5)*2;
+mouseY=(e.clientY/window.innerHeight-0.5)*2;
+if(dragging){
+dragging.x=e.clientX-dragOff.x;
+dragging.y=e.clientY-dragOff.y;
+updatePanelTransform(dragging);
+}
+if(resizing){
+const dx=e.clientX-dragOff.x,dy=e.clientY-dragOff.y;
+resizing.w=Math.max(200,resizing.w+dx);
+resizing.h=Math.max(150,resizing.h+dy);
+resizing.el.style.width=resizing.w+'px';
+resizing.el.style.height=resizing.h+'px';
+dragOff.x=e.clientX;dragOff.y=e.clientY;
+}
+});
+
+window.addEventListener('mouseup',()=>{dragging=null;resizing=null});
+
+scene.addEventListener('wheel',e=>{
+if(!spatial)return;
+e.preventDefault();
+panels.forEach(p=>{
+if(p.el.classList.contains('selected')){
+p.z+=e.deltaY>0?-15:15;
+p.z=Math.max(-200,Math.min(200,p.z));
+updatePanelTransform(p);
+}
+});
+},{passive:false});
+
+function animate(){
+if(spatial){
+const rx=-mouseY*8,ry=mouseX*8;
+world.style.transform=`rotateX(${rx}deg) rotateY(${ry}deg)`;
+}else{
+world.style.transform='none';
+}
+requestAnimationFrame(animate);
+}
+
+modeToggle.addEventListener('click',()=>{
+spatial=!spatial;
+modeToggle.classList.toggle('active',spatial);
+scene.style.perspective=spatial?'1200px':'none';
+panels.forEach(p=>updatePanelTransform(p));
+document.getElementById('depthInfo').textContent=spatial?'Spatial mode: Mouse to look around \u00b7 Scroll on selected panel to adjust depth':'Desktop mode: Flat layout \u00b7 Drag panels to reposition';
+});
+
+createPanels();animate();
+
+// Animate chart bars periodically
+setInterval(()=>{
+document.querySelectorAll('.mini-chart .bar').forEach(b=>{
+b.style.height=Math.random()*50+10+'px';
+});
+},3000);
+</script>
+</body>
+</html>
