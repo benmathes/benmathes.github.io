@@ -112,10 +112,9 @@
       font-size: 0.88rem;
       font-weight: 500;
       border-radius: 6px;
-      transition: background 0.15s, opacity 0.15s;
+      transition: background 0.15s;
     }
     a#openMailBtn:hover { background: #228a4f; }
-    a#openMailBtn.disabled { opacity: 0.5; pointer-events: none; }
 
     #copyBtn {
       background: #e8e8e8;
@@ -198,9 +197,9 @@
   </div>
 
   <div class="actions">
+    <button id="copyBtn">1. Copy email body</button>
+    <a id="openMailBtn" href="#">2. Open mail app →</a>
     <button id="generateBtn">Generate new version</button>
-    <a id="openMailBtn" class="disabled" href="#">✉ Open in email</a>
-    <button id="copyBtn">Copy</button>
     <span class="status" id="status"></span>
   </div>
 
@@ -288,8 +287,8 @@ function setStatus(msg, isError = false) {
 }
 
 function updateMailtoLink() {
-  openMailBtn.href = `mailto:${TO}?subject=${encodeURIComponent(currentSubject)}&body=${encodeURIComponent(emailBody.value)}`;
-  openMailBtn.classList.remove('disabled');
+  // Only to + subject — body goes via the Copy button to avoid long-URL / handler issues.
+  openMailBtn.href = `mailto:${TO}?subject=${encodeURIComponent(currentSubject)}`;
 }
 
 function showBase() {
@@ -339,7 +338,6 @@ async function paraphrase(text, session, swapTable) {
 async function generate() {
   generateBtn.disabled = true;
   copyBtn.disabled = true;
-  openMailBtn.classList.add('disabled');
   setStatus('Generating…');
 
   try {
@@ -384,16 +382,18 @@ async function generate() {
 
 // ── Copy ──────────────────────────────────────────────────────────────────────
 copyBtn.addEventListener('click', async () => {
-  const text = `Subject: ${currentSubject}\n\n${emailBody.value}`;
   try {
-    await navigator.clipboard.writeText(text);
+    await navigator.clipboard.writeText(emailBody.value);
   } catch (_) {
     emailBody.select();
     document.execCommand('copy');
   }
-  copyBtn.textContent = 'Copied!';
+  copyBtn.textContent = 'Copied! Now click →';
   copyBtn.classList.add('copied');
-  setTimeout(() => { copyBtn.textContent = 'Copy'; copyBtn.classList.remove('copied'); }, 1800);
+  setTimeout(() => {
+    copyBtn.textContent = '1. Copy email body';
+    copyBtn.classList.remove('copied');
+  }, 2500);
 });
 
 generateBtn.addEventListener('click', generate);
