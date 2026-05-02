@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squash Court Safety — Email Generator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f5f5f0;
+      color: #1a1a1a;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 2rem 1rem 4rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 640px;
+    }
+
+    h1 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+      color: #111;
+    }
+
+    .subtitle {
+      font-size: 0.85rem;
+      color: #666;
+      margin-bottom: 1.75rem;
+    }
+
+    .to-line {
+      font-size: 0.85rem;
+      color: #444;
+      background: #ebebeb;
+      border-radius: 6px;
+      padding: 0.5rem 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .to-line strong { color: #111; }
+
+    textarea {
+      width: 100%;
+      min-height: 280px;
+      padding: 0.9rem 1rem;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      border: 1.5px solid #ddd;
+      border-radius: 8px;
+      background: #fff;
+      resize: vertical;
+      color: #1a1a1a;
+      font-family: inherit;
+      transition: border-color 0.15s;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: #3a7bd5;
+    }
+
+    .actions {
+      display: flex;
+      gap: 0.65rem;
+      margin-top: 0.85rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    button {
+      padding: 0.55rem 1.1rem;
+      font-size: 0.88rem;
+      font-weight: 500;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+    }
+
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    #generateBtn {
+      background: #3a7bd5;
+      color: #fff;
+    }
+    #generateBtn:not(:disabled):hover { background: #2d6abf; }
+
+    #copyBtn {
+      background: #e8e8e8;
+      color: #333;
+    }
+    #copyBtn:not(:disabled):hover { background: #ddd; }
+
+    #copyBtn.copied {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .status {
+      font-size: 0.8rem;
+      color: #666;
+      margin-left: auto;
+      align-self: center;
+    }
+
+    .status.error { color: #c0392b; }
+
+    .progress-wrap {
+      margin-top: 0.75rem;
+      display: none;
+    }
+
+    .progress-wrap.visible { display: block; }
+
+    progress {
+      width: 100%;
+      height: 4px;
+      appearance: none;
+      -webkit-appearance: none;
+      border-radius: 2px;
+      overflow: hidden;
+      border: none;
+      background: #e0e0e0;
+    }
+
+    progress::-webkit-progress-bar { background: #e0e0e0; }
+    progress::-webkit-progress-value { background: #3a7bd5; transition: width 0.2s; }
+    progress::-moz-progress-bar { background: #3a7bd5; }
+
+    .progress-label {
+      font-size: 0.75rem;
+      color: #888;
+      margin-top: 0.3rem;
+    }
+
+    .engine-badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 10px;
+      background: #e8f0fc;
+      color: #3a7bd5;
+      margin-left: 0.5rem;
+      vertical-align: middle;
+    }
+
+    .note {
+      margin-top: 1.5rem;
+      font-size: 0.78rem;
+      color: #888;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>Bay Club Squash — Court Safety Email <span id="engineBadge" class="engine-badge" style="display:none"></span></h1>
+  <p class="subtitle">Generates a lightly reworded version of the complaint email each time.</p>
+
+  <div class="to-line"><strong>To:</strong> info.bcsf@bayclubs.com</div>
+
+  <textarea id="emailBody" spellcheck="true" autocorrect="on"></textarea>
+
+  <div class="progress-wrap" id="progressWrap">
+    <progress id="progressBar" value="0" max="100"></progress>
+    <div class="progress-label" id="progressLabel">Loading model…</div>
+  </div>
+
+  <div class="actions">
+    <button id="generateBtn">Generate new version</button>
+    <button id="copyBtn">Copy</button>
+    <span class="status" id="status"></span>
+  </div>
+
+  <p class="note">
+    Uses your browser's built-in AI when available (Chrome 130+), otherwise falls back to a small
+    on-device model via Transformers.js (~80 MB, cached after first load). No data leaves your device.
+  </p>
+</div>
+
+<script type="module">
+// ── Base content ─────────────────────────────────────────────────────────────
+const BASE_PARA1 = `I have been a squash playing member for many years. I use the courts several times every week. They are usually clean. But the last few months, every time I use the courts there is loads of little particulate dust on every court. They act like ball bearings, causing us to skid when we are sprinting and lunging. People are liable to get quite injured.`;
+
+const BASE_PARA2 = `In California, maintaining "ordinarily clean" floors in a private athletic club isn't just a courtesy; it is a statutory obligation under California Civil Code § 1714, which holds property owners responsible for injuries caused by a lack of "ordinary care or skill" in management (California Civil Code § 1714). For a squash facility, "ordinary care" is defined by industry standards for traction and safety. This appears to apply even if we have signed waivers.`;
+
+// Second paragraph stays verbatim to protect legal accuracy.
+// Only the first paragraph is paraphrased.
+const SYSTEM_PROMPT = `You are an email editor. The user will give you a paragraph from a complaint email. Rewrite it with slightly different wording and sentence structure while keeping all the same facts, timeline, and concerns intact. Do not add new information. Return only the rewritten paragraph, no preamble or commentary.`;
+
+// ── DOM refs ─────────────────────────────────────────────────────────────────
+const emailBody   = document.getElementById('emailBody');
+const generateBtn = document.getElementById('generateBtn');
+const copyBtn     = document.getElementById('copyBtn');
+const statusEl    = document.getElementById('status');
+const progressWrap = document.getElementById('progressWrap');
+const progressBar  = document.getElementById('progressBar');
+const progressLabel = document.getElementById('progressLabel');
+const engineBadge  = document.getElementById('engineBadge');
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function setStatus(msg, isError = false) {
+  statusEl.textContent = msg;
+  statusEl.className = 'status' + (isError ? ' error' : '');
+}
+
+function showBase() {
+  emailBody.value = BASE_PARA1 + '\n\n' + BASE_PARA2;
+}
+
+// ── Engine detection ─────────────────────────────────────────────────────────
+let engine = null; // 'chrome' | 'transformers'
+let chromeSession = null;
+let transformersPipeline = null;
+
+async function detectChromeAI() {
+  // Chrome 138+ uses top-level LanguageModel; older Chrome used window.ai.languageModel
+  try {
+    if (typeof LanguageModel !== 'undefined') {
+      const avail = await LanguageModel.availability();
+      if (avail && avail !== 'unavailable') return 'new';
+    }
+  } catch (_) {}
+  try {
+    if (window.ai?.languageModel) {
+      const caps = await window.ai.languageModel.capabilities();
+      if (caps?.available && caps.available !== 'no') return 'legacy';
+    }
+  } catch (_) {}
+  return null;
+}
+
+async function initChromeSession(apiType) {
+  const opts = { systemPrompt: SYSTEM_PROMPT };
+  if (apiType === 'new') {
+    chromeSession = await LanguageModel.create(opts);
+  } else {
+    chromeSession = await window.ai.languageModel.create(opts);
+  }
+}
+
+async function loadTransformers() {
+  setStatus('Loading model (first time only)…');
+  progressWrap.classList.add('visible');
+  progressBar.value = 0;
+
+  const { pipeline, env } = await import(
+    'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3/dist/transformers.min.js'
+  );
+
+  // Use quantized models, cache in browser IndexedDB
+  env.allowLocalModels = false;
+
+  transformersPipeline = await pipeline(
+    'text2text-generation',
+    'Xenova/LaMini-Flan-T5-77M',
+    {
+      quantized: true,
+      progress_callback: (p) => {
+        if (p.status === 'downloading') {
+          const pct = p.total > 0 ? Math.round((p.loaded / p.total) * 100) : 0;
+          progressBar.value = pct;
+          progressLabel.textContent = `Downloading model… ${pct}%`;
+        } else if (p.status === 'loading') {
+          progressBar.value = 100;
+          progressLabel.textContent = 'Loading model into memory…';
+        }
+      },
+    }
+  );
+
+  progressWrap.classList.remove('visible');
+  setStatus('');
+}
+
+// ── Generation ────────────────────────────────────────────────────────────────
+async function paraphrasePara1() {
+  const prompt = BASE_PARA1;
+
+  if (engine === 'chrome') {
+    // Reuse session; each prompt is stateless with a fresh clone for consistency
+    const result = await chromeSession.prompt(prompt);
+    return result.trim();
+  } else {
+    // Transformers.js: LaMini instruction format
+    const instruction = `Rewrite the following paragraph with slightly different wording, keeping all facts the same:\n\n${prompt}`;
+    const out = await transformersPipeline(instruction, {
+      max_new_tokens: 200,
+      do_sample: true,
+      temperature: 0.85,
+      top_p: 0.9,
+    });
+    return out[0].generated_text.trim();
+  }
+}
+
+async function generate() {
+  generateBtn.disabled = true;
+  copyBtn.disabled = true;
+  setStatus('Generating…');
+
+  try {
+    // Lazy-init on first use
+    if (!engine) {
+      const chromeType = await detectChromeAI();
+      if (chromeType) {
+        setStatus('Initialising browser AI…');
+        await initChromeSession(chromeType);
+        engine = 'chrome';
+        engineBadge.textContent = 'Chrome AI';
+        engineBadge.style.display = '';
+      } else {
+        await loadTransformers();
+        engine = 'transformers';
+        engineBadge.textContent = 'Transformers.js';
+        engineBadge.style.display = '';
+      }
+    }
+
+    const newPara1 = await paraphrasePara1();
+    emailBody.value = newPara1 + '\n\n' + BASE_PARA2;
+    setStatus('');
+  } catch (err) {
+    console.error(err);
+    setStatus('Error: ' + err.message, true);
+    showBase();
+  } finally {
+    generateBtn.disabled = false;
+    copyBtn.disabled = false;
+  }
+}
+
+// ── Copy ──────────────────────────────────────────────────────────────────────
+copyBtn.addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(emailBody.value);
+    copyBtn.textContent = 'Copied!';
+    copyBtn.classList.add('copied');
+    setTimeout(() => {
+      copyBtn.textContent = 'Copy';
+      copyBtn.classList.remove('copied');
+    }, 1800);
+  } catch (_) {
+    emailBody.select();
+    document.execCommand('copy');
+  }
+});
+
+generateBtn.addEventListener('click', generate);
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+showBase();
+</script>
+</body>
+</html>
