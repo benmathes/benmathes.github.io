@@ -202,8 +202,8 @@
   </div>
 
   <p class="note">
-    Uses your browser's built-in AI when available (Chrome 130+), otherwise falls back to a small
-    on-device model via Transformers.js (~80 MB, cached after first load). No data leaves your device.
+    Uses Chrome's built-in AI when available for natural word substitutions; otherwise makes a small
+    set of targeted word swaps. No data leaves your device.
   </p>
 </div>
 
@@ -216,9 +216,53 @@ const BASE_PARA1 = `I have been a squash playing member for many years. I use th
 
 const BASE_PARA2 = `In California, maintaining "ordinarily clean" floors in a private athletic club isn't just a courtesy; it is a statutory obligation under California Civil Code § 1714, which holds property owners responsible for injuries caused by a lack of "ordinary care or skill" in management (California Civil Code § 1714). For a squash facility, "ordinary care" is defined by industry standards for traction and safety. This appears to apply even if we have signed waivers.`;
 
-const BODY_SYSTEM_PROMPT = `You are an email editor. The user will give you a paragraph from a complaint email. Rewrite it with slightly different wording and sentence structure while keeping all the same facts, timeline, and concerns intact. Do not add new information. Return only the rewritten paragraph, no preamble or commentary.`;
+// Chrome AI prompts: extremely constrained — only 2-3 word swaps, no restructuring.
+const BODY_SYSTEM_PROMPT = `You are a copy editor making the lightest possible edits. The user gives you a paragraph. Swap 2-3 individual words for close synonyms. Do NOT change any sentence structures, reorder sentences, add words, or remove words beyond those swaps. Return the full paragraph with only those tiny changes, nothing else.`;
 
-const SUBJECT_SYSTEM_PROMPT = `You are an email editor. The user will give you an email subject line. Rewrite it with slightly different wording while keeping the same meaning, urgency, and the exact legal citation "California Civil Code § 1714" intact. Keep it concise — one sentence or phrase. Return only the rewritten subject, no preamble or commentary.`;
+const SUBJECT_SYSTEM_PROMPT = `You are a copy editor. The user gives you an email subject line. Swap 1-2 words for close synonyms. Keep the exact string "California Civil Code § 1714" unchanged. Return only the revised subject line, no commentary.`;
+
+// ── Fallback: deterministic word-swap tables (used when Chrome AI is unavailable) ──
+// The small Transformers.js model can't reliably follow nuanced instructions,
+// so we skip it for generation and just do targeted substitutions instead.
+
+function pickRandom(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+// Each entry: [searchString, [...replacements]]  (original never in replacements to guarantee a change)
+const BODY_SWAPS = [
+  ['many years',              ['several years', 'a number of years', 'quite a few years']],
+  ['several times every week',['multiple times a week', 'a few times each week', 'multiple times per week']],
+  ['usually clean',           ['generally clean', 'normally clean', 'typically clean']],
+  ['loads of',                ['a lot of', 'masses of', 'quite a lot of']],
+  ['little particulate dust', ['fine particulate dust', 'tiny dust particles', 'fine dust particles']],
+  ['act like ball bearings',  ['behave like ball bearings', 'work like ball bearings']],
+  ['causing us to skid',      ['making us slip', 'causing slipping']],
+  ['sprinting and lunging',   ['running and lunging', 'sprinting and diving for shots']],
+  ['quite injured',           ['seriously injured', 'badly hurt', 'significantly injured']],
+  ['liable to',               ['likely to', 'at risk of getting']],
+];
+
+const SUBJECT_SWAPS = [
+  ['Unclean',                 ['Dirty', 'Filthy', 'Unsafe', 'Unhygienic']],
+  ['dangerous',               ['a safety hazard', 'hazardous', 'a danger to members']],
+  ['Potentially in violation of', ['Possible violation of', 'Likely violating', 'Apparent violation of']],
+];
+
+function applySwaps(text, swapTable, count = 3) {
+  // Shuffle the table so we pick different swaps each call
+  const shuffled = [...swapTable].sort(() => Math.random() - 0.5);
+  let result = text;
+  let applied = 0;
+  for (const [search, options] of shuffled) {
+    if (applied >= count) break;
+    if (result.includes(search)) {
+      result = result.replace(search, pickRandom(options));
+      applied++;
+    }
+  }
+  return result;
+}
 
 // ── DOM refs ──────────────────────────────────────────────────────────────────
 const emailBody     = document.getElementById('emailBody');
@@ -257,7 +301,6 @@ function showBase() {
 let engine = null;
 let chromeBodySession = null;
 let chromeSubjectSession = null;
-let transformersPipeline = null;
 
 async function detectChromeAI() {
   try {
@@ -281,51 +324,13 @@ async function makeChromeSession(systemPrompt, apiType) {
   return window.ai.languageModel.create(opts);
 }
 
-async function loadTransformers() {
-  setStatus('Loading model (first time only)…');
-  progressWrap.classList.add('visible');
-  progressBar.value = 0;
-
-  const { pipeline, env } = await import(
-    'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3/dist/transformers.min.js'
-  );
-
-  env.allowLocalModels = false;
-
-  transformersPipeline = await pipeline(
-    'text2text-generation',
-    'Xenova/LaMini-Flan-T5-77M',
-    {
-      quantized: true,
-      progress_callback: (p) => {
-        if (p.status === 'downloading') {
-          const pct = p.total > 0 ? Math.round((p.loaded / p.total) * 100) : 0;
-          progressBar.value = pct;
-          progressLabel.textContent = `Downloading model… ${pct}%`;
-        } else if (p.status === 'loading') {
-          progressBar.value = 100;
-          progressLabel.textContent = 'Loading model into memory…';
-        }
-      },
-    }
-  );
-
-  progressWrap.classList.remove('visible');
-  setStatus('');
-}
-
 // ── Generation ────────────────────────────────────────────────────────────────
-async function paraphrase(text, session, instruction) {
+async function paraphrase(text, session, swapTable) {
   if (engine === 'chrome') {
     return (await session.prompt(text)).trim();
   } else {
-    const out = await transformersPipeline(`${instruction}\n\n${text}`, {
-      max_new_tokens: 120,
-      do_sample: true,
-      temperature: 0.85,
-      top_p: 0.9,
-    });
-    return out[0].generated_text.trim();
+    // Swap-table path: reliable, no model download needed
+    return applySwaps(text, swapTable);
   }
 }
 
@@ -348,24 +353,16 @@ async function generate() {
         engineBadge.textContent = 'Chrome AI';
         engineBadge.style.display = '';
       } else {
-        await loadTransformers();
-        engine = 'transformers';
-        engineBadge.textContent = 'Transformers.js';
+        // Word-swap fallback — no model download required
+        engine = 'swaps';
+        engineBadge.textContent = 'word swaps';
         engineBadge.style.display = '';
       }
     }
 
     const [newPara1, newSubject] = await Promise.all([
-      paraphrase(
-        BASE_PARA1,
-        chromeBodySession,
-        'Rewrite the following paragraph with slightly different wording, keeping all facts the same:'
-      ),
-      paraphrase(
-        BASE_SUBJECT,
-        chromeSubjectSession,
-        'Rewrite the following email subject line with slightly different wording, keeping the legal citation exactly as written:'
-      ),
+      paraphrase(BASE_PARA1,   chromeBodySession,    BODY_SWAPS),
+      paraphrase(BASE_SUBJECT, chromeSubjectSession, SUBJECT_SWAPS),
     ]);
 
     emailBody.value = newPara1 + '\n\n' + BASE_PARA2;
