@@ -103,11 +103,19 @@
     }
     #generateBtn:not(:disabled):hover { background: #2d6abf; }
 
-    #openMailBtn {
+    a#openMailBtn {
+      display: inline-block;
       background: #2a9d5c;
       color: #fff;
+      text-decoration: none;
+      padding: 0.55rem 1.1rem;
+      font-size: 0.88rem;
+      font-weight: 500;
+      border-radius: 6px;
+      transition: background 0.15s, opacity 0.15s;
     }
-    #openMailBtn:not(:disabled):hover { background: #228a4f; }
+    a#openMailBtn:hover { background: #228a4f; }
+    a#openMailBtn.disabled { opacity: 0.5; pointer-events: none; }
 
     #copyBtn {
       background: #e8e8e8;
@@ -191,7 +199,7 @@
 
   <div class="actions">
     <button id="generateBtn">Generate new version</button>
-    <button id="openMailBtn" disabled>✉ Open in email</button>
+    <a id="openMailBtn" class="disabled" href="#">✉ Open in email</a>
     <button id="copyBtn">Copy</button>
     <span class="status" id="status"></span>
   </div>
@@ -280,7 +288,8 @@ function setStatus(msg, isError = false) {
 }
 
 function updateMailtoLink() {
-  openMailBtn.disabled = false;
+  openMailBtn.href = `mailto:${TO}?subject=${encodeURIComponent(currentSubject)}&body=${encodeURIComponent(emailBody.value)}`;
+  openMailBtn.classList.remove('disabled');
 }
 
 function showBase() {
@@ -330,7 +339,7 @@ async function paraphrase(text, session, swapTable) {
 async function generate() {
   generateBtn.disabled = true;
   copyBtn.disabled = true;
-  openMailBtn.disabled = true;
+  openMailBtn.classList.add('disabled');
   setStatus('Generating…');
 
   try {
@@ -385,28 +394,6 @@ copyBtn.addEventListener('click', async () => {
   copyBtn.textContent = 'Copied!';
   copyBtn.classList.add('copied');
   setTimeout(() => { copyBtn.textContent = 'Copy'; copyBtn.classList.remove('copied'); }, 1800);
-});
-
-openMailBtn.addEventListener('click', async () => {
-  const mailto = `mailto:${TO}?subject=${encodeURIComponent(currentSubject)}&body=${encodeURIComponent(emailBody.value)}`;
-
-  // Copy a paste-ready version to clipboard as a backup — guarantees the click
-  // is useful even if no mail handler is registered.
-  const clipboardText = `To: ${TO}\nSubject: ${currentSubject}\n\n${emailBody.value}`;
-  try { await navigator.clipboard.writeText(clipboardText); } catch (_) {}
-
-  // Trigger the mail handler via a programmatic anchor click. This is more
-  // reliable than `window.location.href = mailto:...`, which some browsers
-  // interpret as a page navigation and drop silently when no handler exists.
-  const a = document.createElement('a');
-  a.href = mailto;
-  a.style.display = 'none';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-
-  setStatus('Mail app launched · email also copied to clipboard');
-  setTimeout(() => setStatus(''), 4000);
 });
 
 generateBtn.addEventListener('click', generate);
