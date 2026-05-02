@@ -106,13 +106,8 @@
     #openMailBtn {
       background: #2a9d5c;
       color: #fff;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
     }
-    #openMailBtn:not(.disabled):hover { background: #228a4f; }
-    #openMailBtn.disabled { opacity: 0.5; pointer-events: none; }
+    #openMailBtn:not(:disabled):hover { background: #228a4f; }
 
     #copyBtn {
       background: #e8e8e8;
@@ -196,7 +191,7 @@
 
   <div class="actions">
     <button id="generateBtn">Generate new version</button>
-    <a id="openMailBtn" class="disabled">✉ Open in email</a>
+    <button id="openMailBtn" disabled>✉ Open in email</button>
     <button id="copyBtn">Copy</button>
     <span class="status" id="status"></span>
   </div>
@@ -285,9 +280,7 @@ function setStatus(msg, isError = false) {
 }
 
 function updateMailtoLink() {
-  const href = `mailto:${TO}?subject=${encodeURIComponent(currentSubject)}&body=${encodeURIComponent(emailBody.value)}`;
-  openMailBtn.href = href;
-  openMailBtn.classList.remove('disabled');
+  openMailBtn.disabled = false;
 }
 
 function showBase() {
@@ -337,7 +330,7 @@ async function paraphrase(text, session, swapTable) {
 async function generate() {
   generateBtn.disabled = true;
   copyBtn.disabled = true;
-  openMailBtn.classList.add('disabled');
+  openMailBtn.disabled = true;
   setStatus('Generating…');
 
   try {
@@ -392,6 +385,10 @@ copyBtn.addEventListener('click', async () => {
   copyBtn.textContent = 'Copied!';
   copyBtn.classList.add('copied');
   setTimeout(() => { copyBtn.textContent = 'Copy'; copyBtn.classList.remove('copied'); }, 1800);
+});
+
+openMailBtn.addEventListener('click', () => {
+  window.location.href = `mailto:${TO}?subject=${encodeURIComponent(currentSubject)}&body=${encodeURIComponent(emailBody.value)}`;
 });
 
 generateBtn.addEventListener('click', generate);
