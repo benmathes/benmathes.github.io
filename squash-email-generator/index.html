@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squash Court Safety — Email Generator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f5f5f0;
+      color: #1a1a1a;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 2rem 1rem 4rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 640px;
+    }
+
+    h1 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+      color: #111;
+    }
+
+    .subtitle {
+      font-size: 0.85rem;
+      color: #666;
+      margin-bottom: 1.75rem;
+    }
+
+    .header-row {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 0.3rem 0.6rem;
+      font-size: 0.85rem;
+      color: #444;
+      background: #ebebeb;
+      border-radius: 6px;
+      padding: 0.55rem 0.75rem;
+      margin-bottom: 1rem;
+      align-items: baseline;
+    }
+
+    .header-row strong { color: #111; white-space: nowrap; }
+
+    #subjectDisplay {
+      color: #222;
+      font-style: italic;
+      word-break: break-word;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 280px;
+      padding: 0.9rem 1rem;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      border: 1.5px solid #ddd;
+      border-radius: 8px;
+      background: #fff;
+      resize: vertical;
+      color: #1a1a1a;
+      font-family: inherit;
+      transition: border-color 0.15s;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: #3a7bd5;
+    }
+
+    .actions {
+      display: flex;
+      gap: 0.65rem;
+      margin-top: 0.85rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    button {
+      padding: 0.55rem 1.1rem;
+      font-size: 0.88rem;
+      font-weight: 500;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+    }
+
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    #generateBtn {
+      background: #3a7bd5;
+      color: #fff;
+    }
+    #generateBtn:not(:disabled):hover { background: #2d6abf; }
+
+    a#openMailBtn {
+      display: inline-block;
+      background: #2a9d5c;
+      color: #fff;
+      text-decoration: none;
+      padding: 0.55rem 1.1rem;
+      font-size: 0.88rem;
+      font-weight: 500;
+      border-radius: 6px;
+      transition: background 0.15s;
+    }
+    a#openMailBtn:hover { background: #228a4f; }
+
+    #copyBtn {
+      background: #e8e8e8;
+      color: #333;
+    }
+    #copyBtn:not(:disabled):hover { background: #ddd; }
+    #copyBtn.copied { background: #d4edda; color: #155724; }
+
+    .status {
+      font-size: 0.8rem;
+      color: #666;
+      margin-left: auto;
+      align-self: center;
+    }
+
+    .status.error { color: #c0392b; }
+
+    .progress-wrap {
+      margin-top: 0.75rem;
+      display: none;
+    }
+
+    .progress-wrap.visible { display: block; }
+
+    progress {
+      width: 100%;
+      height: 4px;
+      appearance: none;
+      -webkit-appearance: none;
+      border-radius: 2px;
+      overflow: hidden;
+      border: none;
+      background: #e0e0e0;
+    }
+
+    progress::-webkit-progress-bar { background: #e0e0e0; }
+    progress::-webkit-progress-value { background: #3a7bd5; transition: width 0.2s; }
+    progress::-moz-progress-bar { background: #3a7bd5; }
+
+    .progress-label {
+      font-size: 0.75rem;
+      color: #888;
+      margin-top: 0.3rem;
+    }
+
+    .engine-badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 10px;
+      background: #e8f0fc;
+      color: #3a7bd5;
+      margin-left: 0.5rem;
+      vertical-align: middle;
+    }
+
+    .note {
+      margin-top: 1.5rem;
+      font-size: 0.78rem;
+      color: #888;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>Bay Club Squash — Court Safety Email <span id="engineBadge" class="engine-badge" style="display:none"></span></h1>
+  <p class="subtitle">Generates a lightly reworded version of the complaint email each time.</p>
+
+  <div class="header-row">
+    <strong>To:</strong>   <span>info.bcsf@bayclubs.com</span>
+    <strong>Subject:</strong> <span id="subjectDisplay"></span>
+  </div>
+
+  <textarea id="emailBody" spellcheck="true" autocorrect="on"></textarea>
+
+  <div class="progress-wrap" id="progressWrap">
+    <progress id="progressBar" value="0" max="100"></progress>
+    <div class="progress-label" id="progressLabel">Loading model…</div>
+  </div>
+
+  <div class="actions">
+    <button id="copyBtn">1. Copy email body</button>
+    <a id="openMailBtn" href="#">2. Open mail app →</a>
+    <button id="generateBtn">Generate new version</button>
+    <span class="status" id="status"></span>
+  </div>
+
+  <p class="note">
+    Uses Chrome's built-in AI when available for natural word substitutions; otherwise makes a small
+    set of targeted word swaps. No data leaves your device.
+  </p>
+</div>
+
+<script type="module">
+const TO = 'info.bcsf@bayclubs.com';
+
+const BASE_SUBJECT = `Unclean squash courts, dangerous. Potentially in violation of California Civil Code § 1714`;
+
+const BASE_PARA1 = `I have been a squash playing member for many years. I use the courts several times every week. They are usually clean. But the last few months, every time I use the courts there is loads of little particulate dust on every court. They act like ball bearings, causing us to skid when we are sprinting and lunging. People are liable to get quite injured.`;
+
+const BASE_PARA2 = `In California, maintaining "ordinarily clean" floors in a private athletic club isn't just a courtesy; it is a statutory obligation under California Civil Code § 1714, which holds property owners responsible for injuries caused by a lack of "ordinary care or skill" in management (California Civil Code § 1714). For a squash facility, "ordinary care" is defined by industry standards for traction and safety. This appears to apply even if we have signed waivers.`;
+
+// Chrome AI prompts: extremely constrained — only 2-3 word swaps, no restructuring.
+const BODY_SYSTEM_PROMPT = `You are a copy editor making the lightest possible edits. The user gives you a paragraph. Swap 2-3 individual words for close synonyms. Do NOT change any sentence structures, reorder sentences, add words, or remove words beyond those swaps. Return the full paragraph with only those tiny changes, nothing else.`;
+
+const SUBJECT_SYSTEM_PROMPT = `You are a copy editor. The user gives you an email subject line. Swap 1-2 words for close synonyms. Keep the exact string "California Civil Code § 1714" unchanged. Return only the revised subject line, no commentary.`;
+
+// ── Fallback: deterministic word-swap tables (used when Chrome AI is unavailable) ──
+// The small Transformers.js model can't reliably follow nuanced instructions,
+// so we skip it for generation and just do targeted substitutions instead.
+
+function pickRandom(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+// Each entry: [searchString, [...replacements]]  (original never in replacements to guarantee a change)
+const BODY_SWAPS = [
+  ['many years',              ['several years', 'a number of years', 'quite a few years']],
+  ['several times every week',['multiple times a week', 'a few times each week', 'multiple times per week']],
+  ['usually clean',           ['generally clean', 'normally clean', 'typically clean']],
+  ['loads of',                ['a lot of', 'masses of', 'quite a lot of']],
+  ['little particulate dust', ['fine particulate dust', 'tiny dust particles', 'fine dust particles']],
+  ['act like ball bearings',  ['behave like ball bearings', 'work like ball bearings']],
+  ['causing us to skid',      ['making us slip', 'causing slipping']],
+  ['sprinting and lunging',   ['running and lunging', 'sprinting and diving for shots']],
+  ['quite injured',           ['seriously injured', 'badly hurt', 'significantly injured']],
+  ['liable to',               ['likely to', 'at risk of getting']],
+];
+
+const SUBJECT_SWAPS = [
+  ['Unclean',                 ['Dirty', 'Filthy', 'Unsafe', 'Unhygienic']],
+  ['dangerous',               ['a safety hazard', 'hazardous', 'a danger to members']],
+  ['Potentially in violation of', ['Possible violation of', 'Likely violating', 'Apparent violation of']],
+];
+
+function applySwaps(text, swapTable, count = 3) {
+  // Shuffle the table so we pick different swaps each call
+  const shuffled = [...swapTable].sort(() => Math.random() - 0.5);
+  let result = text;
+  let applied = 0;
+  for (const [search, options] of shuffled) {
+    if (applied >= count) break;
+    if (result.includes(search)) {
+      result = result.replace(search, pickRandom(options));
+      applied++;
+    }
+  }
+  return result;
+}
+
+// ── DOM refs ──────────────────────────────────────────────────────────────────
+const emailBody     = document.getElementById('emailBody');
+const subjectDisplay = document.getElementById('subjectDisplay');
+const generateBtn   = document.getElementById('generateBtn');
+const openMailBtn   = document.getElementById('openMailBtn');
+const copyBtn       = document.getElementById('copyBtn');
+const statusEl      = document.getElementById('status');
+const progressWrap  = document.getElementById('progressWrap');
+const progressBar   = document.getElementById('progressBar');
+const progressLabel = document.getElementById('progressLabel');
+const engineBadge   = document.getElementById('engineBadge');
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let currentSubject = BASE_SUBJECT;
+
+function setStatus(msg, isError = false) {
+  statusEl.textContent = msg;
+  statusEl.className = 'status' + (isError ? ' error' : '');
+}
+
+function updateMailtoLink() {
+  // Only to + subject — body goes via the Copy button to avoid long-URL / handler issues.
+  openMailBtn.href = `mailto:${TO}?subject=${encodeURIComponent(currentSubject)}`;
+}
+
+function showBase() {
+  emailBody.value = BASE_PARA1 + '\n\n' + BASE_PARA2;
+  subjectDisplay.textContent = BASE_SUBJECT;
+  currentSubject = BASE_SUBJECT;
+  updateMailtoLink();
+}
+
+// ── Engine detection ──────────────────────────────────────────────────────────
+let engine = null;
+let chromeBodySession = null;
+let chromeSubjectSession = null;
+
+async function detectChromeAI() {
+  try {
+    if (typeof LanguageModel !== 'undefined') {
+      const avail = await LanguageModel.availability();
+      if (avail && avail !== 'unavailable') return 'new';
+    }
+  } catch (_) {}
+  try {
+    if (window.ai?.languageModel) {
+      const caps = await window.ai.languageModel.capabilities();
+      if (caps?.available && caps.available !== 'no') return 'legacy';
+    }
+  } catch (_) {}
+  return null;
+}
+
+async function makeChromeSession(systemPrompt, apiType) {
+  const opts = { systemPrompt };
+  if (apiType === 'new') return LanguageModel.create(opts);
+  return window.ai.languageModel.create(opts);
+}
+
+// ── Generation ────────────────────────────────────────────────────────────────
+async function paraphrase(text, session, swapTable) {
+  if (engine === 'chrome') {
+    return (await session.prompt(text)).trim();
+  } else {
+    // Swap-table path: reliable, no model download needed
+    return applySwaps(text, swapTable);
+  }
+}
+
+async function generate() {
+  generateBtn.disabled = true;
+  copyBtn.disabled = true;
+  setStatus('Generating…');
+
+  try {
+    if (!engine) {
+      const chromeType = await detectChromeAI();
+      if (chromeType) {
+        setStatus('Initialising browser AI…');
+        [chromeBodySession, chromeSubjectSession] = await Promise.all([
+          makeChromeSession(BODY_SYSTEM_PROMPT, chromeType),
+          makeChromeSession(SUBJECT_SYSTEM_PROMPT, chromeType),
+        ]);
+        engine = 'chrome';
+        engineBadge.textContent = 'Chrome AI';
+        engineBadge.style.display = '';
+      } else {
+        // Word-swap fallback — no model download required
+        engine = 'swaps';
+        engineBadge.textContent = 'word swaps';
+        engineBadge.style.display = '';
+      }
+    }
+
+    const [newPara1, newSubject] = await Promise.all([
+      paraphrase(BASE_PARA1,   chromeBodySession,    BODY_SWAPS),
+      paraphrase(BASE_SUBJECT, chromeSubjectSession, SUBJECT_SWAPS),
+    ]);
+
+    emailBody.value = newPara1 + '\n\n' + BASE_PARA2;
+    currentSubject = newSubject;
+    subjectDisplay.textContent = newSubject;
+    updateMailtoLink();
+    setStatus('');
+  } catch (err) {
+    console.error(err);
+    setStatus('Error: ' + err.message, true);
+    showBase();
+  } finally {
+    generateBtn.disabled = false;
+    copyBtn.disabled = false;
+  }
+}
+
+// ── Copy ──────────────────────────────────────────────────────────────────────
+copyBtn.addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(emailBody.value);
+  } catch (_) {
+    emailBody.select();
+    document.execCommand('copy');
+  }
+  copyBtn.textContent = 'Copied! Now click →';
+  copyBtn.classList.add('copied');
+  setTimeout(() => {
+    copyBtn.textContent = '1. Copy email body';
+    copyBtn.classList.remove('copied');
+  }, 2500);
+});
+
+generateBtn.addEventListener('click', generate);
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+showBase();
+</script>
+</body>
+</html>
