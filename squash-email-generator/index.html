@@ -36,16 +36,26 @@
       margin-bottom: 1.75rem;
     }
 
-    .to-line {
+    .header-row {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 0.3rem 0.6rem;
       font-size: 0.85rem;
       color: #444;
       background: #ebebeb;
       border-radius: 6px;
-      padding: 0.5rem 0.75rem;
+      padding: 0.55rem 0.75rem;
       margin-bottom: 1rem;
+      align-items: baseline;
     }
 
-    .to-line strong { color: #111; }
+    .header-row strong { color: #111; white-space: nowrap; }
+
+    #subjectDisplay {
+      color: #222;
+      font-style: italic;
+      word-break: break-word;
+    }
 
     textarea {
       width: 100%;
@@ -93,16 +103,23 @@
     }
     #generateBtn:not(:disabled):hover { background: #2d6abf; }
 
+    #openMailBtn {
+      background: #2a9d5c;
+      color: #fff;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    #openMailBtn:not(.disabled):hover { background: #228a4f; }
+    #openMailBtn.disabled { opacity: 0.5; pointer-events: none; }
+
     #copyBtn {
       background: #e8e8e8;
       color: #333;
     }
     #copyBtn:not(:disabled):hover { background: #ddd; }
-
-    #copyBtn.copied {
-      background: #d4edda;
-      color: #155724;
-    }
+    #copyBtn.copied { background: #d4edda; color: #155724; }
 
     .status {
       font-size: 0.8rem;
@@ -165,7 +182,10 @@
   <h1>Bay Club Squash — Court Safety Email <span id="engineBadge" class="engine-badge" style="display:none"></span></h1>
   <p class="subtitle">Generates a lightly reworded version of the complaint email each time.</p>
 
-  <div class="to-line"><strong>To:</strong> info.bcsf@bayclubs.com</div>
+  <div class="header-row">
+    <strong>To:</strong>   <span>info.bcsf@bayclubs.com</span>
+    <strong>Subject:</strong> <span id="subjectDisplay"></span>
+  </div>
 
   <textarea id="emailBody" spellcheck="true" autocorrect="on"></textarea>
 
@@ -176,6 +196,7 @@
 
   <div class="actions">
     <button id="generateBtn">Generate new version</button>
+    <a id="openMailBtn" class="disabled">✉ Open in email</a>
     <button id="copyBtn">Copy</button>
     <span class="status" id="status"></span>
   </div>
@@ -187,42 +208,58 @@
 </div>
 
 <script type="module">
-// ── Base content ─────────────────────────────────────────────────────────────
+const TO = 'info.bcsf@bayclubs.com';
+
+const BASE_SUBJECT = `Unclean squash courts, dangerous. Potentially in violation of California Civil Code § 1714`;
+
 const BASE_PARA1 = `I have been a squash playing member for many years. I use the courts several times every week. They are usually clean. But the last few months, every time I use the courts there is loads of little particulate dust on every court. They act like ball bearings, causing us to skid when we are sprinting and lunging. People are liable to get quite injured.`;
 
 const BASE_PARA2 = `In California, maintaining "ordinarily clean" floors in a private athletic club isn't just a courtesy; it is a statutory obligation under California Civil Code § 1714, which holds property owners responsible for injuries caused by a lack of "ordinary care or skill" in management (California Civil Code § 1714). For a squash facility, "ordinary care" is defined by industry standards for traction and safety. This appears to apply even if we have signed waivers.`;
 
-// Second paragraph stays verbatim to protect legal accuracy.
-// Only the first paragraph is paraphrased.
-const SYSTEM_PROMPT = `You are an email editor. The user will give you a paragraph from a complaint email. Rewrite it with slightly different wording and sentence structure while keeping all the same facts, timeline, and concerns intact. Do not add new information. Return only the rewritten paragraph, no preamble or commentary.`;
+const BODY_SYSTEM_PROMPT = `You are an email editor. The user will give you a paragraph from a complaint email. Rewrite it with slightly different wording and sentence structure while keeping all the same facts, timeline, and concerns intact. Do not add new information. Return only the rewritten paragraph, no preamble or commentary.`;
 
-// ── DOM refs ─────────────────────────────────────────────────────────────────
-const emailBody   = document.getElementById('emailBody');
-const generateBtn = document.getElementById('generateBtn');
-const copyBtn     = document.getElementById('copyBtn');
-const statusEl    = document.getElementById('status');
-const progressWrap = document.getElementById('progressWrap');
-const progressBar  = document.getElementById('progressBar');
+const SUBJECT_SYSTEM_PROMPT = `You are an email editor. The user will give you an email subject line. Rewrite it with slightly different wording while keeping the same meaning, urgency, and the exact legal citation "California Civil Code § 1714" intact. Keep it concise — one sentence or phrase. Return only the rewritten subject, no preamble or commentary.`;
+
+// ── DOM refs ──────────────────────────────────────────────────────────────────
+const emailBody     = document.getElementById('emailBody');
+const subjectDisplay = document.getElementById('subjectDisplay');
+const generateBtn   = document.getElementById('generateBtn');
+const openMailBtn   = document.getElementById('openMailBtn');
+const copyBtn       = document.getElementById('copyBtn');
+const statusEl      = document.getElementById('status');
+const progressWrap  = document.getElementById('progressWrap');
+const progressBar   = document.getElementById('progressBar');
 const progressLabel = document.getElementById('progressLabel');
-const engineBadge  = document.getElementById('engineBadge');
+const engineBadge   = document.getElementById('engineBadge');
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── State ─────────────────────────────────────────────────────────────────────
+let currentSubject = BASE_SUBJECT;
+
 function setStatus(msg, isError = false) {
   statusEl.textContent = msg;
   statusEl.className = 'status' + (isError ? ' error' : '');
 }
 
-function showBase() {
-  emailBody.value = BASE_PARA1 + '\n\n' + BASE_PARA2;
+function updateMailtoLink() {
+  const href = `mailto:${TO}?subject=${encodeURIComponent(currentSubject)}&body=${encodeURIComponent(emailBody.value)}`;
+  openMailBtn.href = href;
+  openMailBtn.classList.remove('disabled');
 }
 
-// ── Engine detection ─────────────────────────────────────────────────────────
-let engine = null; // 'chrome' | 'transformers'
-let chromeSession = null;
+function showBase() {
+  emailBody.value = BASE_PARA1 + '\n\n' + BASE_PARA2;
+  subjectDisplay.textContent = BASE_SUBJECT;
+  currentSubject = BASE_SUBJECT;
+  updateMailtoLink();
+}
+
+// ── Engine detection ──────────────────────────────────────────────────────────
+let engine = null;
+let chromeBodySession = null;
+let chromeSubjectSession = null;
 let transformersPipeline = null;
 
 async function detectChromeAI() {
-  // Chrome 138+ uses top-level LanguageModel; older Chrome used window.ai.languageModel
   try {
     if (typeof LanguageModel !== 'undefined') {
       const avail = await LanguageModel.availability();
@@ -238,13 +275,10 @@ async function detectChromeAI() {
   return null;
 }
 
-async function initChromeSession(apiType) {
-  const opts = { systemPrompt: SYSTEM_PROMPT };
-  if (apiType === 'new') {
-    chromeSession = await LanguageModel.create(opts);
-  } else {
-    chromeSession = await window.ai.languageModel.create(opts);
-  }
+async function makeChromeSession(systemPrompt, apiType) {
+  const opts = { systemPrompt };
+  if (apiType === 'new') return LanguageModel.create(opts);
+  return window.ai.languageModel.create(opts);
 }
 
 async function loadTransformers() {
@@ -256,7 +290,6 @@ async function loadTransformers() {
     'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3/dist/transformers.min.js'
   );
 
-  // Use quantized models, cache in browser IndexedDB
   env.allowLocalModels = false;
 
   transformersPipeline = await pipeline(
@@ -282,18 +315,12 @@ async function loadTransformers() {
 }
 
 // ── Generation ────────────────────────────────────────────────────────────────
-async function paraphrasePara1() {
-  const prompt = BASE_PARA1;
-
+async function paraphrase(text, session, instruction) {
   if (engine === 'chrome') {
-    // Reuse session; each prompt is stateless with a fresh clone for consistency
-    const result = await chromeSession.prompt(prompt);
-    return result.trim();
+    return (await session.prompt(text)).trim();
   } else {
-    // Transformers.js: LaMini instruction format
-    const instruction = `Rewrite the following paragraph with slightly different wording, keeping all facts the same:\n\n${prompt}`;
-    const out = await transformersPipeline(instruction, {
-      max_new_tokens: 200,
+    const out = await transformersPipeline(`${instruction}\n\n${text}`, {
+      max_new_tokens: 120,
       do_sample: true,
       temperature: 0.85,
       top_p: 0.9,
@@ -305,15 +332,18 @@ async function paraphrasePara1() {
 async function generate() {
   generateBtn.disabled = true;
   copyBtn.disabled = true;
+  openMailBtn.classList.add('disabled');
   setStatus('Generating…');
 
   try {
-    // Lazy-init on first use
     if (!engine) {
       const chromeType = await detectChromeAI();
       if (chromeType) {
         setStatus('Initialising browser AI…');
-        await initChromeSession(chromeType);
+        [chromeBodySession, chromeSubjectSession] = await Promise.all([
+          makeChromeSession(BODY_SYSTEM_PROMPT, chromeType),
+          makeChromeSession(SUBJECT_SYSTEM_PROMPT, chromeType),
+        ]);
         engine = 'chrome';
         engineBadge.textContent = 'Chrome AI';
         engineBadge.style.display = '';
@@ -325,8 +355,23 @@ async function generate() {
       }
     }
 
-    const newPara1 = await paraphrasePara1();
+    const [newPara1, newSubject] = await Promise.all([
+      paraphrase(
+        BASE_PARA1,
+        chromeBodySession,
+        'Rewrite the following paragraph with slightly different wording, keeping all facts the same:'
+      ),
+      paraphrase(
+        BASE_SUBJECT,
+        chromeSubjectSession,
+        'Rewrite the following email subject line with slightly different wording, keeping the legal citation exactly as written:'
+      ),
+    ]);
+
     emailBody.value = newPara1 + '\n\n' + BASE_PARA2;
+    currentSubject = newSubject;
+    subjectDisplay.textContent = newSubject;
+    updateMailtoLink();
     setStatus('');
   } catch (err) {
     console.error(err);
@@ -340,18 +385,16 @@ async function generate() {
 
 // ── Copy ──────────────────────────────────────────────────────────────────────
 copyBtn.addEventListener('click', async () => {
+  const text = `Subject: ${currentSubject}\n\n${emailBody.value}`;
   try {
-    await navigator.clipboard.writeText(emailBody.value);
-    copyBtn.textContent = 'Copied!';
-    copyBtn.classList.add('copied');
-    setTimeout(() => {
-      copyBtn.textContent = 'Copy';
-      copyBtn.classList.remove('copied');
-    }, 1800);
+    await navigator.clipboard.writeText(text);
   } catch (_) {
     emailBody.select();
     document.execCommand('copy');
   }
+  copyBtn.textContent = 'Copied!';
+  copyBtn.classList.add('copied');
+  setTimeout(() => { copyBtn.textContent = 'Copy'; copyBtn.classList.remove('copied'); }, 1800);
 });
 
 generateBtn.addEventListener('click', generate);
