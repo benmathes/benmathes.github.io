@@ -387,8 +387,26 @@ copyBtn.addEventListener('click', async () => {
   setTimeout(() => { copyBtn.textContent = 'Copy'; copyBtn.classList.remove('copied'); }, 1800);
 });
 
-openMailBtn.addEventListener('click', () => {
-  window.location.href = `mailto:${TO}?subject=${encodeURIComponent(currentSubject)}&body=${encodeURIComponent(emailBody.value)}`;
+openMailBtn.addEventListener('click', async () => {
+  const mailto = `mailto:${TO}?subject=${encodeURIComponent(currentSubject)}&body=${encodeURIComponent(emailBody.value)}`;
+
+  // Copy a paste-ready version to clipboard as a backup — guarantees the click
+  // is useful even if no mail handler is registered.
+  const clipboardText = `To: ${TO}\nSubject: ${currentSubject}\n\n${emailBody.value}`;
+  try { await navigator.clipboard.writeText(clipboardText); } catch (_) {}
+
+  // Trigger the mail handler via a programmatic anchor click. This is more
+  // reliable than `window.location.href = mailto:...`, which some browsers
+  // interpret as a page navigation and drop silently when no handler exists.
+  const a = document.createElement('a');
+  a.href = mailto;
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+
+  setStatus('Mail app launched · email also copied to clipboard');
+  setTimeout(() => setStatus(''), 4000);
 });
 
 generateBtn.addEventListener('click', generate);
