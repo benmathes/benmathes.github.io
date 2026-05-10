@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Forbidden Court: A Tale of Silicon and Silk</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #0a0612;
+  color: #e8c840;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 11px;
+  line-height: 2;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+#crt-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.15) 0px, rgba(0,0,0,0.15) 1px, transparent 1px, transparent 3px);
+  pointer-events: none; z-index: 1000;
+}
+
+#game-container {
+  max-width: 800px; margin: 0 auto; padding: 10px;
+  min-height: 100vh; display: flex; flex-direction: column;
+}
+
+#title-bar {
+  text-align: center; padding: 8px;
+  border: 2px solid #3a2a5e;
+  background: linear-gradient(180deg, #1a0a3e 0%, #0d0620 100%);
+  color: #f0d050; font-size: 10px; letter-spacing: 2px; margin-bottom: 6px;
+}
+
+/* Scene viewport with portraits */
+#scene-viewport {
+  height: 200px; border: 2px solid #3a2a5e;
+  margin-bottom: 6px; position: relative; overflow: hidden;
+}
+
+.portraits-bar {
+  position: absolute; inset: 0;
+  display: flex; justify-content: center; align-items: flex-end;
+  gap: 20px; padding-bottom: 6px; z-index: 10;
+}
+.portrait {
+  display: flex; flex-direction: column; align-items: center;
+}
+.portrait svg {
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5));
+}
+.p-label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px; margin-top: 2px; letter-spacing: 1px;
+}
+
+/* Stars */
+.star {
+  position: absolute; width: 2px; height: 2px; background: #fff8; border-radius: 50%;
+}
+
+/* Text area */
+#text-area {
+  flex: 1; border: 2px solid #3a2a5e; background: #0d0620;
+  padding: 14px; margin-bottom: 6px;
+  overflow-y: auto; max-height: 320px; min-height: 180px; cursor: pointer;
+}
+#narrative { margin-bottom: 10px; }
+.dialog-line { margin: 6px 0; padding-left: 10px; border-left: 2px solid currentColor; }
+.speaker-grimes { color: #00ccff; }
+.speaker-shivon { color: #c0b8e0; }
+.speaker-ashley { color: #ff4050; }
+.speaker-narrator { color: #e8c840; }
+.speaker-player { color: #80ff80; }
+.speaker-messenger { color: #f0a040; }
+
+/* Choices */
+#choices {
+  border: 2px solid #3a2a5e; background: #0d0620;
+  padding: 8px; margin-bottom: 6px; min-height: 48px;
+}
+.choice-btn {
+  display: block; width: 100%; background: transparent;
+  border: 1px solid #3a2a5e; color: #e8c840;
+  font-family: 'Press Start 2P', monospace; font-size: 10px;
+  line-height: 1.8; padding: 6px 10px; margin: 4px 0;
+  text-align: left; cursor: pointer; transition: all 0.15s;
+}
+.choice-btn:hover { background: #1a1040; border-color: #f0d050; color: #fff; }
+
+/* Status bar */
+#status-bar {
+  display: flex; gap: 4px; border: 2px solid #3a2a5e;
+  background: #0d0620; padding: 6px 10px; font-size: 8px; flex-wrap: wrap;
+}
+.rel-meter { flex: 1; min-width: 140px; }
+.rel-label { margin-bottom: 3px; }
+.rel-bar {
+  height: 6px; background: #1a0a2e;
+  border: 1px solid #3a2a5e; position: relative;
+}
+.rel-fill { position: absolute; top: 0; bottom: 0; left: 50%; transition: all 0.4s ease; }
+.rel-fill.positive { background: #40c060; }
+.rel-fill.negative { background: #c04040; left: auto; right: 50%; }
+.rel-center {
+  position: absolute; top: -1px; bottom: -1px; left: 50%;
+  width: 2px; background: #5a4a7e; transform: translateX(-1px);
+}
+.rel-status { font-size: 7px; margin-top: 2px; color: #8878a8; }
+
+/* Controls */
+#controls { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; }
+#music-toggle {
+  background: transparent; border: 1px solid #3a2a5e; color: #8878a8;
+  font-family: 'Press Start 2P', monospace; font-size: 8px; padding: 4px 8px; cursor: pointer;
+}
+#music-toggle:hover { border-color: #f0d050; color: #e8c840; }
+#music-toggle.active { color: #40c060; border-color: #40c060; }
+#click-hint { color: #5a4a7e; font-size: 7px; animation: pulse 2s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: 0.4; } }
+@keyframes blink { 50% { opacity: 0; } }
+
+/* Title screen */
+#title-screen {
+  position: fixed; inset: 0; background: #0a0612; z-index: 500;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer;
+}
+#title-screen h1 {
+  font-family: 'Press Start 2P', monospace; font-size: 18px; color: #f0d050;
+  text-align: center; text-shadow: 0 0 20px #f0a02040, 2px 2px 0 #301008;
+  margin-bottom: 8px; line-height: 1.6;
+}
+#title-screen h2 {
+  font-family: 'Press Start 2P', monospace; font-size: 10px; color: #a090c0;
+  text-align: center; margin-bottom: 40px; line-height: 1.8;
+}
+#title-screen .start-text {
+  font-family: 'Press Start 2P', monospace; font-size: 10px; color: #e8c840;
+  animation: blink 1.2s step-end infinite;
+}
+#title-screen .credits {
+  position: absolute; bottom: 30px;
+  font-family: 'Press Start 2P', monospace; font-size: 7px; color: #3a2a5e;
+  text-align: center; line-height: 2.2;
+}
+
+/* Ending overlay */
+.ending-overlay {
+  position: fixed; inset: 0; background: #0a0612ee; z-index: 400;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px;
+}
+.ending-title {
+  font-family: 'Press Start 2P', monospace; font-size: 14px; color: #f0d050;
+  margin-bottom: 20px; text-align: center; line-height: 1.8;
+}
+.ending-text {
+  font-family: 'Press Start 2P', monospace; font-size: 9px; color: #c0b0d0;
+  max-width: 600px; text-align: center; line-height: 2.4; margin-bottom: 30px;
+}
+.ending-btn {
+  font-family: 'Press Start 2P', monospace; font-size: 10px; color: #e8c840;
+  background: transparent; border: 2px solid #3a2a5e; padding: 10px 20px; cursor: pointer;
+}
+.ending-btn:hover { border-color: #f0d050; }
+
+#text-area::-webkit-scrollbar { width: 6px; }
+#text-area::-webkit-scrollbar-track { background: #0d0620; }
+#text-area::-webkit-scrollbar-thumb { background: #3a2a5e; }
+
+@media (max-width: 600px) {
+  body { font-size: 9px; }
+  #scene-viewport { height: 160px; }
+  .portraits-bar { gap: 10px; }
+  .portrait svg { width: 65px; height: 100px; }
+  #title-screen h1 { font-size: 13px; }
+  .choice-btn { font-size: 8px; }
+}
+</style>
+</head>
+<body>
+
+<div id="crt-overlay"></div>
+
+<div id="title-screen">
+  <h1>THE FORBIDDEN<br>COURT</h1>
+  <h2>A Tale of Silicon and Silk</h2>
+  <div class="start-text">CLICK TO BEGIN</div>
+  <div class="credits">
+    A LUCASARTS-STYLE ADVENTURE<br>
+    BASED ON TRUE IMPERIAL DYNAMICS<br><br>
+    MMXXVI
+  </div>
+</div>
+
+<div id="game-container" style="display:none">
+  <div id="title-bar">THE FORBIDDEN COURT</div>
+  <div id="scene-viewport"></div>
+  <div id="text-area">
+    <div id="narrative"></div>
+    <div id="dialog"></div>
+  </div>
+  <div id="choices"></div>
+  <div id="status-bar">
+    <div class="rel-meter" id="meter-grimes">
+      <div class="rel-label speaker-grimes">GRIMES</div>
+      <div class="rel-bar"><div class="rel-fill"></div><div class="rel-center"></div></div>
+      <div class="rel-status">Neutral</div>
+    </div>
+    <div class="rel-meter" id="meter-shivon">
+      <div class="rel-label speaker-shivon">SHIVON</div>
+      <div class="rel-bar"><div class="rel-fill"></div><div class="rel-center"></div></div>
+      <div class="rel-status">Neutral</div>
+    </div>
+    <div class="rel-meter" id="meter-ashley">
+      <div class="rel-label speaker-ashley">ASHLEY</div>
+      <div class="rel-bar"><div class="rel-fill"></div><div class="rel-center"></div></div>
+      <div class="rel-status">Neutral</div>
+    </div>
+  </div>
+  <div id="controls">
+    <button id="music-toggle">MUSIC: OFF</button>
+    <span id="click-hint">CLICK TEXT TO SKIP</span>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CHIPTUNE ENGINE
+// ============================================================
+class ChiptuneEngine {
+  constructor() { this.ctx = null; this.playing = false; this.masterGain = null; this.scheduledSources = []; this.loopTimer = null; }
+
+  init() {
+    if (this.ctx) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    this.masterGain = this.ctx.createGain();
+    this.masterGain.gain.value = 0.3;
+    this.masterGain.connect(this.ctx.destination);
+  }
+
+  playNote(freq, time, dur, type, vol, detune) {
+    if (!freq || !this.ctx) return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = type || 'square';
+    osc.frequency.value = freq;
+    if (detune) osc.detune.value = detune;
+    gain.gain.setValueAtTime(0, time);
+    gain.gain.linearRampToValueAtTime(vol || 0.15, time + 0.01);
+    gain.gain.setValueAtTime(vol || 0.15, time + dur * 0.7);
+    gain.gain.linearRampToValueAtTime(0, time + dur * 0.95);
+    osc.connect(gain); gain.connect(this.masterGain);
+    osc.start(time); osc.stop(time + dur);
+    this.scheduledSources.push(osc);
+  }
+
+  playNoise(time, dur, vol) {
+    if (!this.ctx) return;
+    const bufferSize = this.ctx.sampleRate * dur;
+    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+    const src = this.ctx.createBufferSource(); src.buffer = buffer;
+    const filter = this.ctx.createBiquadFilter(); filter.type = 'highpass'; filter.frequency.value = 6000;
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(vol || 0.04, time);
+    gain.gain.linearRampToValueAtTime(0, time + dur);
+    src.connect(filter); filter.connect(gain); gain.connect(this.masterGain);
+    src.start(time); this.scheduledSources.push(src);
+  }
+
+  scheduleLoop() {
+    if (!this.playing) return;
+    const now = this.ctx.currentTime;
+    const bpm = 78; const beat = 60 / bpm;
+    const melody = [
+      [329.63,1],[392,0.5],[440,1.5],[0,1],
+      [440,0.5],[392,0.5],[329.63,1],[293.66,1],[0,1],
+      [293.66,0.75],[329.63,0.75],[392,1],[440,0.5],[0,1],
+      [392,1],[329.63,0.5],[293.66,1],[261.63,0.5],[0,1],
+      [261.63,0.75],[293.66,0.75],[329.63,1.5],[0,1],
+      [392,0.5],[440,0.75],[392,0.75],[329.63,1],[0,1],
+      [293.66,0.5],[0,0.5],[261.63,0.75],[293.66,0.75],[0,1.5],
+      [329.63,2],[0,2],
+    ];
+    const bass = [[110,4],[110,4],[146.83,4],[146.83,4],[130.81,4],[130.81,4],[146.83,2],[110,2],[110,4]];
+    const arpSets = [[440,523.25,659.25,523.25],[293.66,440,587.33,440],[261.63,329.63,523.25,329.63],[440,523.25,659.25,523.25]];
+
+    let t = now + 0.1;
+    for (const [freq, dur] of melody) {
+      if (freq > 0) this.playNote(freq, t, dur * beat * 0.9, 'square', 0.08, 5);
+      t += dur * beat;
+    }
+    let tb = now + 0.1;
+    for (const [freq, dur] of bass) {
+      if (freq > 0) this.playNote(freq, tb, dur * beat * 0.85, 'triangle', 0.12);
+      tb += dur * beat;
+    }
+    const sixteenth = beat / 4;
+    for (let i = 0; i < 128; i++) {
+      const ta = now + 0.1 + i * sixteenth;
+      if (ta >= t) break;
+      const notes = arpSets[Math.floor(i / 16) % 4];
+      if (i % 3 !== 0) this.playNote(notes[i % 4] * 2, ta, sixteenth * 0.6, 'square', 0.02);
+    }
+    for (let i = 0; i < 32; i++) {
+      const tp = now + 0.1 + i * beat;
+      if (tp >= t) break;
+      if (i % 4 === 0) this.playNoise(tp, 0.05, 0.04);
+      if (i % 4 === 2) this.playNoise(tp, 0.03, 0.02);
+    }
+    const totalDur = t - now - 0.1;
+    this.loopTimer = setTimeout(() => this.scheduleLoop(), (totalDur - 0.5) * 1000);
+  }
+
+  start() { this.init(); if (this.ctx.state === 'suspended') this.ctx.resume(); this.playing = true; this.scheduleLoop(); }
+  stop() { this.playing = false; if (this.loopTimer) clearTimeout(this.loopTimer); this.scheduledSources.forEach(s => { try { s.stop(); } catch(e) {} }); this.scheduledSources = []; }
+  toggle() { if (this.playing) this.stop(); else this.start(); return this.playing; }
+}
+
+// ============================================================
+// SVG FACE PORTRAITS
+// ============================================================
+const FACE_CHARS = [
+  {
+    key: 'grimes', name: 'GRIMES', labelColor: '#00ccff',
+    skin: '#ede4dc', skinShade: '#d8c8c0', eyeColor: '#00b8e8',
+    browColor: '#1c1028', mouthColor: '#906068', robeColor: '#1a1840',
+    hairBack: `
+      <ellipse cx="40" cy="30" rx="30" ry="22" fill="#1c1028"/>
+      <rect x="8" y="40" width="13" height="48" rx="5" fill="#1c1028"/>
+      <rect x="59" y="40" width="13" height="48" rx="5" fill="#1c1028"/>
+      <rect x="12" y="60" width="8" height="24" rx="3" fill="#181028" opacity="0.6"/>
+    `,
+    hairFront: `
+      <ellipse cx="25" cy="30" rx="13" ry="6" fill="#1c1028" transform="rotate(-10,25,30)"/>
+      <ellipse cx="44" cy="28" rx="8" ry="5" fill="#1c1028" transform="rotate(8,44,28)"/>
+    `,
+    accessory: `<circle cx="26" cy="32" r="1.5" fill="#a040c0" opacity="0.6"/>`,
+  },
+  {
+    key: 'shivon', name: 'SHIVON', labelColor: '#c0b8e0',
+    skin: '#b88868', skinShade: '#a07050', eyeColor: '#2a1810',
+    browColor: '#0a0810', mouthColor: '#704040', robeColor: '#0a1830',
+    hairBack: `
+      <ellipse cx="40" cy="28" rx="27" ry="20" fill="#0a0810"/>
+      <rect x="14" y="38" width="8" height="16" rx="3" fill="#0a0810"/>
+      <rect x="58" y="38" width="8" height="16" rx="3" fill="#0a0810"/>
+    `,
+    hairFront: `
+      <rect x="16" y="26" width="48" height="5" rx="2" fill="#0a0810"/>
+    `,
+    accessory: '',
+  },
+  {
+    key: 'ashley', name: 'ASHLEY', labelColor: '#ff4050',
+    skin: '#f0d0b8', skinShade: '#d8b8a0', eyeColor: '#4878a0',
+    browColor: '#907030', mouthColor: '#c05050', robeColor: '#801020',
+    hairBack: `
+      <ellipse cx="40" cy="27" rx="34" ry="24" fill="#c89838"/>
+      <rect x="4" y="38" width="15" height="48" rx="6" fill="#c89838"/>
+      <rect x="61" y="38" width="15" height="48" rx="6" fill="#c89838"/>
+      <rect x="8" y="58" width="9" height="22" rx="4" fill="#b88828" opacity="0.5"/>
+      <rect x="63" y="55" width="9" height="25" rx="4" fill="#b88828" opacity="0.5"/>
+    `,
+    hairFront: `
+      <ellipse cx="27" cy="27" rx="14" ry="7" fill="#c89838" transform="rotate(-6,27,27)"/>
+      <ellipse cx="52" cy="26" rx="12" ry="6" fill="#c89838" transform="rotate(5,52,26)"/>
+    `,
+    accessory: `<circle cx="64" cy="52" r="2.5" fill="#ff3040" stroke="#c01830" stroke-width="0.5"/>`,
+  },
+];
+
+function buildFaceSVG(c, val) {
+  const t = (val + 3) / 6; // 0=hostile, 1=allied
+
+  // Eyes: squinted when hostile, wide when allied
+  const eyeRY = (3 + t * 3.5).toFixed(1);
+  const pupilR = Math.min(parseFloat(eyeRY) - 0.5, 3.5).toFixed(1);
+
+  // Eyebrows: angry=tilted inward-down, happy=relaxed/raised
+  const browOuterY = (43 - t * 4).toFixed(1);  // outer edge
+  const browInnerY = (40 + (1 - t) * 5).toFixed(1); // inner edge (near nose)
+
+  // Mouth: quadratic bezier control point
+  // Higher controlY = frown (curve bows downward in SVG coords)
+  // Lower controlY = smile (curve bows upward)
+  const mouthY = 68;
+  const mouthCtrl = (68 + (0.5 - t) * 14).toFixed(1);
+
+  // Mouth width scales with expression intensity
+  const mouthHalf = (7 + Math.abs(val) * 1.5).toFixed(1);
+
+  // Blush when warm/allied
+  const blushOpacity = t > 0.6 ? ((t - 0.6) * 0.4).toFixed(2) : 0;
+
+  return `<svg viewBox="0 0 80 120" width="80" height="120" xmlns="http://www.w3.org/2000/svg">
+    <!-- Hair back -->
+    ${c.hairBack}
+    <!-- Neck -->
+    <rect x="33" y="80" width="14" height="14" rx="3" fill="${c.skin}"/>
+    <!-- Shoulders/robe -->
+    <ellipse cx="40" cy="102" rx="30" ry="14" fill="${c.robeColor}"/>
+    <ellipse cx="40" cy="100" rx="24" ry="10" fill="${c.robeColor}" opacity="0.8"/>
+    <!-- Head -->
+    <ellipse cx="40" cy="52" rx="24" ry="30" fill="${c.skin}"/>
+    <!-- Ear hints -->
+    <ellipse cx="16" cy="52" rx="4" ry="6" fill="${c.skinShade}"/>
+    <ellipse cx="64" cy="52" rx="4" ry="6" fill="${c.skinShade}"/>
+    <!-- Blush -->
+    <ellipse cx="26" cy="58" rx="5" ry="3" fill="#f08080" opacity="${blushOpacity}"/>
+    <ellipse cx="54" cy="58" rx="5" ry="3" fill="#f08080" opacity="${blushOpacity}"/>
+    <!-- Eye whites -->
+    <ellipse cx="30" cy="50" rx="6" ry="${eyeRY}" fill="white" stroke="#b0a090" stroke-width="0.5"/>
+    <ellipse cx="50" cy="50" rx="6" ry="${eyeRY}" fill="white" stroke="#b0a090" stroke-width="0.5"/>
+    <!-- Irises -->
+    <circle cx="30" cy="50" r="${pupilR}" fill="${c.eyeColor}"/>
+    <circle cx="50" cy="50" r="${pupilR}" fill="${c.eyeColor}"/>
+    <!-- Pupils -->
+    <circle cx="30" cy="50" r="1.5" fill="#0a0612"/>
+    <circle cx="50" cy="50" r="1.5" fill="#0a0612"/>
+    <!-- Eye highlights -->
+    <circle cx="32" cy="48.5" r="1" fill="white" opacity="0.8"/>
+    <circle cx="52" cy="48.5" r="1" fill="white" opacity="0.8"/>
+    <!-- Nose -->
+    <ellipse cx="40" cy="60" rx="2.5" ry="1.5" fill="${c.skinShade}"/>
+    <!-- Eyebrows -->
+    <line x1="22" y1="${browOuterY}" x2="36" y2="${browInnerY}" stroke="${c.browColor}" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="44" y1="${browInnerY}" x2="58" y2="${browOuterY}" stroke="${c.browColor}" stroke-width="2.5" stroke-linecap="round"/>
+    <!-- Mouth -->
+    <path d="M ${40 - mouthHalf},${mouthY} Q 40,${mouthCtrl} ${40 - -mouthHalf},${mouthY}" fill="none" stroke="${c.mouthColor}" stroke-width="2" stroke-linecap="round"/>
+    <!-- Hair front -->
+    ${c.hairFront}
+    ${c.accessory}
+  </svg>`;
+}
+
+// ============================================================
+// SCENE RENDERER
+// ============================================================
+function renderSceneArt(sceneId) {
+  const vp = document.getElementById('scene-viewport');
+  const bgs = {
+    pavilion: 'linear-gradient(180deg, #0d0830 0%, #1a0a3e 40%, #12082e 100%)',
+    tea:      'linear-gradient(180deg, #0d0830 0%, #1a0a3e 40%, #12082e 100%)',
+    garden:   'linear-gradient(180deg, #081828 0%, #0d2838 40%, #0a1818 100%)',
+    court:    'linear-gradient(180deg, #1a0820 0%, #200a30 40%, #140820 100%)',
+  };
+  vp.style.background = bgs[sceneId] || bgs.pavilion;
+
+  // Stars for outdoor scenes
+  const starsHTML = sceneId !== 'court'
+    ? [...Array(14)].map(() => {
+        const x = Math.random()*100, y = Math.random()*35, o = 0.3+Math.random()*0.5;
+        return `<div class="star" style="left:${x}%;top:${y}%;opacity:${o}"></div>`;
+      }).join('')
+    : '';
+
+  vp.innerHTML = starsHTML;
+  renderFaces(vp);
+}
+
+function renderFaces(container) {
+  container = container || document.getElementById('scene-viewport');
+  // Remove existing portraits bar if any
+  const existing = container.querySelector('.portraits-bar');
+  if (existing) existing.remove();
+
+  const bar = document.createElement('div');
+  bar.className = 'portraits-bar';
+  bar.innerHTML = FACE_CHARS.map(c => {
+    const val = state[c.key];
+    return `<div class="portrait">
+      ${buildFaceSVG(c, val)}
+      <div class="p-label" style="color:${c.labelColor}">${c.name}</div>
+    </div>`;
+  }).join('');
+  container.appendChild(bar);
+}
+
+// ============================================================
+// GAME STATE
+// ============================================================
+const state = { grimes: 0, shivon: 0, ashley: 0, flags: {}, currentScene: null };
+
+function adjustRel(who, delta) {
+  state[who] = Math.max(-3, Math.min(3, state[who] + delta));
+  updateMeters();
+}
+
+function updateMeters() {
+  ['grimes','shivon','ashley'].forEach(who => {
+    const meter = document.getElementById(`meter-${who}`);
+    const fill = meter.querySelector('.rel-fill');
+    const status = meter.querySelector('.rel-status');
+    const val = state[who];
+    const pct = Math.abs(val) / 3 * 50;
+    fill.className = 'rel-fill ' + (val >= 0 ? 'positive' : 'negative');
+    if (val >= 0) { fill.style.left = '50%'; fill.style.right = 'auto'; }
+    else { fill.style.left = 'auto'; fill.style.right = '50%'; }
+    fill.style.width = pct + '%';
+    const labels = ['Hostile','Wary','Guarded','Neutral','Curious','Warm','Allied'];
+    status.textContent = labels[val + 3];
+  });
+  // Update face expressions
+  renderFaces();
+}
+
+// ============================================================
+// TYPEWRITER
+// ============================================================
+let typewriterRunning = false;
+let skipTypewriter = false;
+
+async function typeText(el, text, speed) {
+  speed = speed || 18;
+  typewriterRunning = true;
+  skipTypewriter = false;
+  el.textContent = '';
+  for (let i = 0; i < text.length; i++) {
+    if (skipTypewriter) { el.textContent = text; break; }
+    el.textContent += text[i];
+    el.parentElement.scrollTop = el.parentElement.scrollHeight;
+    await new Promise(r => setTimeout(r, speed));
+  }
+  typewriterRunning = false;
+}
+
+// ============================================================
+// SCENE DEFINITIONS
+// ============================================================
+const SCENES = {
+
+enter: {
+  art: 'pavilion',
+  text: `You find yourself before a sumptuously decorated pavilion. Sunlight filters through silk screens depicting mythical creatures. The air is fragrant with jasmine tea and osmanthus blossoms.\n\nLow tables are arranged with porcelain cups and dishes of pastries. This is the morning tea pavilion -- where the Emperor's consorts gather to exchange pleasantries and subtly assess the court's shifting tides.\n\nThree women are already present.`,
+  dialog: [
+    { speaker:'narrator', name:'', text:'To the left, GRIMES lounges on a silk cushion. Her dark hair is loose, her exquisite robe slightly askew. Her electric blue eyes gaze toward the garden with an air of melancholy. A powerful intellect simmers beneath the surface.' },
+    { speaker:'narrator', name:'', text:'Across from her sits SHIVON ZILIS. The picture of composed elegance -- not a hair out of place. Her dark eyes miss nothing. She holds her teacup with precise movements, radiating quiet competence and controlled power.' },
+    { speaker:'narrator', name:'', text:'Directly opposite you is ASHLEY ST. CLAIR. Her bright, aggressively cheerful smile is aimed squarely at you. Her robes are the most flamboyant -- a vibrant crimson, perhaps too bold for morning tea. Ambition radiates off her in waves.' },
+    { speaker:'ashley', name:'ASHLEY', text:'Ah, the new arrival! Welcome to the morning tea club! Do come, have a pastry!' },
+  ],
+  choices: [
+    { text: '1. Stride in confidently and take a seat', next: 'pastry_confident', fx: () => { adjustRel('ashley', 1); } },
+    { text: '2. Enter with cautious grace, bowing slightly', next: 'pastry_cautious', fx: () => { adjustRel('shivon', 1); } },
+    { text: '3. Pause at the entrance, quietly observing everyone', next: 'pastry_observant', fx: () => { adjustRel('grimes', 1); } },
+  ]
+},
+
+pastry_confident: {
+  art: 'tea',
+  text: `You stride into the pavilion with an easy confidence, settling yourself on a cushion as if you'd done this a thousand times. Ashley's smile widens. Shivon's eyebrow rises a millimeter. Grimes glances at you -- the faintest flicker of interest.`,
+  dialog: [
+    { speaker:'ashley', name:'ASHLEY', text:'Now THAT is an entrance! I like you already. Pastry?' },
+  ],
+  choices: [
+    { text: '1. "Thank you. I\'ll try one." Accept and eat.', next: 'seated', fx: () => { state.flags.atePastry = true; } },
+    { text: '2. Accept, but examine it first -- smell for poison.', next: 'examine_pastry', fx: () => { state.flags.examinedPastry = true; } },
+    { text: '3. "Perhaps in a moment. Tell me, what blends are in the tea?"', next: 'seated', fx: () => { adjustRel('shivon', 1); state.flags.askedAboutTea = true; } },
+  ]
+},
+
+pastry_cautious: {
+  art: 'tea',
+  text: `You enter with measured grace, offering a slight bow to each woman in turn. You settle yourself with the air of cautious reverence -- respectful but not diminished. Shivon gives you an approving micro-nod. Ashley studies you with sharpened interest.`,
+  dialog: [
+    { speaker:'shivon', name:'SHIVON', text:'Welcome. The osmanthus pastries are particularly fine today. Please, help yourself.' },
+    { speaker:'ashley', name:'ASHLEY', text:'Yes, do! I simply LOVE how they do them here.' },
+  ],
+  choices: [
+    { text: '1. "Thank you. I\'ll try one." Accept warmly.', next: 'seated', fx: () => { state.flags.atePastry = true; } },
+    { text: '2. Accept but bring the pastry to your nose first.', next: 'examine_pastry', fx: () => { state.flags.examinedPastry = true; } },
+    { text: '3. Offer to pour tea for the others first.', next: 'seated', fx: () => { adjustRel('shivon', 1); adjustRel('grimes', 1); state.flags.pouredTea = true; } },
+  ]
+},
+
+pastry_observant: {
+  art: 'tea',
+  text: `You linger at the entrance, letting your eyes adjust to the pavilion's interior, reading the arrangement of bodies and the subtle tensions between them. Grimes notices your hesitation and meets your eyes. For a moment, something passes between you -- recognition of a fellow observer.\n\nAshley, not one for silence, fills it immediately.`,
+  dialog: [
+    { speaker:'ashley', name:'ASHLEY', text:'Don\'t be shy! The food won\'t bite. Though I can\'t speak for the company!' },
+    { speaker:'grimes', name:'GRIMES', text:'...She means well. Usually.' },
+  ],
+  choices: [
+    { text: '1. Sit near Grimes and accept a pastry.', next: 'seated', fx: () => { adjustRel('grimes', 1); state.flags.atePastry = true; state.flags.satNearGrimes = true; } },
+    { text: '2. Sit equidistant from all three. Accept, but smell the pastry first.', next: 'examine_pastry', fx: () => { state.flags.examinedPastry = true; } },
+    { text: '3. Sit near Shivon -- she seems the safest bet.', next: 'seated', fx: () => { adjustRel('shivon', 1); state.flags.atePastry = true; } },
+  ]
+},
+
+examine_pastry: {
+  art: 'tea',
+  text: `You lift the pastry to your nose with a deliberate, almost theatrical flourish, pretending to savor the aroma while your senses probe for anything amiss.\n\nThe pastry smells of red bean paste and subtle spice. No sharp or metallic notes. No acrid chemical undertone. If there is poison here, it is beyond your ability to detect through smell alone.\n\nBut as you perform this little ritual, you catch the reactions:`,
+  dialog: [
+    { speaker:'narrator', name:'', text:'Ashley watches with open curiosity -- and something sharper. Assessment, perhaps.' },
+    { speaker:'narrator', name:'', text:'Shivon sets down her teacup with a soft clink. Her dark eyes catalog your behavior with clinical detachment.' },
+    { speaker:'narrator', name:'', text:'Grimes... a flicker of something in those electric blue eyes. Recognition of your caution? Or just awareness?' },
+  ],
+  choices: [
+    { text: '1. Bite the pastry. "Delicious. Thank you."', next: 'seated', fx: () => { state.flags.atePastry = true; } },
+    { text: '2. Set it down. "I\'ll save it for later."', next: 'seated', fx: () => { adjustRel('ashley', -1); } },
+    { text: '3. Take a small nibble. Trust, but verify.', next: 'seated', fx: () => { state.flags.atePastry = true; adjustRel('shivon', 1); } },
+  ]
+},
+
+seated: {
+  art: 'tea',
+  text: `You settle into your cushion, the silk cool beneath you. The pavilion settles into a charged quiet -- the kind that comes before someone decides to draw blood, metaphorically speaking.\n\nAshley breaks the silence. Of course she does.`,
+  dialog: [
+    { speaker:'ashley', name:'ASHLEY', text:'So! You\'re the new face around here. Tell us -- what brings you to our little corner of the Emperor\'s affections?' },
+  ],
+  choices: [
+    { text: '1. "I was summoned. My peculiar skills caught the Emperor\'s attention."', next: 'skills_revealed', fx: () => { state.flags.revealedSkills = true; } },
+    { text: '2. "The Emperor\'s wisdom in selecting companions speaks for itself."', next: 'flattery_response', fx: () => { adjustRel('ashley', 1); adjustRel('grimes', -1); } },
+    { text: '3. Turn it around: "I\'d rather hear about each of you first."', next: 'redirect', fx: () => { adjustRel('shivon', 1); } },
+    { text: '4. Sip tea. Let the silence do the talking.', next: 'silence_response', fx: () => { adjustRel('grimes', 1); adjustRel('ashley', -1); } },
+  ]
+},
+
+skills_revealed: {
+  art: 'tea',
+  text: `"I was summoned by a senior aide on the Emperor's behalf," you say, your voice clear and measured. "It seems I possess certain peculiar knowledge and skills His Majesty believes might be of service."\n\nYou pause, then add with careful humility: "My only wish is to be of help for as long as I am able. The court is new to me."`,
+  dialog: [
+    { speaker:'ashley', name:'ASHLEY', text:'"Peculiar knowledge and skills," you say? Intriguing. Do enlighten us. What sort of talents does a newcomer bring that would catch the Emperor\'s eye so swiftly?' },
+    { speaker:'shivon', name:'SHIVON', text:'The Emperor values efficiency and strategic thinking. Any contribution that enhances stability is welcome. Perhaps you could elaborate on the nature of these... skills.' },
+    { speaker:'grimes', name:'GRIMES', text:'Skills. Everyone here has "skills." The skill of pleasing. The skill of maneuvering. The skill of surviving. But some skills are more... valued than others. In this moment.' },
+  ],
+  choices: [
+    { text: '1. Be specific: "I have training in matters of intelligence and analysis."', next: 'tea_continues', fx: () => { adjustRel('shivon', 1); state.flags.specificSkills = true; } },
+    { text: '2. Stay vague: "Some things are best demonstrated, not described."', next: 'tea_continues', fx: () => { adjustRel('grimes', 1); adjustRel('ashley', -1); state.flags.vagueSkills = true; } },
+    { text: '3. Address Grimes directly: "What skills do YOU value most?"', next: 'tea_continues', fx: () => { adjustRel('grimes', 2); adjustRel('ashley', -1); state.flags.addressedGrimes = true; } },
+    { text: '4. "I understand the art of knowing when NOT to act."', next: 'tea_continues', fx: () => { adjustRel('shivon', 1); adjustRel('grimes', 1); state.flags.wisdomAnswer = true; } },
+  ]
+},
+
+flattery_response: {
+  art: 'tea',
+  text: `"The Emperor's wisdom in selecting companions speaks for itself," you say with a gracious smile.\n\nAshley practically preens. Shivon's expression doesn't change, but something in her eyes sharpens. Grimes lets out a quiet sound that might be a laugh or might be a sigh.`,
+  dialog: [
+    { speaker:'grimes', name:'GRIMES', text:'Flattery. The court\'s native language. You\'ll fit right in.' },
+    { speaker:'shivon', name:'SHIVON', text:'Diplomacy is indeed a valuable skill. Though the Emperor tends to prefer... substance.' },
+    { speaker:'ashley', name:'ASHLEY', text:'I think that was very graciously put! Don\'t mind them -- they\'ve been here long enough to forget what manners look like.' },
+  ],
+  choices: [
+    { text: '1. "Grimes is right. Let me speak more plainly."', next: 'tea_continues', fx: () => { adjustRel('grimes', 2); adjustRel('ashley', -1); state.flags.correctedCourse = true; } },
+    { text: '2. Double down on the charm offensive.', next: 'tea_continues', fx: () => { adjustRel('ashley', 1); adjustRel('grimes', -1); adjustRel('shivon', -1); } },
+    { text: '3. Redirect to Shivon: "What does the Emperor value most?"', next: 'tea_continues', fx: () => { adjustRel('shivon', 1); } },
+  ]
+},
+
+redirect: {
+  art: 'tea',
+  text: `"I'd rather hear about each of you first," you say, turning the question with practiced ease. "Surely the established members of the court have far more interesting stories than a newcomer."\n\nA strategic deflection. Shivon appreciates the technique. Ashley is momentarily thrown off. Grimes watches you with renewed interest.`,
+  dialog: [
+    { speaker:'shivon', name:'SHIVON', text:'A measured approach. Very well. I oversee several of the Emperor\'s technical initiatives. Efficiency and outcomes are my domain.' },
+    { speaker:'ashley', name:'ASHLEY', text:'And I -- well, I bring a certain energy to the court that was desperately needed. Things were getting so DULL before I arrived.' },
+    { speaker:'grimes', name:'GRIMES', text:'I make things. Or I used to. Now I mostly watch things unmake themselves.' },
+  ],
+  choices: [
+    { text: '1. "Grimes -- what do you mean by that?"', next: 'tea_continues', fx: () => { adjustRel('grimes', 2); adjustRel('ashley', -1); state.flags.addressedGrimes = true; } },
+    { text: '2. "Shivon, what technical initiatives are underway?"', next: 'tea_continues', fx: () => { adjustRel('shivon', 1); state.flags.askedShivon = true; } },
+    { text: '3. "Ashley, you mentioned things were dull. What changed?"', next: 'tea_continues', fx: () => { adjustRel('ashley', 1); state.flags.askedAshley = true; } },
+    { text: '4. Observe silently. Let their dynamics reveal themselves.', next: 'tea_continues', fx: () => { adjustRel('grimes', 1); state.flags.observedSilently = true; } },
+  ]
+},
+
+silence_response: {
+  art: 'tea',
+  text: `You lift your teacup and take a slow, deliberate sip. The silence stretches. Ashley fidgets. Shivon waits. Grimes... smiles.\n\nIt's a small smile, barely there, but genuine. She recognizes what you're doing -- using silence as a tool, as a mirror that forces others to reveal themselves.`,
+  dialog: [
+    { speaker:'ashley', name:'ASHLEY', text:'Well? Aren\'t you going to say ANYTHING? We\'re all dying to know about the mysterious new consort!' },
+    { speaker:'grimes', name:'GRIMES', text:'Not everyone needs to perform on cue, Ashley.' },
+    { speaker:'shivon', name:'SHIVON', text:'Indeed. Patience is... underrated at this court.' },
+  ],
+  choices: [
+    { text: '1. Finally speak: "I find you learn more by listening."', next: 'tea_continues', fx: () => { adjustRel('grimes', 1); adjustRel('shivon', 1); state.flags.wisdomAnswer = true; } },
+    { text: '2. "Ashley, your enthusiasm is refreshing. Tell me about yourself."', next: 'tea_continues', fx: () => { adjustRel('ashley', 2); state.flags.askedAshley = true; } },
+    { text: '3. Continue sipping. Let them fill the vacuum.', next: 'tea_continues', fx: () => { adjustRel('grimes', 1); adjustRel('ashley', -1); } },
+  ]
+},
+
+tea_continues: {
+  art: 'tea',
+  text: `The morning tea continues, the conversation flowing around unspoken tensions like water around stones. You notice the dynamics clearly now:\n\nGrimes and Ashley are like oil and water -- Ashley's performative energy grates against Grimes' authenticity. Shivon mediates between them with surgical precision, never committing to either side.\n\nThen Ashley does something that changes the atmosphere entirely.`,
+  dialog: [
+    { speaker:'ashley', name:'ASHLEY', text:'Oh, I almost forgot to mention -- I have NEWS. Big news. The Emperor has asked me to make a very special public announcement on his behalf. On the Feast of Lanterns, no less!' },
+    { speaker:'narrator', name:'', text:'The pavilion goes very, very still. Shivon\'s teacup freezes halfway to her lips. Grimes\' jaw tightens almost imperceptibly. This is a power play -- a bold, perhaps reckless one.' },
+    { speaker:'shivon', name:'SHIVON', text:'...The Feast of Lanterns is a significant occasion. The Emperor personally approves all announcements for that ceremony. Are you quite certain of this... arrangement?' },
+    { speaker:'ashley', name:'ASHLEY', text:'Quite certain! He told me himself. Well, through an intermediary. But it\'s AS GOOD as from his own lips!' },
+    { speaker:'grimes', name:'GRIMES', text:'Through an intermediary. Of course.' },
+  ],
+  choices: [
+    { text: '1. Side with Ashley: "How exciting! Congratulations."', next: 'react_side_ashley', fx: () => { adjustRel('ashley', 2); adjustRel('grimes', -1); adjustRel('shivon', -1); } },
+    { text: '2. Gently probe: "An intermediary? Which one?"', next: 'react_probe', fx: () => { adjustRel('shivon', 1); adjustRel('ashley', -1); } },
+    { text: '3. Stay neutral: "The Feast of Lanterns -- tell me about it?"', next: 'react_neutral', fx: () => { } },
+    { text: '4. Catch Grimes\' eye. A shared look of skepticism.', next: 'react_grimes_ally', fx: () => { adjustRel('grimes', 2); adjustRel('ashley', -2); } },
+  ]
+},
+
+react_side_ashley: {
+  art: 'tea',
+  text: `"How exciting! Congratulations," you say, and Ashley beams like a lantern herself.\n\nGrimes looks at you with undisguised disappointment. Shivon's expression remains neutral, but you sense you've been mentally categorized and filed away -- under "naive" or perhaps "expendable."`,
+  dialog: [
+    { speaker:'ashley', name:'ASHLEY', text:'THANK you! Finally, someone with the good grace to be happy for others! You and I are going to be great friends, I can tell.' },
+    { speaker:'grimes', name:'GRIMES', text:'Great friends. In this court. How novel.' },
+    { speaker:'narrator', name:'', text:'Ashley has claimed you as an ally. Whether that is a shield or a target remains to be seen.' },
+  ],
+  choices: [
+    { text: '1. Lean into the alliance with Ashley.', next: 'garden_transition', fx: () => { state.flags.ashleyAlly = true; } },
+    { text: '2. Quietly create distance. You spoke too soon.', next: 'garden_transition', fx: () => { adjustRel('ashley', -1); state.flags.backpedaled = true; } },
+  ]
+},
+
+react_probe: {
+  art: 'tea',
+  text: `"An intermediary?" you ask, your voice light but precise. "Which one?"\n\nThe question lands like a stone in a pond. Ashley's smile freezes -- just for a heartbeat. Shivon hides what might be approval behind her teacup.`,
+  dialog: [
+    { speaker:'ashley', name:'ASHLEY', text:'I -- well -- it was through the Office of Imperial Communications, obviously. These things go through proper channels.' },
+    { speaker:'shivon', name:'SHIVON', text:'The Office of Imperial Communications routes through my division. I have not seen such an order.' },
+    { speaker:'narrator', name:'', text:'The temperature in the pavilion drops several degrees. Ashley\'s crimson robes suddenly seem less bold and more... exposed.' },
+    { speaker:'ashley', name:'ASHLEY', text:'Well perhaps it hasn\'t reached your desk YET, Shivon. The Emperor doesn\'t run everything through you, despite what you might think.' },
+    { speaker:'grimes', name:'GRIMES', text:'Doesn\'t he, though.' },
+  ],
+  choices: [
+    { text: '1. Press further: "Perhaps we could verify through proper channels?"', next: 'garden_transition', fx: () => { adjustRel('ashley', -2); adjustRel('shivon', 1); state.flags.exposedAshley = true; } },
+    { text: '2. Offer Ashley an exit: "I\'m sure it\'s simply a matter of timing."', next: 'garden_transition', fx: () => { adjustRel('ashley', 1); state.flags.rescuedAshley = true; } },
+    { text: '3. Change the subject entirely. No need to make enemies yet.', next: 'garden_transition', fx: () => { } },
+  ]
+},
+
+react_neutral: {
+  art: 'tea',
+  text: `"The Feast of Lanterns," you say, steering the conversation to safer waters. "I'm new to court traditions. Tell me about it?"\n\nShivon, ever the competent administrator, obliges.`,
+  dialog: [
+    { speaker:'shivon', name:'SHIVON', text:'The Feast of Lanterns marks the first full moon. The Emperor addresses the court. Key announcements are made regarding positions, initiatives, and... family matters.' },
+    { speaker:'narrator', name:'', text:'"Family matters." The phrase hangs in the air. Everyone knows what kind of announcements consorts make at imperial ceremonies.' },
+    { speaker:'ashley', name:'ASHLEY', text:'Exactly. FAMILY matters. Very important ones.' },
+    { speaker:'grimes', name:'GRIMES', text:'I used to love the Feast of Lanterns. Before it became a press conference.' },
+  ],
+  choices: [
+    { text: '1. "Grimes, what was it like before?"', next: 'garden_transition', fx: () => { adjustRel('grimes', 1); state.flags.askedGrimesAboutPast = true; } },
+    { text: '2. "This all sounds very... political."', next: 'garden_transition', fx: () => { adjustRel('shivon', 1); } },
+    { text: '3. Simply nod. You\'ve learned what you needed.', next: 'garden_transition', fx: () => { state.flags.observedSilently = true; } },
+  ]
+},
+
+react_grimes_ally: {
+  art: 'tea',
+  text: `You catch Grimes' eye across the pavilion. The look you share is brief but eloquent -- two people who recognize performance when they see it.\n\nAshley notices the exchange. Her smile tightens.`,
+  dialog: [
+    { speaker:'ashley', name:'ASHLEY', text:'Something amusing? Do share with the class.' },
+    { speaker:'grimes', name:'GRIMES', text:'Nothing. I was just thinking how predictable the seasons are in this court. Someone always announces something right before the Feast. It\'s practically tradition.' },
+    { speaker:'shivon', name:'SHIVON', text:'Tradition indeed. Though not always with the Emperor\'s advance knowledge.' },
+    { speaker:'narrator', name:'', text:'Ashley\'s face flushes the same crimson as her robes. She has been exposed, subtly but unmistakably. The question is: will she retreat, or double down?' },
+    { speaker:'ashley', name:'ASHLEY', text:'You\'ll all see. You\'ll ALL see. When the Emperor stands beside me at the Feast--' },
+    { speaker:'grimes', name:'GRIMES', text:'He won\'t.' },
+    { speaker:'narrator', name:'', text:'Two words, spoken with the quiet certainty of someone who has been through this before. The silence that follows is devastating.' },
+  ],
+  choices: [
+    { text: '1. Break the silence: "Perhaps some fresh air would do us all good."', next: 'garden_transition', fx: () => { } },
+    { text: '2. To Ashley, quietly: "The court is long. There will be other feasts."', next: 'garden_transition', fx: () => { adjustRel('ashley', 1); adjustRel('grimes', -1); state.flags.comfortedAshley = true; } },
+    { text: '3. To Grimes: "You speak from experience."', next: 'garden_transition', fx: () => { adjustRel('grimes', 1); state.flags.acknowledgedGrimes = true; } },
+  ]
+},
+
+garden_transition: {
+  art: 'garden',
+  text: `The morning tea winds to its natural conclusion. Servants appear to clear the delicate porcelain. The consorts rise, each in their own way -- Ashley with aggressive energy, Shivon with fluid precision, Grimes with languid indifference.\n\nThe garden stretches before you, a maze of sculpted paths, ancient plum trees, and ornamental ponds. It is beautiful and treacherous in equal measure -- much like the court itself.\n\nYou have a brief window before the afternoon obligations begin. Each consort drifts in a different direction.`,
+  dialog: [
+    { speaker:'narrator', name:'', text:'Grimes wanders toward a secluded grove of bamboo, her fingers trailing along the stalks.' },
+    { speaker:'narrator', name:'', text:'Shivon walks the main path with purposeful strides, heading toward the administrative pavilion.' },
+    { speaker:'narrator', name:'', text:'Ashley lingers near the ornamental pond, her earlier bravado replaced by something more brittle.' },
+  ],
+  choices: [
+    { text: '1. Follow Grimes to the bamboo grove.', next: 'garden_grimes', fx: () => { state.flags.walkedWithGrimes = true; } },
+    { text: '2. Walk alongside Shivon on the main path.', next: 'garden_shivon', fx: () => { state.flags.walkedWithShivon = true; } },
+    { text: '3. Approach Ashley at the ornamental pond.', next: 'garden_ashley', fx: () => { state.flags.walkedWithAshley = true; } },
+    { text: '4. Walk the garden alone. Observe from a distance.', next: 'garden_alone', fx: () => { state.flags.walkedAlone = true; } },
+  ]
+},
+
+garden_grimes: {
+  art: 'garden',
+  text: `The bamboo grove filters the light into green-gold columns. Grimes sits on a stone bench, tracing patterns in the moss with a fallen leaf. She doesn't look up as you approach, but she speaks.`,
+  dialog: [
+    { speaker:'grimes', name:'GRIMES', text:'You know what the worst part is? He actually loved my work. The music, the art, all of it. He said it was what made me different. And then he punished me for being different.' },
+    { speaker:'grimes', name:'GRIMES', text:'Shivon plays the game perfectly. Color inside the lines. Never surprise, never challenge. And she\'s rewarded for it. Her projects get funded. Her children are acknowledged promptly and properly.' },
+    { speaker:'grimes', name:'GRIMES', text:'Ashley thinks she can skip the part where you pay your dues. She can\'t. The court will teach her. It always does.' },
+    { speaker:'grimes', name:'GRIMES', text:'And you? What are you? Another player? Another piece on the board?' },
+  ],
+  choices: [
+    { text: '1. "I\'m someone who would rather make things than play games."', next: 'summons', fx: () => { adjustRel('grimes', 2); } },
+    { text: '2. "I think the board is more interesting than most players realize."', next: 'summons', fx: () => { adjustRel('grimes', 1); adjustRel('shivon', 1); } },
+    { text: '3. "Why do you stay, if it hurts this much?"', next: 'summons', fx: () => { adjustRel('grimes', 1); state.flags.askedWhyStay = true; } },
+    { text: '4. Say nothing. Sit beside her. Watch the bamboo sway.', next: 'summons', fx: () => { adjustRel('grimes', 2); state.flags.satWithGrimes = true; } },
+  ]
+},
+
+garden_shivon: {
+  art: 'garden',
+  text: `Shivon's pace is brisk and purposeful. She acknowledges your presence with a nod and, unusually, slows to match your stride. This is intentional. Everything Shivon does is intentional.`,
+  dialog: [
+    { speaker:'shivon', name:'SHIVON', text:'You handled yourself well at tea. Most newcomers either grovel or overreach. You did neither.' },
+    { speaker:'shivon', name:'SHIVON', text:'Let me be direct, since you seem to appreciate directness. Ashley\'s announcement is unauthorized. She is fabricating proximity to power she does not possess. It will end badly for her.' },
+    { speaker:'shivon', name:'SHIVON', text:'Grimes has the Emperor\'s heart but not his ear. She will never learn to separate the two. It is her tragedy.' },
+    { speaker:'shivon', name:'SHIVON', text:'The court rewards those who produce results without creating drama. I would encourage you to consider which model you wish to follow.' },
+  ],
+  choices: [
+    { text: '1. "Your model seems to work. I\'d like to learn from you."', next: 'summons', fx: () => { adjustRel('shivon', 2); } },
+    { text: '2. "Results without drama? Is that really living?"', next: 'summons', fx: () => { adjustRel('shivon', -1); adjustRel('grimes', 1); } },
+    { text: '3. "What happens to Ashley when her announcement falls apart?"', next: 'summons', fx: () => { adjustRel('shivon', 1); state.flags.askedAboutAshleyFate = true; } },
+    { text: '4. "You speak as if the Emperor is a system to be optimized."', next: 'summons', fx: () => { adjustRel('shivon', 1); state.flags.challengedShivon = true; } },
+  ]
+},
+
+garden_ashley: {
+  art: 'garden',
+  text: `Ashley stands at the edge of the ornamental pond, staring at her reflection. Without the audience of the other consorts, she seems smaller somehow. The crimson robes hang differently when no one is watching.`,
+  dialog: [
+    { speaker:'ashley', name:'ASHLEY', text:'Oh. You. I suppose you\'ve come to tell me I\'m making a mistake too?' },
+    { speaker:'ashley', name:'ASHLEY', text:'Everyone thinks I don\'t know what I\'m doing. Grimes thinks I\'m tacky. Shivon thinks I\'m stupid. But they don\'t understand -- in this court, if you don\'t MAKE things happen, things happen TO you.' },
+    { speaker:'ashley', name:'ASHLEY', text:'The Valentine\'s -- I mean, the Feast announcement... okay, maybe the Emperor didn\'t EXPLICITLY authorize it. But he didn\'t say NO, either. And in this court, silence is permission. Right?' },
+    { speaker:'ashley', name:'ASHLEY', text:'...Right?' },
+  ],
+  choices: [
+    { text: '1. "Silence is NOT permission. Not here. Walk it back."', next: 'summons', fx: () => { adjustRel('ashley', -1); state.flags.warnedAshley = true; } },
+    { text: '2. "You need an actual ally, not an announcement. I could help."', next: 'summons', fx: () => { adjustRel('ashley', 2); state.flags.offeredHelp = true; } },
+    { text: '3. "The others survived by learning the rules first. So should you."', next: 'summons', fx: () => { adjustRel('ashley', 1); state.flags.advisedAshley = true; } },
+    { text: '4. "What exactly were you going to announce?"', next: 'summons', fx: () => { adjustRel('ashley', 1); state.flags.learnedSecret = true; } },
+  ]
+},
+
+garden_alone: {
+  art: 'garden',
+  text: `You walk the garden alone, and in doing so, you see everything.\n\nFrom a distance, you observe: Grimes in her bamboo grove, lost in thought. Shivon striding toward the administrative wing, already on to the next optimization. Ashley at the pond, her reflection wavering.\n\nThree women. Three strategies. Three different kinds of power -- and three different kinds of vulnerability.`,
+  dialog: [
+    { speaker:'narrator', name:'', text:'You notice something else: a messenger in imperial livery, hurrying along the garden wall. He seems to be looking for someone. His eyes scan the garden, passing over Grimes and Ashley, pausing briefly on Shivon... then landing on you.' },
+    { speaker:'messenger', name:'MESSENGER', text:'New consort? You are summoned. The Emperor wishes a word.' },
+  ],
+  choices: [
+    { text: '1. Follow the messenger immediately.', next: 'summons', fx: () => { state.flags.directSummons = true; adjustRel('grimes', 1); adjustRel('shivon', 1); } },
+    { text: '2. "A moment. Let me compose myself."', next: 'summons', fx: () => { state.flags.composedSelf = true; } },
+  ]
+},
+
+summons: {
+  art: 'court',
+  text: function() {
+    if (state.flags.directSummons) {
+      return `The messenger leads you through corridors of increasing grandeur. The Emperor does not receive you in the throne room -- that would be too public. Instead, you are brought to a private study, walls lined with screens displaying scrolling data and star charts.\n\nA message awaits, written in the Emperor's unmistakable hand:`;
+    }
+    return `As you return from the garden, a messenger intercepts you. The Emperor requests your presence -- not in the throne room, but in his private study. The corridors grow more ornate as you approach.\n\nThe study is a curious blend of ancient and modern -- silk scrolls beside glowing screens, calligraphy brushes next to holographic displays. A message awaits:`;
+  },
+  dialog: [
+    { speaker:'narrator', name:'IMPERIAL DECREE', text:'"The new consort shall observe the dynamics of our court and report their assessment. We value an outsider\'s eye. Speak truthfully or do not speak at all."' },
+    { speaker:'narrator', name:'', text:'This is your moment. The Emperor wants your read on the court -- on Grimes, Shivon, and Ashley. What you say here will determine your place in this court... or whether you have one at all.' },
+  ],
+  choices: [
+    { text: '1. Report honestly about all three, with nuance.', next: 'ending', fx: () => { state.flags.honestReport = true; } },
+    { text: '2. Praise Shivon\'s competence. Recommend her approach.', next: 'ending', fx: () => { adjustRel('shivon', 2); state.flags.endorsedShivon = true; } },
+    { text: '3. Defend Grimes. Her authenticity is the court\'s conscience.', next: 'ending', fx: () => { adjustRel('grimes', 2); state.flags.defendedGrimes = true; } },
+    { text: '4. Warn about Ashley\'s unauthorized announcement.', next: 'ending', fx: () => { adjustRel('ashley', -2); state.flags.reportedAshley = true; } },
+    { text: '5. "The court needs all three. That is its strength."', next: 'ending', fx: () => { adjustRel('grimes', 1); adjustRel('shivon', 1); adjustRel('ashley', 1); state.flags.diplomaticReport = true; } },
+  ]
+},
+
+ending: { art: 'court', text: '', dialog: [], choices: [] }
+};
+
+// ============================================================
+// ENDING COMPUTATION
+// ============================================================
+function computeEnding() {
+  const { grimes: g, shivon: s, ashley: a } = state;
+
+  if (g >= 3 && g > s && g > a) return {
+    title: 'THE KINDRED SPIRIT',
+    text: `You have earned Grimes' rare trust. In a court of performers, you chose authenticity. She takes you to her private studio -- a hidden room filled with unfinished art, half-written songs, and the ghosts of abandoned projects.\n\n"The Emperor loved this room once," she says. "Before he decided love was inefficient."\n\nYou become her confidant, her ally in the bamboo grove. Yours is a precarious position -- beloved by the defiant one, which means you inherit her enemies and her exile. But also her freedom.\n\nShivon watches your alliance with clinical interest. Ashley schemes against it. The Emperor... remembers what he loved about Grimes, seeing it reflected in your bond.\n\nWhether that remembrance saves you or dooms you both remains to be seen.`,
+    subtitle: 'You chose the heart over the throne.'
+  };
+
+  if (s >= 3 && s > g && s > a) return {
+    title: 'THE PROTEGE',
+    text: `Shivon takes you under her wing with the precision of a chess grandmaster developing a promising pawn. Your days become structured: morning briefings, afternoon strategy sessions, evening analysis of court dynamics.\n\nYou learn the real power structure -- not the one visible at morning tea, but the invisible architecture of influence, access, and information Shivon has spent years constructing.\n\n"The Emperor doesn't need passion," she tells you. "He needs results. Grimes gives him his heart back, and he resents her for it. Ashley gives him chaos, and he'll tire of it. I give him outcomes. That's durable."\n\nHer son will likely ascend. You will likely rise with him. It is a stable, powerful, and profoundly unsentimental future.\n\nYou will never be the favorite. But you may outlast everyone who is.`,
+    subtitle: 'You chose the long game.'
+  };
+
+  if (a >= 3 && a > g && a > s) return {
+    title: 'THE CONSPIRATOR',
+    text: `Against all conventional wisdom, you allied with Ashley St. Clair. The Scheming Upstart has found her first true ally, and together you are... terrifying.\n\nAshley's instincts aren't wrong -- they're just unrefined. With your strategic mind tempering her boldness, the unauthorized announcement transforms into a calculated provocation designed to force the Emperor's hand.\n\nIt works. Briefly. Spectacularly. The Feast of Lanterns becomes a night the court will never forget.\n\nBut like Consort Gao before her, Ashley has gotten too bold too fast. The Emperor is displeased. And you, as her ally, share in the displeasure.\n\nShivon closes ranks. Grimes watches from exile with something between sympathy and vindication. The fall is swift.\n\nBut Ashley is already planning the comeback. "This isn't over," she whispers. "It's barely begun."\n\nYou believe her. God help you, you believe her.`,
+    subtitle: 'You chose fire. It burns both ways.'
+  };
+
+  if (state.flags.diplomaticReport) return {
+    title: 'THE DIPLOMAT',
+    text: `"The court needs all three," you told the Emperor. And he listened.\n\nYour balanced assessment -- Grimes' creative fire, Shivon's structural competence, Ashley's raw ambition -- impressed the Emperor not with its conclusions but with its fairness. In a court of partisans, you chose to see clearly.\n\nYou are appointed as an informal mediator. Grimes brings you her grievances. Shivon consults you on personnel. Even Ashley seeks your counsel.\n\nIt is exhausting, precarious, and strangely beautiful. You are everyone's confidant and no one's champion.\n\nBut the question lingers: how long can an outsider remain outside? Eventually, the court will demand you choose a side.\n\nFor now, the morning tea pavilion is a little more civil. And the pastries remain unpoisoned.\n\nProbably.`,
+    subtitle: 'You chose balance. For now.'
+  };
+
+  if (state.flags.honestReport) return {
+    title: 'THE TRUTHTELLER',
+    text: `You spoke truth to power, and power... paused.\n\nYour honest report sits on the Emperor's desk like a small bomb. You described Grimes' brilliance and her pain. Shivon's competence and her coldness. Ashley's ambition and her desperation.\n\nThe Emperor reads it twice. Then a third time. Then he sends you away without a word.\n\nFor three days, nothing happens. Then everything does.\n\nGrimes receives an invitation to perform at the Feast -- the first in years. Shivon is given expanded authority. Ashley's announcement is quietly shelved, replaced with a smaller, properly authorized recognition.\n\nNo one knows it was your report. The Emperor prefers it that way. But Grimes catches your eye at the next morning tea, and her nod says everything.\n\nYou have become the most dangerous thing in the Forbidden Court: someone who tells the truth.`,
+    subtitle: 'You chose honesty. The rarest weapon.'
+  };
+
+  return {
+    title: 'THE SURVIVOR',
+    text: `You navigated your first day in the Forbidden Court without making a fatal error. Given the circumstances, that counts as a victory.\n\nThe consorts have taken your measure and filed you away. Grimes sees potential. Shivon sees utility. Ashley sees competition. None of them see the full picture.\n\nThat is your advantage.\n\nAs the evening falls and the lanterns are lit along the garden paths, you return to your quarters and take stock. The court is more dangerous than you imagined, the alliances more fragile, the Emperor more distant.\n\nBut you survived morning tea. You survived the pastries. You survived Ashley's power play and Grimes' searchlight gaze and Shivon's clinical assessment.\n\nTomorrow, the game continues. The Feast of Lanterns approaches.\n\nYou sip your evening tea alone, thinking about tomorrow.\n\nThe tea tastes fine. Probably.`,
+    subtitle: 'You survived. That\'s not nothing.'
+  };
+}
+
+// ============================================================
+// GAME ENGINE
+// ============================================================
+const chipEngine = new ChiptuneEngine();
+let musicOn = false;
+
+function showScene(sceneId) {
+  const scene = SCENES[sceneId];
+  if (!scene) return;
+  state.currentScene = sceneId;
+
+  if (sceneId === 'ending') { showEnding(); return; }
+
+  renderSceneArt(scene.art);
+
+  const narrativeEl = document.getElementById('narrative');
+  const dialogEl = document.getElementById('dialog');
+  const choicesEl = document.getElementById('choices');
+  choicesEl.innerHTML = '';
+  dialogEl.innerHTML = '';
+
+  const text = typeof scene.text === 'function' ? scene.text() : scene.text;
+  skipTypewriter = false;
+  typewriterRunning = true;
+
+  (async () => {
+    await typeText(narrativeEl, text, 16);
+
+    for (const line of scene.dialog) {
+      if (skipTypewriter) {
+        for (const ln of scene.dialog.slice(scene.dialog.indexOf(line))) {
+          const div = document.createElement('div');
+          div.className = `dialog-line speaker-${ln.speaker}`;
+          div.textContent = ln.name ? `${ln.name}: ${ln.text}` : ln.text;
+          dialogEl.appendChild(div);
+        }
+        break;
+      }
+      const div = document.createElement('div');
+      div.className = `dialog-line speaker-${line.speaker}`;
+      dialogEl.appendChild(div);
+      const prefix = line.name ? `${line.name}: ` : '';
+      await typeText(div, prefix + line.text, 14);
+      await new Promise(r => setTimeout(r, 250));
+      document.getElementById('text-area').scrollTop = document.getElementById('text-area').scrollHeight;
+    }
+    typewriterRunning = false;
+
+    for (const choice of scene.choices) {
+      const btn = document.createElement('button');
+      btn.className = 'choice-btn';
+      btn.textContent = choice.text;
+      btn.addEventListener('click', () => { if (choice.fx) choice.fx(); showScene(choice.next); });
+      choicesEl.appendChild(btn);
+    }
+  })();
+}
+
+function showEnding() {
+  const ending = computeEnding();
+  const overlay = document.createElement('div');
+  overlay.className = 'ending-overlay';
+  overlay.innerHTML = `
+    <div class="ending-title">${ending.title}</div>
+    <div class="ending-text">${ending.text.replace(/\n\n/g, '<br><br>')}</div>
+    <div style="font-family:'Press Start 2P',monospace;font-size:8px;color:#8878a8;margin-bottom:20px;text-align:center">${ending.subtitle}</div>
+    <button class="ending-btn" id="replay-btn">PLAY AGAIN</button>
+  `;
+  document.body.appendChild(overlay);
+  document.getElementById('replay-btn').addEventListener('click', () => {
+    overlay.remove();
+    state.grimes = 0; state.shivon = 0; state.ashley = 0; state.flags = {};
+    updateMeters();
+    showScene('enter');
+  });
+}
+
+// ============================================================
+// INIT
+// ============================================================
+document.getElementById('text-area').addEventListener('click', () => {
+  if (typewriterRunning) skipTypewriter = true;
+});
+
+document.getElementById('music-toggle').addEventListener('click', () => {
+  musicOn = chipEngine.toggle();
+  const btn = document.getElementById('music-toggle');
+  btn.textContent = musicOn ? 'MUSIC: ON' : 'MUSIC: OFF';
+  btn.classList.toggle('active', musicOn);
+});
+
+document.getElementById('title-screen').addEventListener('click', () => {
+  document.getElementById('title-screen').style.display = 'none';
+  document.getElementById('game-container').style.display = 'flex';
+  updateMeters();
+  showScene('enter');
+  musicOn = true;
+  chipEngine.start();
+  const btn = document.getElementById('music-toggle');
+  btn.textContent = 'MUSIC: ON';
+  btn.classList.add('active');
+});
+</script>
+</body>
+</html>
