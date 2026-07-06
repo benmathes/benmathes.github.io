@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Arpeggios From Hell</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  background: #0b0512;
+  overflow: hidden;
+  touch-action: none;
+  font-family: 'Press Start 2P', monospace;
+}
+
+#wrap {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+canvas {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  background: #170b24;
+  box-shadow: 0 0 40px rgba(255, 107, 129, 0.25), 0 0 120px rgba(120, 60, 200, 0.2);
+  border: 2px solid #3a2352;
+}
+
+#hint {
+  color: #6b4a8f;
+  font-size: 8px;
+  letter-spacing: 1px;
+  text-align: center;
+  line-height: 1.8;
+}
+
+#crt {
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.12) 0px, rgba(0,0,0,0.12) 1px, transparent 1px, transparent 3px);
+  pointer-events: none;
+}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game" width="240" height="320"></canvas>
+  <div id="hint">ARROWS/WASD move &middot; SHIFT focus &middot; M mute &middot; P pause</div>
+</div>
+<div id="crt"></div>
+
+<script>
+(() => {
+'use strict';
+
+// ---------------------------------------------------------------- canvas ---
+const W = 240, H = 320;
+const cv = document.getElementById('game');
+const cx = cv.getContext('2d');
+cx.imageSmoothingEnabled = false;
+
+function fit() {
+  const scale = Math.max(1, Math.floor(Math.min(
+    window.innerWidth / W, (window.innerHeight - 30) / H)));
+  cv.style.width = (W * scale) + 'px';
+  cv.style.height = (H * scale) + 'px';
+}
+window.addEventListener('resize', fit);
+fit();
+
+// ---------------------------------------------------------------- sprites --
+// Sprites are ASCII grids pre-rendered to offscreen canvases.
+function spr(rows, pal) {
+  const c = document.createElement('canvas');
+  c.width = rows[0].length; c.height = rows.length;
+  const g = c.getContext('2d');
+  rows.forEach((row, y) => {
+    for (let x = 0; x < row.length; x++) {
+      const col = pal[row[x]];
+      if (!col) continue;
+      g.fillStyle = col;
+      g.fillRect(x, y, 1, 1);
+    }
+  });
+  return c;
+}
+
+const IMP = spr([
+  '..R.....R..',
+  '.RR.....RR.',
+  '..rrrrrrr..',
+  '.rrrrrrrrr.',
+  '.rwwrrrwwr.',
+  '.rwkrrrkwr.',
+  '.rrrrrrrrr.',
+  '.rPrrrrrPr.',
+  '.rrrmmmrrr.',
+  '..rrrrrrr..',
+  '...rr.rr...',
+  '..rr...rr..',
+], { R:'#a12c3f', r:'#ff6b81', w:'#ffffff', k:'#1b1b2b', P:'#ffb3c1', m:'#c9184a' });
+
+const DEMON = spr([
+  '......hhhhhhhhhh........',
+  '....hhhhhhhhhhhhhh......',
+  '...hhhhhhhhhhhhhhhh.....',
+  '..hhhhHhhhhhhhHhhhhh....',
+  '..hhhffffffffffhhhhh....',
+  '.hhhffffffffffffhhhh....',
+  '.hhhfsswsffsswsfhhhh....',
+  '.hhhfssssffssssfhhhh....',
+  '.hhhffffffffffffhhhh....',
+  '.hhhhffwwwwwwffhhhhh....',
+  '.hhhhfffmmmmfffhhhhh....',
+  '..hhhhffffffffhhhhh.....',
+  '...hhh.bbbbbb.hhh.......',
+  '....h..bbbbbb..h........',
+  '.......bbbbbbbb.........',
+  '..nnnnnggggbbbb.........',
+  '..k....gggggg...........',
+  '.......gwggg............',
+  '........bb..bb..........',
+  '........bb..bb..........',
+  '.......kkk..kkk.........',
+], { h:'#ff9f43', H:'#d35400', f:'#ffdbac', s:'#12122b', w:'#ffffff',
+     m:'#e05263', b:'#2d2438', g:'#ff4757', n:'#c8a27a', k:'#111111' });
+
+const NOTE_ROWS = [
+  '....X..',
+  '....XX.',
+  '....X.X',
+  '....X..',
+  '....X..',
+  '.XXXX..',
+  'XXXXX..',
+  '.XXX...',
+];
+// chord-tone colors: root / third / fifth / spice
+const NOTE_COLS = ['#ffd166', '#ff6b81', '#4ecdc4', '#c792ea'];
+const NOTES = NOTE_COLS.map(c => spr(NOTE_ROWS, { X: c }));
+const NOTE_HOT = spr(NOTE_ROWS, { X: '#ff3355' }); // aimed bullets
+
+const HEART = spr([
+  '.XX.XX.',
+  'XXXXXXX',
+  'XXXXXXX',
+  '.XXXXX.',
+  '..XXX..',
+  '...X...',
+], { X: '#ff6b81' });
+
+const HEART_EMPTY = spr([
+  '.XX.XX.',
+  'X..X..X',
+  'X.....X',
+  '.X...X.',
+  '..X.X..',
+  '...X...',
+], { X: '#5a3a6e' });
+
+const FLAME = spr([
+  '..o..',
+  '.ooo.',
+  '.oyo.',
+  'oyyyo',
+  'okyko',
+  '.ooo.',
+], { o:'#ff9f43', y:'#ffe066', k:'#5c2a00' });
+
+// ---------------------------------------------------------------- audio ----
+// The band. A harmonic-minor shred lead (two detuned saws through a filter
+// and a feedback delay), a triangle bass, a thumpy kick, and a noise hat.
+let AC = null, master, delaySend, muted = false;
+
+function initAudio() {
+  AC = new (window.AudioContext || window.webkitAudioContext)();
+  master = AC.createGain();
+  master.gain.value = 0.5;
+  const comp = AC.createDynamicsCompressor();
+  master.connect(comp);
+  comp.connect(AC.destination);
+
+  const delay = AC.createDelay(0.6);
+  delay.delayTime.value = 0.22;
+  const fb = AC.createGain();
+  fb.gain.value = 0.32;
+  delay.connect(fb); fb.connect(delay);
+  delay.connect(master);
+  delaySend = delay;
+
+  noiseBuf = AC.createBuffer(1, AC.sampleRate * 0.1, AC.sampleRate);
+  const d = noiseBuf.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+}
+let noiseBuf = null;
+
+const freqOf = m => 440 * Math.pow(2, (m - 69) / 12);
+
+function lead(midi, t, dur) {
+  const f = freqOf(midi);
+  const flt = AC.createBiquadFilter();
+  flt.type = 'lowpass';
+  flt.Q.value = 3;
+  flt.frequency.setValueAtTime(Math.min(f * 7, 9500), t);
+  flt.frequency.exponentialRampToValueAtTime(Math.min(f * 2.5, 6000), t + dur);
+  const g = AC.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.16, t + 0.006);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur * 1.5);
+  for (const det of [-7, 7]) {
+    const o = AC.createOscillator();
+    o.type = 'sawtooth';
+    o.frequency.value = f;
+    o.detune.value = det;
+    o.connect(flt);
+    o.start(t); o.stop(t + dur * 1.6);
+  }
+  flt.connect(g);
+  g.connect(master);
+  const send = AC.createGain();
+  send.gain.value = 0.45;
+  g.connect(send);
+  send.connect(delaySend);
+}
+
+function bass(midi, t, dur) {
+  const o = AC.createOscillator();
+  o.type = 'triangle';
+  o.frequency.value = freqOf(midi - 24);
+  const g = AC.createGain();
+  g.gain.setValueAtTime(0.14, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  o.connect(g); g.connect(master);
+  o.start(t); o.stop(t + dur);
+}
+
+function kick(t) {
+  const o = AC.createOscillator();
+  o.frequency.setValueAtTime(130, t);
+  o.frequency.exponentialRampToValueAtTime(38, t + 0.09);
+  const g = AC.createGain();
+  g.gain.setValueAtTime(0.5, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.13);
+  o.connect(g); g.connect(master);
+  o.start(t); o.stop(t + 0.15);
+}
+
+function hat(t) {
+  const s = AC.createBufferSource();
+  s.buffer = noiseBuf;
+  const f = AC.createBiquadFilter();
+  f.type = 'highpass'; f.frequency.value = 7000;
+  const g = AC.createGain();
+  g.gain.setValueAtTime(0.12, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+  s.connect(f); f.connect(g); g.connect(master);
+  s.start(t); s.stop(t + 0.05);
+}
+
+// -------------------------------------------------------------- the music --
+// A harmonic minor, the one true neoclassical key. Chords as midi stacks
+// spanning ~2.5 octaves; the lead sweeps up and down through them.
+const CHORDS = {
+  Am:   [57, 60, 64, 69, 72, 76, 81],
+  G:    [55, 59, 62, 67, 71, 74, 79],
+  F:    [53, 57, 60, 65, 69, 72, 77],
+  E:    [52, 56, 59, 64, 68, 71, 76],   // with the G# — harmonic minor magic
+  dim:  [56, 59, 62, 65, 68, 71, 74, 77], // G#dim7 climb for the finale
+};
+const PROG = ['Am', 'G', 'F', 'E'];
+const SWEEP = [0, 1, 2, 3, 4, 5, 6, 5, 4, 3, 2, 1, 0, 1, 2, 3]; // 16ths / bar
+const CLIMB = [0, 1, 2, 3, 1, 2, 3, 4, 2, 3, 4, 5, 3, 4, 5, 6];
+
+const PHASES = [
+  { name: 'I. ADAGIO',                sub: '(warming up. still cute.)', bpm: 76,  bars: 4 },
+  { name: 'II. ALLEGRO',              sub: '(fingers loosening)',       bpm: 98,  bars: 4 },
+  { name: 'III. PRESTO',              sub: '(oh no)',                   bpm: 122, bars: 4 },
+  { name: 'IV. PRESTISSIMO',          sub: '(OH NO)',                   bpm: 146, bars: 4 },
+  { name: 'V. ARPEGGIOS FROM HELL',   sub: '(unleash the fury)',        bpm: 168, bars: 9999 },
+];
+
+// ---------------------------------------------------------------- state ----
+const MIDI_LO = 50, MIDI_HI = 81;
+const midiX = m => 14 + (m - MIDI_LO) / (MIDI_HI - MIDI_LO) * (W - 28);
+
+let state = 'title';          // title | play | dead
+let player, bullets, sparks, flames, spawnQueue;
+let score, best, lives, grazes, dodged, invulnUntil;
+let bar, step, phase, bpm, nextTime, phaseBarStart;
+let bannerText, bannerSub, bannerUntil;
+let demon, shake, paused = false;
+let schedTimer = null;
+
+best = +(localStorage.getItem('arpeggios-from-hell-best') || 0);
+
+function reset() {
+  player = { x: W / 2, y: H - 44, focus: false };
+  bullets = []; sparks = []; spawnQueue = [];
+  flames = [];
+  for (let i = 0; i < 7; i++) {
+    flames.push({ x: 16 + i * 34, seed: Math.random() * 9 });
+  }
+  score = 0; lives = 3; grazes = 0; dodged = 0; invulnUntil = 0;
+  bar = 0; step = 0; phase = 0; phaseBarStart = 0;
+  bpm = PHASES[0].bpm;
+  demon = { x: W / 2, tx: W / 2 };
+  shake = 0;
+  bannerText = PHASES[0].name; bannerSub = PHASES[0].sub;
+  bannerUntil = (AC ? AC.currentTime : 0) + 2.4;
+}
+
+// ------------------------------------------------------------- scheduler ---
+// Classic lookahead scheduler: audio gets sample-accurate times, and each
+// scheduled note is queued as a bullet spawn at the same musical moment.
+function onBar() {
+  bar++;
+  const p = PHASES[phase];
+  if (phase < PHASES.length - 1 && bar - phaseBarStart >= p.bars) {
+    phase++;
+    phaseBarStart = bar;
+    bpm = PHASES[phase].bpm;
+    bannerText = PHASES[phase].name;
+    bannerSub = PHASES[phase].sub;
+    bannerUntil = AC.currentTime + 2.4;
+  }
+  if (phase === PHASES.length - 1) bpm = Math.min(200, bpm + 1); // endless creep
+  demon.tx = 40 + Math.random() * (W - 80);
+}
+
+function schedule() {
+  if (state !== 'play' || paused) return;
+  const stepDur = 60 / bpm / 4;
+  while (nextTime < AC.currentTime + 0.15) {
+    const finale = phase === PHASES.length - 1;
+    const chordName = (finale && bar % 4 === 3) ? 'dim' : PROG[bar % 4];
+    const chord = CHORDS[chordName];
+    const pat = chordName === 'dim' ? CLIMB : SWEEP;
+    const midi = chord[pat[step] % chord.length];
+
+    lead(midi, nextTime, stepDur * 1.1);
+    if (step === 0) bass(chord[0], nextTime, stepDur * 8);
+    if (step % 4 === 0) kick(nextTime);
+    if (phase >= 2 && step % 2 === 1) hat(nextTime);
+
+    spawnQueue.push({ t: nextTime, midi, step, bar, chordName });
+
+    step++;
+    if (step === 16) { step = 0; onBar(); }
+    nextTime += stepDur;
+  }
+}
+
+// --------------------------------------------------------------- spawning --
+function toneIndex(midi, chord) {
+  const i = chord.indexOf(midi);
+  return i < 0 ? 3 : Math.min(i % 7 % 4, 3);
+}
+
+function spawnBullet(ev) {
+  if (bullets.length > 380) return;
+  const speed = 42 + phase * 13;
+  const mode = ev.bar % 3;
+  let b;
+  if (mode === 1) {
+    // fan: fired from the guitar, angle follows the pitch
+    const ox = demon.x - 8, oy = 34;
+    const ang = Math.PI / 2 + (ev.midi - 66) / 34 * 1.15;
+    b = { x: ox, y: oy, vx: Math.cos(ang) * speed * 1.1, vy: Math.sin(ang) * speed * 1.1 };
+    sparks.push({ x: ox, y: oy, vx: 0, vy: -14, life: 0.3, col: '#ffd166', txt: '♪' });
+  } else {
+    // rain: falls from where the pitch lives on the staff
+    const drift = mode === 2 ? Math.sin(ev.step * 0.8) * 14 : 0;
+    b = { x: midiX(ev.midi), y: 30, vx: drift, vy: speed };
+  }
+  b.hot = false;
+  // in the fast phases the downbeat note takes aim at you, personally
+  if (phase >= 3 && ev.step % 8 === 0 && state === 'play') {
+    const dx = player.x - demon.x, dy = player.y - 34;
+    const d = Math.hypot(dx, dy) || 1;
+    b = { x: demon.x - 8, y: 34, vx: dx / d * speed * 1.35, vy: dy / d * speed * 1.35, hot: true };
+  }
+  b.sprite = b.hot ? NOTE_HOT : NOTES[toneIndex(ev.midi, CHORDS[ev.chordName])];
+  b.seed = Math.random() * 9;
+  b.grazed = false;
+  bullets.push(b);
+}
+
+// ----------------------------------------------------------------- input ---
+const keys = {};
+window.addEventListener('keydown', e => {
+  keys[e.key.toLowerCase()] = true;
+  if (['arrowup','arrowdown','arrowleft','arrowright',' '].includes(e.key.toLowerCase())) e.preventDefault();
+  if (e.key.toLowerCase() === 'm' && master) { muted = !muted; master.gain.value = muted ? 0 : 0.5; }
+  if (e.key.toLowerCase() === 'p' && state === 'play') togglePause();
+  if ((e.key.toLowerCase() === 'z' || e.key === 'Enter')) advance();
+});
+window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+
+let touchId = null, touchLast = null;
+cv.addEventListener('pointerdown', e => {
+  advance();
+  touchId = e.pointerId;
+  touchLast = { x: e.clientX, y: e.clientY };
+});
+cv.addEventListener('pointermove', e => {
+  if (e.pointerId !== touchId || !touchLast || state !== 'play') return;
+  const scale = cv.clientWidth / W;
+  player.x += (e.clientX - touchLast.x) / scale;
+  player.y += (e.clientY - touchLast.y) / scale;
+  touchLast = { x: e.clientX, y: e.clientY };
+});
+window.addEventListener('pointerup', () => { touchId = null; touchLast = null; });
+
+function advance() {
+  if (state === 'play') return;
+  if (!AC) initAudio();
+  AC.resume();
+  reset();
+  nextTime = AC.currentTime + 0.1;
+  state = 'play';
+  if (!schedTimer) schedTimer = setInterval(schedule, 25);
+}
+
+function togglePause() {
+  paused = !paused;
+  if (paused) AC.suspend(); else { AC.resume(); nextTime = Math.max(nextTime, AC.currentTime + 0.1); }
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && state === 'play' && !paused) togglePause();
+});
+
+// ----------------------------------------------------------------- death ---
+function die() {
+  state = 'dead';
+  if (score > best) { best = score; localStorage.setItem('arpeggios-from-hell-best', best); }
+  // a sad, slow, minor farewell
+  const t = AC.currentTime + 0.1;
+  [76, 74, 71, 68].forEach((m, i) => lead(m, t + i * 0.28, 0.26));
+  [57, 60, 64].forEach(m => bass(m + 12, t + 1.2, 1.4));
+}
+
+function hit() {
+  lives--;
+  shake = 0.35;
+  invulnUntil = AC.currentTime + 2;
+  // mercy bomb: clear the neighborhood
+  bullets = bullets.filter(b => Math.hypot(b.x - player.x, b.y - player.y) > 70);
+  for (let i = 0; i < 14; i++) {
+    const a = Math.random() * Math.PI * 2;
+    sparks.push({ x: player.x, y: player.y, vx: Math.cos(a) * 50, vy: Math.sin(a) * 50, life: 0.5, col: '#ff6b81' });
+  }
+  if (lives <= 0) die();
+}
+
+// ---------------------------------------------------------------- update ---
+function update(dt) {
+  const now = AC ? AC.currentTime : 0;
+
+  if (state === 'play') {
+    // consume spawn queue in sync with the audio clock
+    while (spawnQueue.length && spawnQueue[0].t <= now + 0.02) {
+      spawnBullet(spawnQueue.shift());
+    }
+
+    player.focus = keys['shift'];
+    const sp = player.focus ? 46 : 92;
+    if (keys['arrowleft'] || keys['a']) player.x -= sp * dt;
+    if (keys['arrowright'] || keys['d']) player.x += sp * dt;
+    if (keys['arrowup'] || keys['w']) player.y -= sp * dt;
+    if (keys['arrowdown'] || keys['s']) player.y += sp * dt;
+    player.x = Math.max(8, Math.min(W - 8, player.x));
+    player.y = Math.max(46, Math.min(H - 10, player.y));
+
+    score += dt * 10 * (phase + 1);
+
+    demon.x += (demon.tx - demon.x) * Math.min(1, dt * 1.5);
+
+    const inv = now < invulnUntil;
+    for (let i = bullets.length - 1; i >= 0; i--) {
+      const b = bullets[i];
+      b.x += b.vx * dt;
+      b.y += b.vy * dt;
+      if (b.y > H + 8 || b.x < -8 || b.x > W + 8) {
+        bullets.splice(i, 1);
+        dodged++;
+        continue;
+      }
+      const d = Math.hypot(b.x - player.x, b.y - player.y);
+      if (!inv && d < 4) { hit(); break; }
+      if (!b.grazed && d < 11) {
+        b.grazed = true;
+        grazes++;
+        score += 25;
+        sparks.push({ x: player.x + (b.x - player.x) / 2, y: player.y + (b.y - player.y) / 2,
+                      vx: 0, vy: -20, life: 0.4, col: '#ffe066', txt: '+' });
+      }
+    }
+  }
+
+  for (let i = sparks.length - 1; i >= 0; i--) {
+    const s = sparks[i];
+    s.x += s.vx * dt; s.y += s.vy * dt; s.life -= dt;
+    if (s.life <= 0) sparks.splice(i, 1);
+  }
+  shake = Math.max(0, shake - dt);
+}
+
+// ------------------------------------------------------------------ draw ---
+function text(str, x, y, col, size = 8, align = 'center') {
+  cx.font = size + 'px "Press Start 2P"';
+  cx.textAlign = align;
+  cx.fillStyle = col;
+  cx.fillText(str, Math.round(x), Math.round(y));
+}
+
+function draw() {
+  const now = AC ? AC.currentTime : performance.now() / 1000;
+  const beatDur = 60 / bpm;
+  const bob = Math.sin(now / beatDur * Math.PI) * (1 + phase * 0.8);
+
+  cx.save();
+  if (shake > 0) cx.translate((Math.random() - 0.5) * 4, (Math.random() - 0.5) * 4);
+
+  // background: deep purple, redder as hell approaches
+  const hellish = state === 'play' ? phase / (PHASES.length - 1) : 0;
+  cx.fillStyle = `rgb(${23 + hellish * 30},${11 - hellish * 4},${36})`;
+  cx.fillRect(-4, -4, W + 8, H + 8);
+
+  // a musical staff for the notes to fall through
+  cx.fillStyle = 'rgba(255,255,255,0.05)';
+  for (let i = 0; i < 5; i++) cx.fillRect(0, 80 + i * 34, W, 1);
+
+  // the tiny flame crowd, headbanging at the bottom
+  flames.forEach(f => {
+    const fy = H - 10 + Math.sin(now * 4 + f.seed) * 2;
+    cx.drawImage(FLAME, Math.round(f.x - 2), Math.round(fy - 6));
+  });
+
+  if (state === 'title') {
+    cx.drawImage(DEMON, 0, 0, 24, 21, W / 2 - 36, 60 + Math.sin(now * 2) * 3, 72, 63);
+    text('ARPEGGIOS', W / 2, 160, '#ffd166', 16);
+    text('FROM HELL', W / 2, 184, '#ff6b81', 16);
+    text('a very fast, very cute', W / 2, 212, '#b58fd6', 7);
+    text('bullet hell', W / 2, 226, '#b58fd6', 7);
+    if (Math.floor(now * 2) % 2 === 0) text('TAP OR PRESS Z TO SHRED', W / 2, 268, '#ffffff', 8);
+    text('sound on, obviously', W / 2, 288, '#6b4a8f', 7);
+    if (best > 0) text('BEST ' + String(Math.floor(best)).padStart(6, '0'), W / 2, 306, '#4ecdc4', 7);
+    cx.restore();
+    return;
+  }
+
+  // the maestro
+  const dx = Math.round(demon.x - 12), dy = Math.round(10 + bob);
+  cx.drawImage(DEMON, dx, dy);
+
+  // bullets: falling notes, wobbling like vibrato
+  bullets.forEach(b => {
+    const wob = Math.sin(now * 6 + b.seed) * 1.2;
+    cx.drawImage(b.sprite, Math.round(b.x - 3 + wob), Math.round(b.y - 4));
+  });
+
+  // player imp (blinks while invulnerable)
+  const inv = AC && now < invulnUntil;
+  if (!inv || Math.floor(now * 10) % 2 === 0) {
+    cx.drawImage(IMP, Math.round(player.x - 5), Math.round(player.y - 6));
+    if (player.focus) {
+      cx.fillStyle = '#ffffff';
+      cx.fillRect(Math.round(player.x) - 1, Math.round(player.y) - 1, 2, 2);
+    }
+  }
+
+  // sparkles & floaty glyphs
+  sparks.forEach(s => {
+    if (s.txt) {
+      text(s.txt, s.x, s.y, s.col, 8);
+    } else {
+      cx.fillStyle = s.col;
+      cx.fillRect(Math.round(s.x), Math.round(s.y), 2, 2);
+    }
+  });
+
+  // HUD
+  text('SCORE ' + String(Math.floor(score)).padStart(6, '0'), 4, 12, '#ffd166', 7, 'left');
+  for (let i = 0; i < 3; i++) {
+    cx.drawImage(i < lives ? HEART : HEART_EMPTY, W - 30 + i * 9, 5);
+  }
+  text(PHASES[phase].name, W / 2, H - 24, 'rgba(181,143,214,0.8)', 7);
+
+  if (AC && now < bannerUntil && state === 'play') {
+    const big = phase === PHASES.length - 1;
+    text(bannerText, W / 2, 140, big ? '#ff3355' : '#ffffff', big ? 10 : 9);
+    text(bannerSub, W / 2, 158, '#b58fd6', 7);
+  }
+
+  if (paused) {
+    cx.fillStyle = 'rgba(11,5,18,0.7)';
+    cx.fillRect(0, 0, W, H);
+    text('PAUSED', W / 2, H / 2, '#ffffff', 12);
+  }
+
+  if (state === 'dead') {
+    cx.fillStyle = 'rgba(11,5,18,0.78)';
+    cx.fillRect(0, 0, W, H);
+    text('YOU GOT', W / 2, 120, '#ff6b81', 14);
+    text('SHREDDED', W / 2, 142, '#ff6b81', 14);
+    text('SCORE ' + Math.floor(score), W / 2, 178, '#ffd166', 8);
+    text('BEST  ' + Math.floor(best), W / 2, 194, '#4ecdc4', 8);
+    text(dodged + ' notes dodged', W / 2, 214, '#b58fd6', 7);
+    text(grazes + ' harmonic grazes', W / 2, 228, '#b58fd6', 7);
+    if (Math.floor(now * 2) % 2 === 0) text('Z / TAP FOR AN ENCORE', W / 2, 262, '#ffffff', 8);
+  }
+
+  cx.restore();
+}
+
+// ------------------------------------------------------------------ loop ---
+let last = performance.now();
+function frame(t) {
+  const dt = Math.min(0.033, (t - last) / 1000);
+  last = t;
+  if (!paused) update(dt);
+  draw();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+reset();
+})();
+</script>
+</body>
+</html>
