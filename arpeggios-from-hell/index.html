@@ -490,7 +490,7 @@ const SWEEP = [0, 1, 2, 3, 4, 5, 6, 5, 4, 3, 2, 1, 0, 1, 2, 3];
 const CLIMB = [0, 1, 2, 3, 1, 2, 3, 4, 2, 3, 4, 5, 3, 4, 5, 6];
 
 // ---------------------------------------------------------------- levels ---
-const BARS_PER_LEVEL = 8;
+const BARS_PER_LEVEL = 12;
 const MOVE_NAMES = ['ADAGIO', 'ANDANTE', 'ALLEGRO', 'VIVACE', 'PRESTO',
                     'PRESTISSIMO', 'ARPEGGIOS FROM HELL'];
 const MOVE_SUBS = ['(warming up. still cute.)', '(a pleasant stroll)',
@@ -708,7 +708,7 @@ let player, bullets, sparks, flames, spawnQueue;
 let powers, powerTimer, slowUntil, shieldUntil, pinchUntil;
 let score, best, lives, grazes, dodged, invulnUntil;
 let level, barsThisLevel, bar, step, bpm, nextTime;
-let actives, passives, draftCards, draftSel;
+let actives, passives, draftCards, draftSel, openingPicks = 0;
 let bannerText, bannerSub, bannerUntil;
 let demon, shake, paused = false;
 let lastDir = { x: 0, y: -1 };
@@ -903,11 +903,18 @@ function applyCard(card) {
     passives[card.id] = (passives[card.id] || 0) + 1;
     if (card.id === 'strings') lives = Math.min(maxLives(), lives + 1);
   }
-  nextLevel();
+  if (openingPicks > 0) {
+    // the pre-show soundcheck: three picks before the first note flies
+    openingPicks--;
+    if (openingPicks > 0) enterDraft();
+    else startPlay();
+  } else {
+    level++;
+    startPlay();
+  }
 }
 
-function nextLevel() {
-  level++;
+function startPlay() {
   barsThisLevel = 0;
   bpm = levelBpm(level);
   state = 'play';
@@ -994,8 +1001,8 @@ function advance() {
   if (!AC) initAudio();
   AC.resume();
   reset();
-  nextTime = AC.currentTime + 0.1;
-  state = 'play';
+  openingPicks = 3;
+  enterDraft();
   if (!schedTimer) schedTimer = setInterval(schedule, 25);
 }
 
@@ -1188,8 +1195,13 @@ function drawSkillBar(now) {
 function drawDraft(now) {
   cx.fillStyle = 'rgba(11,5,18,0.88)';
   cx.fillRect(0, 0, W, PLAY_H);
-  text('MOVEMENT CLEAR!', W / 2, 34, '#ffd166', 10);
-  text('pick your gear', W / 2, 52, '#b58fd6', 7);
+  if (openingPicks > 0) {
+    text('BUILD YOUR RIG', W / 2, 34, '#ffd166', 10);
+    text('opening pick ' + (4 - openingPicks) + ' of 3', W / 2, 52, '#b58fd6', 7);
+  } else {
+    text('MOVEMENT CLEAR!', W / 2, 34, '#ffd166', 10);
+    text('pick your gear', W / 2, 52, '#b58fd6', 7);
+  }
   draftCards.forEach((c, i) => {
     const cy = 74 + i * 72;
     const sel = i === draftSel;
