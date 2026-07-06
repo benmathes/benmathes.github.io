@@ -51,8 +51,8 @@ canvas {
 </head>
 <body>
 <div id="wrap">
-  <canvas id="game" width="240" height="320"></canvas>
-  <div id="hint">ARROWS/WASD move &middot; SHIFT focus &middot; M mute &middot; P pause<br>sound on, obviously</div>
+  <canvas id="game" width="240" height="352"></canvas>
+  <div id="hint">ARROWS move &middot; ASDF skills &middot; SHIFT focus &middot; M mute &middot; P pause<br>sound on, obviously</div>
 </div>
 <div id="crt"></div>
 
@@ -61,7 +61,7 @@ canvas {
 'use strict';
 
 // ---------------------------------------------------------------- canvas ---
-const W = 240, H = 320;
+const W = 240, PLAY_H = 320, H = 352; // 32px skill bar below the playfield
 const cv = document.getElementById('game');
 const cx = cv.getContext('2d');
 cx.imageSmoothingEnabled = false;
@@ -76,7 +76,6 @@ window.addEventListener('resize', fit);
 fit();
 
 // ---------------------------------------------------------------- sprites --
-// Sprites are ASCII grids pre-rendered to offscreen canvases.
 function spr(rows, pal) {
   const c = document.createElement('canvas');
   c.width = rows[0].length; c.height = rows.length;
@@ -142,10 +141,9 @@ const NOTE_ROWS = [
   'XXXXX..',
   '.XXX...',
 ];
-// chord-tone colors: root / third / fifth / spice
 const NOTE_COLS = ['#ffd166', '#ff6b81', '#4ecdc4', '#c792ea'];
 const NOTES = NOTE_COLS.map(c => spr(NOTE_ROWS, { X: c }));
-const NOTE_HOT = spr(NOTE_ROWS, { X: '#ff3355' }); // aimed bullets
+const NOTE_HOT = spr(NOTE_ROWS, { X: '#ff3355' });
 
 const HEART = spr([
   '.XX.XX.',
@@ -165,7 +163,15 @@ const HEART_EMPTY = spr([
   '...X...',
 ], { X: '#5a3a6e' });
 
-// powerups: deliberately un-note-shaped so they read at a glance
+const FLAME = spr([
+  '..o..',
+  '.ooo.',
+  '.oyo.',
+  'oyyyo',
+  'okyko',
+  '.ooo.',
+], { o:'#ff9f43', y:'#ffe066', k:'#5c2a00' });
+
 const PICK = spr([
   '.ttttttt.',
   'tTTTTTTTt',
@@ -202,18 +208,128 @@ const FERMATA = spr([
 
 const POWER_SPRITES = { pick: PICK, bolt: BOLT, slow: FERMATA };
 
-const FLAME = spr([
-  '..o..',
-  '.ooo.',
-  '.oyo.',
-  'oyyyo',
-  'okyko',
-  '.ooo.',
-], { o:'#ff9f43', y:'#ffe066', k:'#5c2a00' });
+// skill icons — small and shape-distinct so the ASDF bar reads at a glance
+const DASH_IC = spr([
+  'X...X....',
+  '.X...X...',
+  '..X...X..',
+  '...X...X.',
+  '....X...X',
+  '...X...X.',
+  '..X...X..',
+  '.X...X...',
+  'X...X....',
+], { X:'#ff9eb5' });
+
+const SHIELD_IC = spr([
+  '..XXXXX..',
+  '.X.....X.',
+  'X.......X',
+  'X.......X',
+  'X.......X',
+  'X.......X',
+  'X.......X',
+  '.X.....X.',
+  '..XXXXX..',
+], { X:'#8ecae6' });
+
+const BURST_IC = spr([
+  '....X....',
+  '....X....',
+  '.X..X..X.',
+  '..X.X.X..',
+  'XXXX.XXXX',
+  '..X.X.X..',
+  '.X..X..X.',
+  '....X....',
+  '....X....',
+], { X:'#ffe066' });
+
+const WAVE_IC = spr([
+  'X..X..X..',
+  '.X..X..X.',
+  '.X..X..X.',
+  '..X..X..X',
+  '..X..X..X',
+  '..X..X..X',
+  '.X..X..X.',
+  '.X..X..X.',
+  'X..X..X..',
+], { X:'#c792ea' });
+
+const PINCH_IC = spr([
+  'X...X...X',
+  '.X..X..X.',
+  '..X.X.X..',
+  '...XXX...',
+  'XXXX.XXXX',
+  '...XXX...',
+  '..X.X.X..',
+  '.X..X..X.',
+  'X...X...X',
+], { X:'#ff6b81' });
+
+const CLOCK_IC = spr([
+  '..XXXXX..',
+  '.X.....X.',
+  'X...X...X',
+  'X...X...X',
+  'X...XXX.X',
+  'X.......X',
+  'X.......X',
+  '.X.....X.',
+  '..XXXXX..',
+], { X:'#4ecdc4' });
+
+const METRO_IC = spr([
+  '....X....',
+  '...XwX...',
+  '...XwX...',
+  '..X.w.X..',
+  '..X.w.X..',
+  '.X..w..X.',
+  '.X.w...X.',
+  'X..w....X',
+  'XXXXXXXXX',
+], { X:'#ffd166', w:'#ffffff' });
+
+const MAGNET_IC = spr([
+  '.XX...XX.',
+  '.XX...XX.',
+  '.XX...XX.',
+  '.XX...XX.',
+  '.XX...XX.',
+  'XXX...XXX',
+  'X.......X',
+  'X.......X',
+  '.XXXXXXX.',
+], { X:'#ff9f43' });
+
+const AMP_IC = spr([
+  'XXXXXXXXX',
+  'X.w.w.w.X',
+  'XXXXXXXXX',
+  'X.......X',
+  'X..XXX..X',
+  'X.X...X.X',
+  'X.X...X.X',
+  'X..XXX..X',
+  'XXXXXXXXX',
+], { X:'#b58fd6', w:'#ffffff' });
+
+const STAR_IC = spr([
+  '....X....',
+  '...XXX...',
+  '...XXX...',
+  'XXXXXXXXX',
+  '.XXXXXXX.',
+  '..XXXXX..',
+  '..XX.XX..',
+  '.XX...XX.',
+  'X.......X',
+], { X:'#ffe066' });
 
 // ---------------------------------------------------------------- audio ----
-// The band. A harmonic-minor shred lead (two detuned saws through a filter
-// and a feedback delay), a triangle bass, a thumpy kick, and a noise hat.
 let AC = null, master, delaySend, muted = false;
 
 function initAudio() {
@@ -301,8 +417,7 @@ function hat(t) {
   s.start(t); s.stop(t + 0.05);
 }
 
-function powerChord(t) {
-  // A5, played with intent
+function powerChordSfx(t) {
   [45, 52, 57].forEach(m => {
     const o = AC.createOscillator();
     o.type = 'sawtooth';
@@ -323,7 +438,6 @@ function pickJingle(t) {
 }
 
 function diveBomb(t) {
-  // the whammy bar of time itself
   const o = AC.createOscillator();
   o.type = 'sawtooth';
   o.frequency.setValueAtTime(660, t);
@@ -335,38 +449,72 @@ function diveBomb(t) {
   o.start(t); o.stop(t + 0.85);
 }
 
+function gliss(t, up) {
+  const o = AC.createOscillator();
+  o.type = 'square';
+  o.frequency.setValueAtTime(up ? 300 : 900, t);
+  o.frequency.exponentialRampToValueAtTime(up ? 900 : 300, t + 0.12);
+  const g = AC.createGain();
+  g.gain.setValueAtTime(0.08, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+  o.connect(g); g.connect(master);
+  o.start(t); o.stop(t + 0.16);
+}
+
+function squeal(t) {
+  const o = AC.createOscillator();
+  o.type = 'sine';
+  o.frequency.setValueAtTime(1400, t);
+  o.frequency.exponentialRampToValueAtTime(2600, t + 0.18);
+  const g = AC.createGain();
+  g.gain.setValueAtTime(0.1, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+  o.connect(g); g.connect(master);
+  o.start(t); o.stop(t + 0.32);
+}
+
+function shimmer(t) {
+  [76, 81, 88].forEach((m, i) => lead(m, t + i * 0.04, 0.12));
+}
+
 // -------------------------------------------------------------- the music --
-// A harmonic minor, the one true neoclassical key. Chords as midi stacks
-// spanning ~2.5 octaves; the lead sweeps up and down through them.
 const CHORDS = {
-  Am:   [57, 60, 64, 69, 72, 76, 81],
-  G:    [55, 59, 62, 67, 71, 74, 79],
-  F:    [53, 57, 60, 65, 69, 72, 77],
-  E:    [52, 56, 59, 64, 68, 71, 76],   // with the G# — harmonic minor magic
-  dim:  [56, 59, 62, 65, 68, 71, 74, 77], // G#dim7 climb for the finale
+  Am:  [57, 60, 64, 69, 72, 76, 81],
+  G:   [55, 59, 62, 67, 71, 74, 79],
+  F:   [53, 57, 60, 65, 69, 72, 77],
+  E:   [52, 56, 59, 64, 68, 71, 76],
+  dim: [56, 59, 62, 65, 68, 71, 74, 77],
 };
 const PROG = ['Am', 'G', 'F', 'E'];
-const SWEEP = [0, 1, 2, 3, 4, 5, 6, 5, 4, 3, 2, 1, 0, 1, 2, 3]; // 16ths / bar
+const SWEEP = [0, 1, 2, 3, 4, 5, 6, 5, 4, 3, 2, 1, 0, 1, 2, 3];
 const CLIMB = [0, 1, 2, 3, 1, 2, 3, 4, 2, 3, 4, 5, 3, 4, 5, 6];
 
-const PHASES = [
-  { name: 'I. ADAGIO',                sub: '(warming up. still cute.)', bpm: 76,  bars: 4 },
-  { name: 'II. ALLEGRO',              sub: '(fingers loosening)',       bpm: 98,  bars: 4 },
-  { name: 'III. PRESTO',              sub: '(oh no)',                   bpm: 122, bars: 4 },
-  { name: 'IV. PRESTISSIMO',          sub: '(OH NO)',                   bpm: 146, bars: 4 },
-  { name: 'V. ARPEGGIOS FROM HELL',   sub: '(unleash the fury)',        bpm: 168, bars: 9999 },
-];
+// ---------------------------------------------------------------- levels ---
+const BARS_PER_LEVEL = 8;
+const MOVE_NAMES = ['ADAGIO', 'ANDANTE', 'ALLEGRO', 'VIVACE', 'PRESTO',
+                    'PRESTISSIMO', 'ARPEGGIOS FROM HELL'];
+const MOVE_SUBS = ['(warming up. still cute.)', '(a pleasant stroll)',
+                   '(fingers loosening)', '(oh no)', '(OH NO)',
+                   '(hold on to something)', '(unleash the fury)'];
+
+function roman(n) {
+  const R = [[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']];
+  let s = '';
+  for (const [v, sym] of R) while (n >= v) { s += sym; n -= v; }
+  return s;
+}
+const moveName = l => l <= 7 ? MOVE_NAMES[l - 1] : 'HELL, PART ' + roman(l - 6);
+const moveSub = l => l <= 7 ? MOVE_SUBS[l - 1] : '(more is more)';
+const levelBpm = l => Math.min(208, 76 + 14 * (l - 1)) * DIFF().tempo;
 
 // ------------------------------------------------------------ difficulty ---
-// speed: bullet velocity; tempo: bpm multiplier; power: powerup interval;
-// aimPhase: when the downbeat starts hunting you; score: bragging multiplier
 const DIFFS = [
-  { id: 'easy',   name: 'EASY',   sub: 'cute notes only',     col: '#4ecdc4',
-    speed: 0.72, tempo: 0.85, power: 0.65, aimPhase: 4, score: 0.6 },
-  { id: 'medium', name: 'MEDIUM', sub: 'as Yngwie intended',  col: '#ffd166',
-    speed: 1,    tempo: 1,    power: 1,    aimPhase: 3, score: 1 },
-  { id: 'hell',   name: 'HELL',   sub: 'more is more',        col: '#ff3355',
-    speed: 1.25, tempo: 1.15, power: 1.5,  aimPhase: 2, score: 1.5 },
+  { id: 'easy',   name: 'EASY',   sub: 'cute notes only',    col: '#4ecdc4',
+    speed: 0.72, tempo: 0.85, power: 0.65, aimLevel: 5, score: 0.6 },
+  { id: 'medium', name: 'MEDIUM', sub: 'as Yngwie intended', col: '#ffd166',
+    speed: 1,    tempo: 1,    power: 1,    aimLevel: 3, score: 1 },
+  { id: 'hell',   name: 'HELL',   sub: 'more is more',       col: '#ff3355',
+    speed: 1.25, tempo: 1.15, power: 1.5,  aimLevel: 2, score: 1.5 },
 ];
 let diffIdx = Math.min(2, +(localStorage.getItem('arpeggios-from-hell-diff') || 1));
 const DIFF = () => DIFFS[diffIdx];
@@ -380,62 +528,239 @@ function selectDiff(i) {
   best = loadBest();
 }
 
+// ---------------------------------------------------------------- skills ---
+// The build pool: 7 actives (x3 levels each) + 17 passives, several of which
+// only appear once you own the skill they riff on. Far more than one run can
+// hold, which is the point.
+const ACTIVES = {
+  dash: {
+    name: 'WHAMMY DASH', icon: DASH_IC, col: '#ff9eb5',
+    cds: [4, 3, 2],
+    lines: ['blink along your held', 'direction. brief invuln.'],
+    up: ['cooldown 4s > 3s', 'cooldown 3s > 2s'],
+    use(lv) {
+      const t = AC.currentTime;
+      const from = { x: player.x, y: player.y };
+      player.x = clampX(player.x + lastDir.x * 46);
+      player.y = clampY(player.y + lastDir.y * 46);
+      invulnUntil = Math.max(invulnUntil, t + 0.35);
+      gliss(t, true);
+      for (let i = 0; i < 6; i++) {
+        const f = i / 5;
+        sparks.push({ x: from.x + (player.x - from.x) * f,
+                      y: from.y + (player.y - from.y) * f,
+                      vx: 0, vy: 0, life: 0.25, col: '#ff9eb5' });
+      }
+      if (passives.trail) {
+        for (let i = bullets.length - 1; i >= 0; i--) {
+          const b = bullets[i];
+          if (segDist(from, player, b) < 15) {
+            addScore(5);
+            sparks.push({ x: b.x, y: b.y, vx: 0, vy: -20, life: 0.3, col: '#ff9eb5' });
+            bullets.splice(i, 1);
+          }
+        }
+      }
+    },
+  },
+  chord: {
+    name: 'POWER CHORD', icon: BOLT, col: '#ffe066',
+    cds: [26, 19, 13],
+    lines: ['clear every bullet', 'on screen'],
+    up: ['cooldown 26s > 19s', 'cooldown 19s > 13s'],
+    use() {
+      const t = AC.currentTime;
+      bullets.forEach(b => {
+        addScore(5);
+        sparks.push({ x: b.x, y: b.y, vx: (Math.random() - 0.5) * 40, vy: -30, life: 0.4, col: '#ffe066' });
+      });
+      bullets = [];
+      powerChordSfx(t);
+      shake = 0.25;
+      if (passives.ampfb) slowUntil = Math.max(slowUntil, t + 3);
+    },
+  },
+  fermata: {
+    name: 'FERMATA', icon: FERMATA, col: '#ffffff',
+    cds: [17, 13, 10],
+    lines: ['bend time: bullets', 'crawl for 4s'],
+    up: ['cooldown 17s > 13s', 'cooldown 13s > 10s'],
+    use() {
+      const t = AC.currentTime;
+      slowUntil = Math.max(slowUntil, t + 4 + 1.5 * (passives.tube || 0));
+      diveBomb(t);
+    },
+  },
+  shield: {
+    name: 'TREMOLO SHIELD', icon: SHIELD_IC, col: '#8ecae6',
+    cds: [14, 11, 8],
+    lines: ['1.6s of shimmering', 'invulnerability'],
+    up: ['cooldown 14s > 11s', 'cooldown 11s > 8s'],
+    use() {
+      const t = AC.currentTime;
+      invulnUntil = Math.max(invulnUntil, t + 1.6);
+      shieldUntil = t + 1.6;
+      shimmer(t);
+    },
+  },
+  burst: {
+    name: 'HARMONIC BURST', icon: BURST_IC, col: '#ffe066',
+    cds: [9, 7, 5],
+    lines: ['vaporize bullets near', 'you, for points'],
+    up: ['cooldown 9s > 7s', 'cooldown 7s > 5s'],
+    use() {
+      const t = AC.currentTime;
+      squeal(t);
+      for (let i = bullets.length - 1; i >= 0; i--) {
+        const b = bullets[i];
+        if (Math.hypot(b.x - player.x, b.y - player.y) < 52) {
+          addScore(8);
+          sparks.push({ x: b.x, y: b.y, vx: (Math.random() - 0.5) * 50, vy: -25, life: 0.4, col: '#ffe066' });
+          bullets.splice(i, 1);
+        }
+      }
+      sparks.push({ x: player.x, y: player.y, vx: 0, vy: 0, life: 0.3, col: '#ffe066', ring: 52 });
+    },
+  },
+  wave: {
+    name: 'FEEDBACK WAVE', icon: WAVE_IC, col: '#c792ea',
+    cds: [12, 9, 7],
+    lines: ['shove every bullet', 'away from you'],
+    up: ['cooldown 12s > 9s', 'cooldown 9s > 7s'],
+    use() {
+      const t = AC.currentTime;
+      gliss(t, false);
+      bullets.forEach(b => {
+        const dx = b.x - player.x, dy = b.y - player.y;
+        const d = Math.hypot(dx, dy) || 1;
+        const sp = Math.hypot(b.vx, b.vy) * 1.15 || 60;
+        b.vx = dx / d * sp;
+        b.vy = dy / d * sp;
+      });
+      sparks.push({ x: player.x, y: player.y, vx: 0, vy: 0, life: 0.4, col: '#c792ea', ring: 70 });
+    },
+  },
+  pinch: {
+    name: 'PINCH HARMONIC', icon: PINCH_IC, col: '#ff6b81',
+    cds: [13, 11, 9],
+    lines: ['4s: graze radius x2,', 'graze points x3'],
+    up: ['cooldown 13s > 11s', 'cooldown 11s > 9s'],
+    use() {
+      const t = AC.currentTime;
+      pinchUntil = t + 4;
+      squeal(t);
+    },
+  },
+};
+
+const PASSIVES = {
+  metronome: { name: 'METRONOME', icon: METRO_IC, max: 3,
+    lines: ['move 12% faster'] },
+  strings:   { name: 'THICKER STRINGS', icon: HEART, max: 3,
+    lines: ['+1 max heart,', 'and heal 1'] },
+  echo:      { name: 'TAPE ECHO', icon: CLOCK_IC, max: 3,
+    lines: ['skill cooldowns -12%'] },
+  magnet:    { name: 'PICKUP MAGNET', icon: MAGNET_IC, max: 2,
+    lines: ['powerups drift', 'toward you'] },
+  groupie:   { name: 'GROUPIE', icon: FLAME, max: 2,
+    lines: ['powerups arrive', '20% more often'] },
+  vibrato:   { name: 'WIDE VIBRATO', icon: WAVE_IC, max: 2,
+    lines: ['graze radius +35%'] },
+  goldtop:   { name: 'GOLD TOP', icon: STAR_IC, max: 2,
+    lines: ['graze points +50%'] },
+  halfstack: { name: 'HALF STACK', icon: AMP_IC, max: 3,
+    lines: ['bullets 6% slower'] },
+  lucky:     { name: 'LUCKY PICK', icon: PICK, max: 2,
+    lines: ['12% chance a hit', 'counts as a graze'] },
+  capo:      { name: 'CAPO', icon: NOTES[0], max: 3,
+    lines: ['all points +20%'] },
+  tube:      { name: 'TUBE WARMTH', icon: FERMATA, max: 2,
+    lines: ['slow-mo lasts', '+1.5s longer'] },
+  roadie:    { name: 'ROADIE', icon: PICK, max: 1,
+    lines: ['picks heal', '+1 extra heart'] },
+  encore:    { name: 'ENCORE', icon: STAR_IC, max: 1,
+    lines: ['cheat death once:', 'revive with 2 hearts'] },
+  trail:     { name: 'SCALLOPED TRAIL', icon: DASH_IC, max: 1, req: 'dash',
+    lines: ['whammy dash vaporizes', 'bullets in its path'] },
+  floop:     { name: 'FEEDBACK LOOP', icon: WAVE_IC, max: 1,
+    lines: ['taking a hit clears the', 'screen + 2s slow-mo'] },
+  ampfb:     { name: 'AMP FEEDBACK', icon: BOLT, max: 1, req: 'chord',
+    lines: ['power chord also', 'slows time 3s'] },
+  sympath:   { name: 'SYMPATHETIC STRINGS', icon: FERMATA, max: 1,
+    lines: ['during slow-mo,', 'graze points x2'] },
+};
+
 // ---------------------------------------------------------------- state ----
 const MIDI_LO = 50, MIDI_HI = 81;
 const midiX = m => 14 + (m - MIDI_LO) / (MIDI_HI - MIDI_LO) * (W - 28);
+const clampX = x => Math.max(8, Math.min(W - 8, x));
+const clampY = y => Math.max(46, Math.min(PLAY_H - 10, y));
 
-let state = 'title';          // title | play | dead
+function segDist(a, b, p) {
+  const dx = b.x - a.x, dy = b.y - a.y;
+  const len2 = dx * dx + dy * dy;
+  const t = len2 ? Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / len2)) : 0;
+  return Math.hypot(p.x - (a.x + dx * t), p.y - (a.y + dy * t));
+}
+
+let state = 'title';          // title | play | draft | dead
 let player, bullets, sparks, flames, spawnQueue;
-let powers, powerTimer, slowUntil;
+let powers, powerTimer, slowUntil, shieldUntil, pinchUntil;
 let score, best, lives, grazes, dodged, invulnUntil;
-let bar, step, phase, bpm, nextTime, phaseBarStart;
+let level, barsThisLevel, bar, step, bpm, nextTime;
+let actives, passives, draftCards, draftSel;
 let bannerText, bannerSub, bannerUntil;
 let demon, shake, paused = false;
+let lastDir = { x: 0, y: -1 };
 let schedTimer = null;
 
 best = loadBest();
 
+const maxLives = () => Math.min(6, 3 + (passives.strings || 0));
+const cdMul = () => Math.pow(0.88, passives.echo || 0);
+function addScore(n) {
+  score += n * DIFF().score * Math.pow(1.2, passives.capo || 0);
+}
+
 function reset() {
-  player = { x: W / 2, y: H - 44, focus: false };
+  player = { x: W / 2, y: PLAY_H - 44, focus: false };
   bullets = []; sparks = []; spawnQueue = [];
-  powers = []; powerTimer = 8 * DIFF().power; slowUntil = 0;
+  powers = []; powerTimer = 8 * DIFF().power;
+  slowUntil = 0; shieldUntil = 0; pinchUntil = 0;
   flames = [];
   for (let i = 0; i < 7; i++) {
     flames.push({ x: 16 + i * 34, seed: Math.random() * 9 });
   }
   score = 0; lives = 3; grazes = 0; dodged = 0; invulnUntil = 0;
-  bar = 0; step = 0; phase = 0; phaseBarStart = 0;
-  bpm = PHASES[0].bpm * DIFF().tempo;
+  level = 1; barsThisLevel = 0; bar = 0; step = 0;
+  bpm = levelBpm(1);
+  actives = [{ id: 'dash', lv: 1, cdLeft: 0 }, null, null, null];
+  passives = {};
   demon = { x: W / 2, tx: W / 2 };
   shake = 0;
-  bannerText = PHASES[0].name; bannerSub = PHASES[0].sub;
+  lastDir = { x: 0, y: -1 };
+  banner('MOV. I: ' + moveName(1), moveSub(1));
+}
+
+function banner(txt, sub) {
+  bannerText = txt;
+  bannerSub = sub;
   bannerUntil = (AC ? AC.currentTime : 0) + 2.4;
 }
 
 // ------------------------------------------------------------- scheduler ---
-// Classic lookahead scheduler: audio gets sample-accurate times, and each
-// scheduled note is queued as a bullet spawn at the same musical moment.
 function onBar() {
   bar++;
-  const p = PHASES[phase];
-  if (phase < PHASES.length - 1 && bar - phaseBarStart >= p.bars) {
-    phase++;
-    phaseBarStart = bar;
-    bpm = PHASES[phase].bpm * DIFF().tempo;
-    bannerText = PHASES[phase].name;
-    bannerSub = PHASES[phase].sub;
-    bannerUntil = AC.currentTime + 2.4;
-  }
-  if (phase === PHASES.length - 1) bpm = Math.min(200 * DIFF().tempo, bpm + 1); // endless creep
+  barsThisLevel++;
   demon.tx = 40 + Math.random() * (W - 80);
+  if (barsThisLevel >= BARS_PER_LEVEL) enterDraft();
 }
 
 function schedule() {
   if (state !== 'play' || paused) return;
   const stepDur = 60 / bpm / 4;
   while (nextTime < AC.currentTime + 0.15) {
-    const finale = phase === PHASES.length - 1;
-    const chordName = (finale && bar % 4 === 3) ? 'dim' : PROG[bar % 4];
+    const chordName = (level >= 5 && bar % 4 === 3) ? 'dim' : PROG[bar % 4];
     const chord = CHORDS[chordName];
     const pat = chordName === 'dim' ? CLIMB : SWEEP;
     const midi = chord[pat[step] % chord.length];
@@ -443,12 +768,12 @@ function schedule() {
     lead(midi, nextTime, stepDur * 1.1);
     if (step === 0) bass(chord[0], nextTime, stepDur * 8);
     if (step % 4 === 0) kick(nextTime);
-    if (phase >= 2 && step % 2 === 1) hat(nextTime);
+    if (level >= 3 && step % 2 === 1) hat(nextTime);
 
     spawnQueue.push({ t: nextTime, midi, step, bar, chordName });
 
     step++;
-    if (step === 16) { step = 0; onBar(); }
+    if (step === 16) { step = 0; onBar(); if (state !== 'play') return; }
     nextTime += stepDur;
   }
 }
@@ -461,23 +786,20 @@ function toneIndex(midi, chord) {
 
 function spawnBullet(ev) {
   if (bullets.length > 380) return;
-  const speed = (42 + phase * 13) * DIFF().speed;
+  const speed = (40 + level * 7) * DIFF().speed * Math.pow(0.94, passives.halfstack || 0);
   const mode = ev.bar % 3;
   let b;
   if (mode === 1) {
-    // fan: fired from the guitar, angle follows the pitch
     const ox = demon.x - 8, oy = 34;
     const ang = Math.PI / 2 + (ev.midi - 66) / 34 * 1.15;
     b = { x: ox, y: oy, vx: Math.cos(ang) * speed * 1.1, vy: Math.sin(ang) * speed * 1.1 };
     sparks.push({ x: ox, y: oy, vx: 0, vy: -14, life: 0.3, col: '#ffd166', txt: '♪' });
   } else {
-    // rain: falls from where the pitch lives on the staff
     const drift = mode === 2 ? Math.sin(ev.step * 0.8) * 14 : 0;
     b = { x: midiX(ev.midi), y: 30, vx: drift, vy: speed };
   }
   b.hot = false;
-  // in the fast phases the downbeat note takes aim at you, personally
-  if (phase >= DIFF().aimPhase && ev.step % 8 === 0 && state === 'play') {
+  if (level >= DIFF().aimLevel && ev.step % 8 === 0 && state === 'play') {
     const dx = player.x - demon.x, dy = player.y - 34;
     const d = Math.hypot(dx, dy) || 1;
     b = { x: demon.x - 8, y: 34, vx: dx / d * speed * 1.35, vy: dy / d * speed * 1.35, hot: true };
@@ -488,33 +810,165 @@ function spawnBullet(ev) {
   bullets.push(b);
 }
 
+// -------------------------------------------------------------- powerups ---
+function spawnPower() {
+  let type = ['pick', 'bolt', 'slow'][Math.floor(Math.random() * 3)];
+  if (type === 'pick' && lives >= maxLives()) type = Math.random() < 0.5 ? 'bolt' : 'slow';
+  powers.push({ x: 24 + Math.random() * (W - 48), y: -8, vy: 24, type, seed: Math.random() * 9 });
+}
+
+function collectPower(p) {
+  const t = AC.currentTime;
+  let txt, col;
+  if (p.type === 'pick') {
+    lives = Math.min(maxLives(), lives + 1 + (passives.roadie || 0));
+    pickJingle(t);
+    txt = '+1UP!'; col = '#4ecdc4';
+  } else if (p.type === 'bolt') {
+    bullets.forEach(b => {
+      addScore(5);
+      sparks.push({ x: b.x, y: b.y, vx: (Math.random() - 0.5) * 40, vy: -30, life: 0.4, col: '#ffe066' });
+    });
+    bullets = [];
+    powerChordSfx(t);
+    shake = 0.25;
+    txt = 'POWER CHORD!'; col = '#ffe066';
+  } else {
+    slowUntil = Math.max(slowUntil, t + 5 + 1.5 * (passives.tube || 0));
+    diveBomb(t);
+    txt = 'FERMATA!'; col = '#ffffff';
+  }
+  sparks.push({ x: player.x, y: player.y - 12, vx: 0, vy: -14, life: 1, col, txt });
+}
+
+// -------------------------------------------------------------- the draft --
+function draftPool() {
+  const pool = [];
+  ACTIVES && Object.entries(ACTIVES).forEach(([id, def]) => {
+    const owned = actives.find(a => a && a.id === id);
+    if (owned && owned.lv < 3) {
+      pool.push({ kind: 'upgrade', id, name: def.name, icon: def.icon,
+                  lines: [def.up[owned.lv - 1]], tag: 'LV' + (owned.lv + 1) });
+    } else if (!owned && actives.some(a => !a)) {
+      pool.push({ kind: 'active', id, name: def.name, icon: def.icon,
+                  lines: def.lines, tag: 'NEW' });
+    }
+  });
+  Object.entries(PASSIVES).forEach(([id, def]) => {
+    const count = passives[id] || 0;
+    if (count >= def.max) return;
+    if (def.req && !actives.find(a => a && a.id === def.req)) return;
+    pool.push({ kind: 'passive', id, name: def.name, icon: def.icon,
+                lines: def.lines, tag: count > 0 ? 'x' + (count + 1) : '' });
+  });
+  return pool;
+}
+
+function enterDraft() {
+  // sweep the stage clean, with applause in points
+  bullets.forEach(b => {
+    addScore(2);
+    sparks.push({ x: b.x, y: b.y, vx: (Math.random() - 0.5) * 30, vy: -25, life: 0.5, col: '#ffd166' });
+  });
+  bullets = [];
+  spawnQueue = [];
+  powers = [];
+
+  const pool = draftPool();
+  if (!pool.length) { nextLevel(); return; }
+  // shuffle
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  draftCards = pool.slice(0, 3);
+  // early on, make sure the build can actually grow an arsenal
+  const activesOwned = actives.filter(a => a).length;
+  if (activesOwned < 2 && !draftCards.some(c => c.kind !== 'passive')) {
+    const act = pool.find(c => c.kind !== 'passive');
+    if (act) draftCards[0] = act;
+  }
+  draftSel = 0;
+  state = 'draft';
+  pickJingle(AC.currentTime);
+}
+
+function applyCard(card) {
+  if (card.kind === 'active') {
+    const slot = actives.findIndex(a => !a);
+    actives[slot] = { id: card.id, lv: 1, cdLeft: 0 };
+  } else if (card.kind === 'upgrade') {
+    actives.find(a => a && a.id === card.id).lv++;
+  } else {
+    passives[card.id] = (passives[card.id] || 0) + 1;
+    if (card.id === 'strings') lives = Math.min(maxLives(), lives + 1);
+  }
+  nextLevel();
+}
+
+function nextLevel() {
+  level++;
+  barsThisLevel = 0;
+  bpm = levelBpm(level);
+  state = 'play';
+  nextTime = AC.currentTime + 0.7;
+  banner('MOV. ' + roman(level) + ': ' + moveName(level), moveSub(level));
+}
+
+// ----------------------------------------------------------------- skills --
+function useSkill(i) {
+  if (state !== 'play' || paused) return;
+  const slot = actives[i];
+  if (!slot || slot.cdLeft > 0) return;
+  const def = ACTIVES[slot.id];
+  def.use(slot.lv);
+  slot.cdLeft = def.cds[slot.lv - 1] * cdMul();
+}
+
 // ----------------------------------------------------------------- input ---
 const keys = {};
+const SKILL_KEYS = { a: 0, s: 1, d: 2, f: 3 };
 window.addEventListener('keydown', e => {
-  keys[e.key.toLowerCase()] = true;
-  if (['arrowup','arrowdown','arrowleft','arrowright',' '].includes(e.key.toLowerCase())) e.preventDefault();
-  if (e.key.toLowerCase() === 'm' && master) { muted = !muted; master.gain.value = muted ? 0 : 0.5; }
-  if (e.key.toLowerCase() === 'p' && state === 'play') togglePause();
+  const k = e.key.toLowerCase();
+  keys[k] = true;
+  if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k)) e.preventDefault();
+  if (k === 'm' && master) { muted = !muted; master.gain.value = muted ? 0 : 0.5; }
+  if (k === 'p' && state === 'play') togglePause();
+  if (state === 'play' && k in SKILL_KEYS && !e.repeat) useSkill(SKILL_KEYS[k]);
   if (state === 'title') {
-    if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') selectDiff(diffIdx - 1);
-    if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') selectDiff(diffIdx + 1);
+    if (e.key === 'ArrowLeft') selectDiff(diffIdx - 1);
+    if (e.key === 'ArrowRight') selectDiff(diffIdx + 1);
   }
-  if (state === 'dead' && e.key.toLowerCase() === 'x') state = 'title';
-  if ((e.key.toLowerCase() === 'z' || e.key === 'Enter')) advance();
+  if (state === 'draft') {
+    if (e.key === 'ArrowUp') draftSel = (draftSel + draftCards.length - 1) % draftCards.length;
+    if (e.key === 'ArrowDown') draftSel = (draftSel + 1) % draftCards.length;
+    if (k === 'z' || e.key === 'Enter') applyCard(draftCards[draftSel]);
+    return;
+  }
+  if (state === 'dead' && k === 'x') state = 'title';
+  if (k === 'z' || e.key === 'Enter') advance();
 });
 window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
 
 let touchId = null, touchLast = null;
 cv.addEventListener('pointerdown', e => {
-  // on the title screen, tapping a difficulty selects it instead of starting
+  const r = cv.getBoundingClientRect();
+  const gx = (e.clientX - r.left) / r.width * W;
+  const gy = (e.clientY - r.top) / r.height * H;
   if (state === 'title') {
-    const r = cv.getBoundingClientRect();
-    const gx = (e.clientX - r.left) / r.width * W;
-    const gy = (e.clientY - r.top) / r.height * H;
     if (gy > 236 && gy < 262) {
       selectDiff(Math.min(2, Math.floor(gx / (W / 3))));
       return;
     }
+  }
+  if (state === 'draft') {
+    const i = Math.floor((gy - 74) / 72);
+    if (i >= 0 && i < draftCards.length) applyCard(draftCards[i]);
+    return;
+  }
+  if (state === 'play' && gy > PLAY_H) {
+    useSkill(Math.min(3, Math.floor(gx / (W / 4))));
+    return;
   }
   advance();
   touchId = e.pointerId;
@@ -523,14 +977,20 @@ cv.addEventListener('pointerdown', e => {
 cv.addEventListener('pointermove', e => {
   if (e.pointerId !== touchId || !touchLast || state !== 'play') return;
   const scale = cv.clientWidth / W;
-  player.x += (e.clientX - touchLast.x) / scale;
-  player.y += (e.clientY - touchLast.y) / scale;
+  const dx = (e.clientX - touchLast.x) / scale;
+  const dy = (e.clientY - touchLast.y) / scale;
+  player.x += dx;
+  player.y += dy;
+  if (dx || dy) {
+    const d = Math.hypot(dx, dy);
+    lastDir = { x: dx / d, y: dy / d };
+  }
   touchLast = { x: e.clientX, y: e.clientY };
 });
 window.addEventListener('pointerup', () => { touchId = null; touchLast = null; });
 
 function advance() {
-  if (state === 'play') return;
+  if (state === 'play' || state === 'draft') return;
   if (!AC) initAudio();
   AC.resume();
   reset();
@@ -549,20 +1009,41 @@ document.addEventListener('visibilitychange', () => {
 
 // ----------------------------------------------------------------- death ---
 function die() {
+  if (passives.encore) {
+    passives.encore--;
+    lives = 2;
+    invulnUntil = AC.currentTime + 3;
+    bullets = [];
+    powerChordSfx(AC.currentTime);
+    banner('ENCORE!', '(the crowd demands more)');
+    return;
+  }
   state = 'dead';
   if (score > best) { best = score; localStorage.setItem('arpeggios-from-hell-best-' + DIFF().id, best); }
-  // a sad, slow, minor farewell
   const t = AC.currentTime + 0.1;
   [76, 74, 71, 68].forEach((m, i) => lead(m, t + i * 0.28, 0.26));
   [57, 60, 64].forEach(m => bass(m + 12, t + 1.2, 1.4));
 }
 
 function hit() {
+  const t = AC.currentTime;
+  if ((passives.lucky || 0) > 0 && Math.random() < 0.12 * passives.lucky) {
+    grazes++;
+    addScore(25);
+    sparks.push({ x: player.x, y: player.y - 10, vx: 0, vy: -16, life: 0.7, col: '#4ecdc4', txt: 'LUCKY!' });
+    invulnUntil = Math.max(invulnUntil, t + 0.5);
+    return;
+  }
   lives--;
   shake = 0.35;
-  invulnUntil = AC.currentTime + 2;
-  // mercy bomb: clear the neighborhood
-  bullets = bullets.filter(b => Math.hypot(b.x - player.x, b.y - player.y) > 70);
+  invulnUntil = t + 2;
+  if (passives.floop) {
+    bullets.forEach(b => sparks.push({ x: b.x, y: b.y, vx: 0, vy: -20, life: 0.4, col: '#c792ea' }));
+    bullets = [];
+    slowUntil = Math.max(slowUntil, t + 2);
+  } else {
+    bullets = bullets.filter(b => Math.hypot(b.x - player.x, b.y - player.y) > 70);
+  }
   for (let i = 0; i < 14; i++) {
     const a = Math.random() * Math.PI * 2;
     sparks.push({ x: player.x, y: player.y, vx: Math.cos(a) * 50, vy: Math.sin(a) * 50, life: 0.5, col: '#ff6b81' });
@@ -570,68 +1051,57 @@ function hit() {
   if (lives <= 0) die();
 }
 
-// -------------------------------------------------------------- powerups ---
-function spawnPower() {
-  let type = ['pick', 'bolt', 'slow'][Math.floor(Math.random() * 3)];
-  if (type === 'pick' && lives >= 5) type = Math.random() < 0.5 ? 'bolt' : 'slow';
-  powers.push({ x: 24 + Math.random() * (W - 48), y: -8, vy: 24, type, seed: Math.random() * 9 });
-}
-
-function collectPower(p) {
-  const t = AC.currentTime;
-  let txt, col;
-  if (p.type === 'pick') {
-    lives = Math.min(5, lives + 1);
-    pickJingle(t);
-    txt = '+1UP!'; col = '#4ecdc4';
-  } else if (p.type === 'bolt') {
-    bullets.forEach(b => {
-      score += 5;
-      sparks.push({ x: b.x, y: b.y, vx: (Math.random() - 0.5) * 40, vy: -30, life: 0.4, col: '#ffe066' });
-    });
-    bullets = [];
-    powerChord(t);
-    shake = 0.25;
-    txt = 'POWER CHORD!'; col = '#ffe066';
-  } else {
-    slowUntil = t + 5;
-    diveBomb(t);
-    txt = 'FERMATA!'; col = '#ffffff';
-  }
-  sparks.push({ x: player.x, y: player.y - 12, vx: 0, vy: -14, life: 1, col, txt });
-}
-
 // ---------------------------------------------------------------- update ---
 function update(dt) {
   const now = AC ? AC.currentTime : 0;
-  const ts = AC && now < slowUntil ? 0.35 : 1; // fermata bends time
+  const ts = AC && now < slowUntil ? 0.35 : 1;
 
   if (state === 'play') {
-    // consume spawn queue in sync with the audio clock
     while (spawnQueue.length && spawnQueue[0].t <= now + 0.02) {
       spawnBullet(spawnQueue.shift());
     }
 
     player.focus = keys['shift'];
-    const sp = player.focus ? 46 : 92;
-    if (keys['arrowleft'] || keys['a']) player.x -= sp * dt;
-    if (keys['arrowright'] || keys['d']) player.x += sp * dt;
-    if (keys['arrowup'] || keys['w']) player.y -= sp * dt;
-    if (keys['arrowdown'] || keys['s']) player.y += sp * dt;
-    player.x = Math.max(8, Math.min(W - 8, player.x));
-    player.y = Math.max(46, Math.min(H - 10, player.y));
+    const sp = (player.focus ? 46 : 92) * (1 + 0.12 * (passives.metronome || 0));
+    let mx = 0, my = 0;
+    if (keys['arrowleft']) mx -= 1;
+    if (keys['arrowright']) mx += 1;
+    if (keys['arrowup']) my -= 1;
+    if (keys['arrowdown']) my += 1;
+    if (mx || my) {
+      const d = Math.hypot(mx, my);
+      lastDir = { x: mx / d, y: my / d };
+      player.x += mx / d * sp * dt;
+      player.y += my / d * sp * dt;
+    }
+    player.x = clampX(player.x);
+    player.y = clampY(player.y);
 
-    score += dt * 10 * (phase + 1) * DIFF().score;
+    addScore(dt * 10 * level);
 
     demon.x += (demon.tx - demon.x) * Math.min(1, dt * 1.5);
 
+    actives.forEach(a => { if (a && a.cdLeft > 0) a.cdLeft = Math.max(0, a.cdLeft - dt); });
+
     powerTimer -= dt;
-    if (powerTimer <= 0) { spawnPower(); powerTimer = (10 + Math.random() * 7) * DIFF().power; }
+    if (powerTimer <= 0) {
+      spawnPower();
+      powerTimer = (10 + Math.random() * 7) * DIFF().power * Math.pow(0.8, passives.groupie || 0);
+    }
     for (let i = powers.length - 1; i >= 0; i--) {
       const p = powers[i];
       p.y += p.vy * dt * ts;
       p.x += Math.sin(now * 2 + p.seed) * 12 * dt;
-      if (p.y > H + 10) { powers.splice(i, 1); continue; }
+      if (passives.magnet) {
+        const dx = player.x - p.x, dy = player.y - p.y;
+        const d = Math.hypot(dx, dy);
+        if (d < 90) {
+          const pull = 55 * passives.magnet;
+          p.x += dx / d * pull * dt;
+          p.y += dy / d * pull * dt;
+        }
+      }
+      if (p.y > PLAY_H + 10) { powers.splice(i, 1); continue; }
       if (Math.hypot(p.x - player.x, p.y - player.y) < 9) {
         collectPower(p);
         powers.splice(i, 1);
@@ -639,21 +1109,25 @@ function update(dt) {
     }
 
     const inv = now < invulnUntil;
+    const grazeR = 11 * Math.pow(1.35, passives.vibrato || 0) * (now < pinchUntil ? 2 : 1);
+    const grazePts = 25 * Math.pow(1.5, passives.goldtop || 0)
+      * (now < pinchUntil ? 3 : 1)
+      * (passives.sympath && now < slowUntil ? 2 : 1);
     for (let i = bullets.length - 1; i >= 0; i--) {
       const b = bullets[i];
       b.x += b.vx * dt * ts;
       b.y += b.vy * dt * ts;
-      if (b.y > H + 8 || b.x < -8 || b.x > W + 8) {
+      if (b.y > PLAY_H + 8 || b.y < -10 || b.x < -8 || b.x > W + 8) {
         bullets.splice(i, 1);
         dodged++;
         continue;
       }
       const d = Math.hypot(b.x - player.x, b.y - player.y);
       if (!inv && d < 4) { hit(); break; }
-      if (!b.grazed && d < 11) {
+      if (!b.grazed && d < grazeR) {
         b.grazed = true;
         grazes++;
-        score += 25 * DIFF().score;
+        addScore(grazePts);
         sparks.push({ x: player.x + (b.x - player.x) / 2, y: player.y + (b.y - player.y) / 2,
                       vx: 0, vy: -20, life: 0.4, col: '#ffe066', txt: '+' });
       }
@@ -676,26 +1150,82 @@ function text(str, x, y, col, size = 8, align = 'center') {
   cx.fillText(str, Math.round(x), Math.round(y));
 }
 
+function drawSkillBar(now) {
+  cx.fillStyle = '#0e0718';
+  cx.fillRect(0, PLAY_H, W, H - PLAY_H);
+  cx.fillStyle = '#3a2352';
+  cx.fillRect(0, PLAY_H, W, 1);
+  const KEYS = ['A', 'S', 'D', 'F'];
+  for (let i = 0; i < 4; i++) {
+    const bx = 12 + i * 58, by = PLAY_H + 4, bs = 22;
+    const slot = actives[i];
+    cx.fillStyle = '#1c1030';
+    cx.fillRect(bx, by, bs, bs);
+    if (slot) {
+      const def = ACTIVES[slot.id];
+      const cd = def.cds[slot.lv - 1] * cdMul();
+      const frac = slot.cdLeft / cd;
+      cx.globalAlpha = frac > 0 ? 0.35 : 1;
+      cx.drawImage(def.icon, bx + Math.floor((bs - def.icon.width) / 2),
+                   by + Math.floor((bs - def.icon.height) / 2));
+      cx.globalAlpha = 1;
+      if (frac > 0) { // cooldown drains downward
+        cx.fillStyle = 'rgba(23,11,36,0.75)';
+        cx.fillRect(bx, by, bs, Math.ceil(bs * frac));
+      } else if (Math.floor(now * 4) % 4 === 0) {
+        cx.strokeStyle = def.col;
+        cx.strokeRect(bx + 0.5, by + 0.5, bs - 1, bs - 1);
+      }
+      if (slot.lv > 1) text('' + slot.lv, bx + bs - 2, by + bs - 1, '#ffd166', 6, 'right');
+    } else {
+      cx.strokeStyle = '#3a2352';
+      cx.strokeRect(bx + 0.5, by + 0.5, bs - 1, bs - 1);
+    }
+    text(KEYS[i], bx + bs / 2, PLAY_H + 32, slot ? '#b58fd6' : '#4a3161', 6);
+  }
+}
+
+function drawDraft(now) {
+  cx.fillStyle = 'rgba(11,5,18,0.88)';
+  cx.fillRect(0, 0, W, PLAY_H);
+  text('MOVEMENT CLEAR!', W / 2, 34, '#ffd166', 10);
+  text('pick your gear', W / 2, 52, '#b58fd6', 7);
+  draftCards.forEach((c, i) => {
+    const cy = 74 + i * 72;
+    const sel = i === draftSel;
+    cx.fillStyle = sel ? '#241238' : '#180d28';
+    cx.fillRect(16, cy, W - 32, 62);
+    cx.strokeStyle = sel ? '#ffd166' : '#3a2352';
+    cx.strokeRect(16.5, cy + 0.5, W - 33, 61);
+    cx.fillStyle = '#1c1030';
+    cx.fillRect(24, cy + 8, 20, 20);
+    cx.drawImage(c.icon, 24 + Math.floor((20 - c.icon.width) / 2),
+                 cy + 8 + Math.floor((20 - c.icon.height) / 2));
+    text(c.name, 52, cy + 17, sel ? '#ffffff' : '#b58fd6', 6, 'left');
+    c.lines.forEach((ln, j) => text(ln, 52, cy + 31 + j * 11, '#8f77a8', 6, 'left'));
+    if (c.tag) text(c.tag, W - 22, cy + 17, c.kind === 'passive' ? '#4ecdc4' : '#ffd166', 6, 'right');
+    if (sel && Math.floor(now * 2) % 2 === 0) text('>', 12, cy + 36, '#ffd166', 8, 'left');
+  });
+  text('UP/DOWN pick - Z confirm - or tap', W / 2, 306, '#6b4a8f', 6);
+}
+
 function draw() {
   const now = AC ? AC.currentTime : performance.now() / 1000;
   const beatDur = 60 / bpm;
-  const bob = Math.sin(now / beatDur * Math.PI) * (1 + phase * 0.8);
+  const bob = Math.sin(now / beatDur * Math.PI) * (1 + Math.min(6, level) * 0.5);
 
   cx.save();
   if (shake > 0) cx.translate((Math.random() - 0.5) * 4, (Math.random() - 0.5) * 4);
 
-  // background: deep purple, redder as hell approaches
-  const hellish = state === 'play' ? phase / (PHASES.length - 1) : 0;
+  const hellish = state === 'title' ? 0 : Math.min(1, (level - 1) / 6);
   cx.fillStyle = `rgb(${23 + hellish * 30},${11 - hellish * 4},${36})`;
-  cx.fillRect(-4, -4, W + 8, H + 8);
+  cx.fillRect(-4, -4, W + 8, PLAY_H + 8);
 
-  // a musical staff for the notes to fall through
   cx.fillStyle = 'rgba(255,255,255,0.05)';
   for (let i = 0; i < 5; i++) cx.fillRect(0, 80 + i * 34, W, 1);
 
-  // the tiny flame crowd, headbanging at the bottom
   flames.forEach(f => {
-    const fy = H - 10 + Math.sin(now * 4 + f.seed) * 2;
+    const fy = PLAY_H - 10 + Math.sin(now * 4 + f.seed) * 2;
     cx.drawImage(FLAME, Math.round(f.x - 2), Math.round(fy - 6));
   });
 
@@ -703,9 +1233,8 @@ function draw() {
     cx.drawImage(DEMON, 0, 0, 24, 21, W / 2 - 36, 60 + Math.sin(now * 2) * 3, 72, 63);
     text('ARPEGGIOS', W / 2, 160, '#ffd166', 16);
     text('FROM HELL', W / 2, 184, '#ff6b81', 16);
-    text('a very fast, very cute', W / 2, 212, '#b58fd6', 7);
-    text('bullet hell', W / 2, 226, '#b58fd6', 7);
-    // difficulty selector
+    text('a very fast, very cute', W / 2, 210, '#b58fd6', 7);
+    text('roguelike bullet hell', W / 2, 224, '#b58fd6', 7);
     DIFFS.forEach((d, i) => {
       const dx2 = W / 6 + i * (W / 3);
       const sel = i === diffIdx;
@@ -715,14 +1244,13 @@ function draw() {
     if (best > 0) text('BEST ' + String(Math.floor(best)).padStart(6, '0'), W / 2, 281, DIFF().col, 7);
     if (Math.floor(now * 2) % 2 === 0) text('TAP OR PRESS Z TO SHRED', W / 2, 298, '#ffffff', 8);
     cx.restore();
+    drawSkillBar(now);
     return;
   }
 
-  // the maestro
   const dx = Math.round(demon.x - 12), dy = Math.round(10 + bob);
   cx.drawImage(DEMON, dx, dy);
 
-  // powerups: picks, bolts, fermatas — drifting down like merch into a crowd
   powers.forEach(p => {
     const s = POWER_SPRITES[p.type];
     const pb = Math.sin(now * 3 + p.seed) * 1.5;
@@ -733,13 +1261,11 @@ function draw() {
     cx.drawImage(s, Math.round(p.x - s.width / 2), Math.round(p.y + pb - s.height / 2));
   });
 
-  // bullets: falling notes, wobbling like vibrato
   bullets.forEach(b => {
     const wob = Math.sin(now * 6 + b.seed) * 1.2;
     cx.drawImage(b.sprite, Math.round(b.x - 3 + wob), Math.round(b.y - 4));
   });
 
-  // player imp (blinks while invulnerable)
   const inv = AC && now < invulnUntil;
   if (!inv || Math.floor(now * 10) % 2 === 0) {
     cx.drawImage(IMP, Math.round(player.x - 5), Math.round(player.y - 6));
@@ -748,58 +1274,79 @@ function draw() {
       cx.fillRect(Math.round(player.x) - 1, Math.round(player.y) - 1, 2, 2);
     }
   }
+  if (AC && now < shieldUntil) {
+    cx.strokeStyle = 'rgba(142,202,230,' + (0.5 + 0.3 * Math.sin(now * 12)) + ')';
+    cx.beginPath();
+    cx.arc(Math.round(player.x), Math.round(player.y), 10, 0, Math.PI * 2);
+    cx.stroke();
+  }
 
-  // sparkles & floaty glyphs
   sparks.forEach(s => {
     if (s.txt) {
       text(s.txt, s.x, s.y, s.col, 8);
+    } else if (s.ring) {
+      cx.strokeStyle = s.col;
+      cx.globalAlpha = Math.max(0, s.life * 2.5);
+      cx.beginPath();
+      cx.arc(Math.round(s.x), Math.round(s.y), Math.max(2, s.ring * (1 - s.life * 2.5)), 0, Math.PI * 2);
+      cx.stroke();
+      cx.globalAlpha = 1;
     } else {
       cx.fillStyle = s.col;
       cx.fillRect(Math.round(s.x), Math.round(s.y), 2, 2);
     }
   });
 
-  // fermata slow-mo: the air goes icy
-  if (AC && now < slowUntil && state === 'play') {
+  if (AC && now < slowUntil && state !== 'dead') {
     cx.fillStyle = 'rgba(120,180,255,0.08)';
-    cx.fillRect(0, 0, W, H);
+    cx.fillRect(0, 0, W, PLAY_H);
   }
 
   // HUD
   text('SCORE ' + String(Math.floor(score)).padStart(6, '0'), 4, 12, '#ffd166', 7, 'left');
-  const slots = Math.max(3, lives);
+  const slots = Math.max(3, maxLives());
   for (let i = 0; i < slots; i++) {
     cx.drawImage(i < lives ? HEART : HEART_EMPTY, W - 3 - (slots - i) * 9, 5);
   }
-  text(PHASES[phase].name, W / 2, H - 24, 'rgba(181,143,214,0.8)', 7);
+  // level progress: bars survived this movement
+  cx.fillStyle = '#3a2352';
+  cx.fillRect(W / 2 - 30, 17, 60, 3);
+  cx.fillStyle = '#ffd166';
+  cx.fillRect(W / 2 - 30, 17, Math.round(60 * Math.min(1, barsThisLevel / BARS_PER_LEVEL)), 3);
+  text('MOV. ' + roman(level), W / 2, 12, 'rgba(181,143,214,0.9)', 6);
 
   if (AC && now < bannerUntil && state === 'play') {
-    const big = phase === PHASES.length - 1;
-    text(bannerText, W / 2, 140, big ? '#ff3355' : '#ffffff', big ? 10 : 9);
+    const big = level >= 7;
+    text(bannerText, W / 2, 140, big ? '#ff3355' : '#ffffff', big ? 9 : 9);
     text(bannerSub, W / 2, 158, '#b58fd6', 7);
   }
 
+  if (state === 'draft') drawDraft(now);
+
   if (paused) {
     cx.fillStyle = 'rgba(11,5,18,0.7)';
-    cx.fillRect(0, 0, W, H);
-    text('PAUSED', W / 2, H / 2, '#ffffff', 12);
+    cx.fillRect(0, 0, W, PLAY_H);
+    text('PAUSED', W / 2, PLAY_H / 2, '#ffffff', 12);
   }
 
   if (state === 'dead') {
     cx.fillStyle = 'rgba(11,5,18,0.78)';
-    cx.fillRect(0, 0, W, H);
-    text('YOU GOT', W / 2, 120, '#ff6b81', 14);
-    text('SHREDDED', W / 2, 142, '#ff6b81', 14);
-    text('SCORE ' + Math.floor(score), W / 2, 178, '#ffd166', 8);
-    text('BEST  ' + Math.floor(best), W / 2, 194, '#4ecdc4', 8);
-    text(dodged + ' notes dodged', W / 2, 214, '#b58fd6', 7);
-    text(grazes + ' harmonic grazes', W / 2, 228, '#b58fd6', 7);
-    text('on ' + DIFF().name, W / 2, 242, DIFF().col, 7);
-    if (Math.floor(now * 2) % 2 === 0) text('Z / TAP FOR AN ENCORE', W / 2, 268, '#ffffff', 8);
-    text('X FOR MENU', W / 2, 284, '#6b4a8f', 7);
+    cx.fillRect(0, 0, W, PLAY_H);
+    text('YOU GOT', W / 2, 104, '#ff6b81', 14);
+    text('SHREDDED', W / 2, 126, '#ff6b81', 14);
+    text('in movement ' + roman(level) + ', on ' + DIFF().name, W / 2, 152, DIFF().col, 7);
+    text('SCORE ' + Math.floor(score), W / 2, 176, '#ffd166', 8);
+    text('BEST  ' + Math.floor(best), W / 2, 192, '#4ecdc4', 8);
+    text(dodged + ' notes dodged', W / 2, 212, '#b58fd6', 7);
+    text(grazes + ' harmonic grazes', W / 2, 226, '#b58fd6', 7);
+    text(Object.values(passives).reduce((a, b) => a + b, 0) + actives.filter(a => a).length
+         + ' skills collected', W / 2, 240, '#b58fd6', 7);
+    if (Math.floor(now * 2) % 2 === 0) text('Z / TAP FOR AN ENCORE', W / 2, 272, '#ffffff', 8);
+    text('X FOR MENU', W / 2, 288, '#6b4a8f', 7);
   }
 
   cx.restore();
+  drawSkillBar(now);
 }
 
 // ------------------------------------------------------------------ loop ---
