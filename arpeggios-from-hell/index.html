@@ -52,7 +52,7 @@ canvas {
 <body>
 <div id="wrap">
   <canvas id="game" width="240" height="320"></canvas>
-  <div id="hint">ARROWS/WASD move &middot; SHIFT focus &middot; M mute &middot; P pause</div>
+  <div id="hint">ARROWS/WASD move &middot; SHIFT focus &middot; M mute &middot; P pause<br>sound on, obviously</div>
 </div>
 <div id="crt"></div>
 
@@ -357,6 +357,29 @@ const PHASES = [
   { name: 'V. ARPEGGIOS FROM HELL',   sub: '(unleash the fury)',        bpm: 168, bars: 9999 },
 ];
 
+// ------------------------------------------------------------ difficulty ---
+// speed: bullet velocity; tempo: bpm multiplier; power: powerup interval;
+// aimPhase: when the downbeat starts hunting you; score: bragging multiplier
+const DIFFS = [
+  { id: 'easy',   name: 'EASY',   sub: 'cute notes only',     col: '#4ecdc4',
+    speed: 0.72, tempo: 0.85, power: 0.65, aimPhase: 4, score: 0.6 },
+  { id: 'medium', name: 'MEDIUM', sub: 'as Yngwie intended',  col: '#ffd166',
+    speed: 1,    tempo: 1,    power: 1,    aimPhase: 3, score: 1 },
+  { id: 'hell',   name: 'HELL',   sub: 'more is more',        col: '#ff3355',
+    speed: 1.25, tempo: 1.15, power: 1.5,  aimPhase: 2, score: 1.5 },
+];
+let diffIdx = Math.min(2, +(localStorage.getItem('arpeggios-from-hell-diff') || 1));
+const DIFF = () => DIFFS[diffIdx];
+
+function loadBest() {
+  return +(localStorage.getItem('arpeggios-from-hell-best-' + DIFF().id) || 0);
+}
+function selectDiff(i) {
+  diffIdx = (i + DIFFS.length) % DIFFS.length;
+  localStorage.setItem('arpeggios-from-hell-diff', diffIdx);
+  best = loadBest();
+}
+
 // ---------------------------------------------------------------- state ----
 const MIDI_LO = 50, MIDI_HI = 81;
 const midiX = m => 14 + (m - MIDI_LO) / (MIDI_HI - MIDI_LO) * (W - 28);
@@ -370,19 +393,19 @@ let bannerText, bannerSub, bannerUntil;
 let demon, shake, paused = false;
 let schedTimer = null;
 
-best = +(localStorage.getItem('arpeggios-from-hell-best') || 0);
+best = loadBest();
 
 function reset() {
   player = { x: W / 2, y: H - 44, focus: false };
   bullets = []; sparks = []; spawnQueue = [];
-  powers = []; powerTimer = 8; slowUntil = 0;
+  powers = []; powerTimer = 8 * DIFF().power; slowUntil = 0;
   flames = [];
   for (let i = 0; i < 7; i++) {
     flames.push({ x: 16 + i * 34, seed: Math.random() * 9 });
   }
   score = 0; lives = 3; grazes = 0; dodged = 0; invulnUntil = 0;
   bar = 0; step = 0; phase = 0; phaseBarStart = 0;
-  bpm = PHASES[0].bpm;
+  bpm = PHASES[0].bpm * DIFF().tempo;
   demon = { x: W / 2, tx: W / 2 };
   shake = 0;
   bannerText = PHASES[0].name; bannerSub = PHASES[0].sub;
@@ -398,12 +421,12 @@ function onBar() {
   if (phase < PHASES.length - 1 && bar - phaseBarStart >= p.bars) {
     phase++;
     phaseBarStart = bar;
-    bpm = PHASES[phase].bpm;
+    bpm = PHASES[phase].bpm * DIFF().tempo;
     bannerText = PHASES[phase].name;
     bannerSub = PHASES[phase].sub;
     bannerUntil = AC.currentTime + 2.4;
   }
-  if (phase === PHASES.length - 1) bpm = Math.min(200, bpm + 1); // endless creep
+  if (phase === PHASES.length - 1) bpm = Math.min(200 * DIFF().tempo, bpm + 1); // endless creep
   demon.tx = 40 + Math.random() * (W - 80);
 }
 
@@ -438,7 +461,7 @@ function toneIndex(midi, chord) {
 
 function spawnBullet(ev) {
   if (bullets.length > 380) return;
-  const speed = 42 + phase * 13;
+  const speed = (42 + phase * 13) * DIFF().speed;
   const mode = ev.bar % 3;
   let b;
   if (mode === 1) {
@@ -454,7 +477,7 @@ function spawnBullet(ev) {
   }
   b.hot = false;
   // in the fast phases the downbeat note takes aim at you, personally
-  if (phase >= 3 && ev.step % 8 === 0 && state === 'play') {
+  if (phase >= DIFF().aimPhase && ev.step % 8 === 0 && state === 'play') {
     const dx = player.x - demon.x, dy = player.y - 34;
     const d = Math.hypot(dx, dy) || 1;
     b = { x: demon.x - 8, y: 34, vx: dx / d * speed * 1.35, vy: dy / d * speed * 1.35, hot: true };
@@ -472,12 +495,27 @@ window.addEventListener('keydown', e => {
   if (['arrowup','arrowdown','arrowleft','arrowright',' '].includes(e.key.toLowerCase())) e.preventDefault();
   if (e.key.toLowerCase() === 'm' && master) { muted = !muted; master.gain.value = muted ? 0 : 0.5; }
   if (e.key.toLowerCase() === 'p' && state === 'play') togglePause();
+  if (state === 'title') {
+    if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') selectDiff(diffIdx - 1);
+    if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') selectDiff(diffIdx + 1);
+  }
+  if (state === 'dead' && e.key.toLowerCase() === 'x') state = 'title';
   if ((e.key.toLowerCase() === 'z' || e.key === 'Enter')) advance();
 });
 window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
 
 let touchId = null, touchLast = null;
 cv.addEventListener('pointerdown', e => {
+  // on the title screen, tapping a difficulty selects it instead of starting
+  if (state === 'title') {
+    const r = cv.getBoundingClientRect();
+    const gx = (e.clientX - r.left) / r.width * W;
+    const gy = (e.clientY - r.top) / r.height * H;
+    if (gy > 236 && gy < 262) {
+      selectDiff(Math.min(2, Math.floor(gx / (W / 3))));
+      return;
+    }
+  }
   advance();
   touchId = e.pointerId;
   touchLast = { x: e.clientX, y: e.clientY };
@@ -512,7 +550,7 @@ document.addEventListener('visibilitychange', () => {
 // ----------------------------------------------------------------- death ---
 function die() {
   state = 'dead';
-  if (score > best) { best = score; localStorage.setItem('arpeggios-from-hell-best', best); }
+  if (score > best) { best = score; localStorage.setItem('arpeggios-from-hell-best-' + DIFF().id, best); }
   // a sad, slow, minor farewell
   const t = AC.currentTime + 0.1;
   [76, 74, 71, 68].forEach((m, i) => lead(m, t + i * 0.28, 0.26));
@@ -583,12 +621,12 @@ function update(dt) {
     player.x = Math.max(8, Math.min(W - 8, player.x));
     player.y = Math.max(46, Math.min(H - 10, player.y));
 
-    score += dt * 10 * (phase + 1);
+    score += dt * 10 * (phase + 1) * DIFF().score;
 
     demon.x += (demon.tx - demon.x) * Math.min(1, dt * 1.5);
 
     powerTimer -= dt;
-    if (powerTimer <= 0) { spawnPower(); powerTimer = 10 + Math.random() * 7; }
+    if (powerTimer <= 0) { spawnPower(); powerTimer = (10 + Math.random() * 7) * DIFF().power; }
     for (let i = powers.length - 1; i >= 0; i--) {
       const p = powers[i];
       p.y += p.vy * dt * ts;
@@ -615,7 +653,7 @@ function update(dt) {
       if (!b.grazed && d < 11) {
         b.grazed = true;
         grazes++;
-        score += 25;
+        score += 25 * DIFF().score;
         sparks.push({ x: player.x + (b.x - player.x) / 2, y: player.y + (b.y - player.y) / 2,
                       vx: 0, vy: -20, life: 0.4, col: '#ffe066', txt: '+' });
       }
@@ -667,9 +705,15 @@ function draw() {
     text('FROM HELL', W / 2, 184, '#ff6b81', 16);
     text('a very fast, very cute', W / 2, 212, '#b58fd6', 7);
     text('bullet hell', W / 2, 226, '#b58fd6', 7);
-    if (Math.floor(now * 2) % 2 === 0) text('TAP OR PRESS Z TO SHRED', W / 2, 268, '#ffffff', 8);
-    text('sound on, obviously', W / 2, 288, '#6b4a8f', 7);
-    if (best > 0) text('BEST ' + String(Math.floor(best)).padStart(6, '0'), W / 2, 306, '#4ecdc4', 7);
+    // difficulty selector
+    DIFFS.forEach((d, i) => {
+      const dx2 = W / 6 + i * (W / 3);
+      const sel = i === diffIdx;
+      text(sel ? '>' + d.name + '<' : d.name, dx2, 252, sel ? d.col : '#5a3a6e', 7);
+    });
+    text(DIFF().sub, W / 2, 266, DIFF().col, 6);
+    if (best > 0) text('BEST ' + String(Math.floor(best)).padStart(6, '0'), W / 2, 281, DIFF().col, 7);
+    if (Math.floor(now * 2) % 2 === 0) text('TAP OR PRESS Z TO SHRED', W / 2, 298, '#ffffff', 8);
     cx.restore();
     return;
   }
@@ -750,7 +794,9 @@ function draw() {
     text('BEST  ' + Math.floor(best), W / 2, 194, '#4ecdc4', 8);
     text(dodged + ' notes dodged', W / 2, 214, '#b58fd6', 7);
     text(grazes + ' harmonic grazes', W / 2, 228, '#b58fd6', 7);
-    if (Math.floor(now * 2) % 2 === 0) text('Z / TAP FOR AN ENCORE', W / 2, 262, '#ffffff', 8);
+    text('on ' + DIFF().name, W / 2, 242, DIFF().col, 7);
+    if (Math.floor(now * 2) % 2 === 0) text('Z / TAP FOR AN ENCORE', W / 2, 268, '#ffffff', 8);
+    text('X FOR MENU', W / 2, 284, '#6b4a8f', 7);
   }
 
   cx.restore();
