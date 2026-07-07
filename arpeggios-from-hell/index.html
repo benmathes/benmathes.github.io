@@ -1001,7 +1001,7 @@ function advance() {
   if (!AC) initAudio();
   AC.resume();
   reset();
-  openingPicks = 3;
+  openingPicks = 1;
   enterDraft();
   if (!schedTimer) schedTimer = setInterval(schedule, 25);
 }
@@ -1197,7 +1197,7 @@ function drawDraft(now) {
   cx.fillRect(0, 0, W, PLAY_H);
   if (openingPicks > 0) {
     text('BUILD YOUR RIG', W / 2, 38, '#ffd166', 16);
-    text('pick ' + (4 - openingPicks) + ' of 3', W / 2, 56, '#b58fd6', 8);
+    text('pick your first card', W / 2, 56, '#b58fd6', 8);
   } else {
     text('MOVEMENT CLEAR', W / 2, 38, '#ffd166', 16);
     text('pick your gear', W / 2, 56, '#b58fd6', 8);
