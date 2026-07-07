@@ -536,7 +536,7 @@ const ACTIVES = {
   dash: {
     name: 'WHAMMY DASH', icon: DASH_IC, col: '#ff9eb5',
     cds: [4, 3, 2],
-    lines: ['blink along your held', 'direction. brief invuln.'],
+    lines: ['dash your held dir,', 'brief invuln'],
     up: ['cooldown 4s > 3s', 'cooldown 3s > 2s'],
     use(lv) {
       const t = AC.currentTime;
@@ -606,7 +606,7 @@ const ACTIVES = {
   burst: {
     name: 'HARMONIC BURST', icon: BURST_IC, col: '#ffe066',
     cds: [9, 7, 5],
-    lines: ['vaporize bullets near', 'you, for points'],
+    lines: ['vaporize bullets', 'near you, for pts'],
     up: ['cooldown 9s > 7s', 'cooldown 7s > 5s'],
     use() {
       const t = AC.currentTime;
@@ -643,7 +643,7 @@ const ACTIVES = {
   pinch: {
     name: 'PINCH HARMONIC', icon: PINCH_IC, col: '#ff6b81',
     cds: [13, 11, 9],
-    lines: ['4s: graze radius x2,', 'graze points x3'],
+    lines: ['4s: graze radius x2', 'graze points x3'],
     up: ['cooldown 13s > 11s', 'cooldown 11s > 9s'],
     use() {
       const t = AC.currentTime;
@@ -679,14 +679,14 @@ const PASSIVES = {
   roadie:    { name: 'ROADIE', icon: PICK, max: 1,
     lines: ['picks heal', '+1 extra heart'] },
   encore:    { name: 'ENCORE', icon: STAR_IC, max: 1,
-    lines: ['cheat death once:', 'revive with 2 hearts'] },
+    lines: ['cheat death once:', 'revive w/ 2 hearts'] },
   trail:     { name: 'SCALLOPED TRAIL', icon: DASH_IC, max: 1, req: 'dash',
-    lines: ['whammy dash vaporizes', 'bullets in its path'] },
+    lines: ['whammy dash clears', 'bullets in its path'] },
   floop:     { name: 'FEEDBACK LOOP', icon: WAVE_IC, max: 1,
-    lines: ['taking a hit clears the', 'screen + 2s slow-mo'] },
+    lines: ['a hit clears screen', '+ 2s slow-mo'] },
   ampfb:     { name: 'AMP FEEDBACK', icon: BOLT, max: 1, req: 'chord',
     lines: ['power chord also', 'slows time 3s'] },
-  sympath:   { name: 'SYMPATHETIC STRINGS', icon: FERMATA, max: 1,
+  sympath:   { name: 'SYMPATHY STRINGS', icon: FERMATA, max: 1,
     lines: ['during slow-mo,', 'graze points x2'] },
 };
 
@@ -1164,7 +1164,7 @@ function drawSkillBar(now) {
   cx.fillRect(0, PLAY_H, W, 1);
   const KEYS = ['A', 'S', 'D', 'F'];
   for (let i = 0; i < 4; i++) {
-    const bx = 12 + i * 58, by = PLAY_H + 4, bs = 22;
+    const bx = 12 + i * 58, by = PLAY_H + 3, bs = 20;
     const slot = actives[i];
     cx.fillStyle = '#1c1030';
     cx.fillRect(bx, by, bs, bs);
@@ -1183,12 +1183,12 @@ function drawSkillBar(now) {
         cx.strokeStyle = def.col;
         cx.strokeRect(bx + 0.5, by + 0.5, bs - 1, bs - 1);
       }
-      if (slot.lv > 1) text('' + slot.lv, bx + bs - 2, by + bs - 1, '#ffd166', 6, 'right');
+      if (slot.lv > 1) text('' + slot.lv, bx + bs - 1, by + bs - 1, '#ffd166', 8, 'right');
     } else {
       cx.strokeStyle = '#3a2352';
       cx.strokeRect(bx + 0.5, by + 0.5, bs - 1, bs - 1);
     }
-    text(KEYS[i], bx + bs / 2, PLAY_H + 32, slot ? '#b58fd6' : '#4a3161', 6);
+    text(KEYS[i], bx + bs / 2, 350, slot ? '#b58fd6' : '#4a3161', 8);
   }
 }
 
@@ -1196,29 +1196,29 @@ function drawDraft(now) {
   cx.fillStyle = 'rgba(11,5,18,0.88)';
   cx.fillRect(0, 0, W, PLAY_H);
   if (openingPicks > 0) {
-    text('BUILD YOUR RIG', W / 2, 34, '#ffd166', 10);
-    text('opening pick ' + (4 - openingPicks) + ' of 3', W / 2, 52, '#b58fd6', 7);
+    text('BUILD YOUR RIG', W / 2, 38, '#ffd166', 16);
+    text('pick ' + (4 - openingPicks) + ' of 3', W / 2, 56, '#b58fd6', 8);
   } else {
-    text('MOVEMENT CLEAR!', W / 2, 34, '#ffd166', 10);
-    text('pick your gear', W / 2, 52, '#b58fd6', 7);
+    text('MOVEMENT CLEAR', W / 2, 38, '#ffd166', 16);
+    text('pick your gear', W / 2, 56, '#b58fd6', 8);
   }
   draftCards.forEach((c, i) => {
     const cy = 74 + i * 72;
     const sel = i === draftSel;
     cx.fillStyle = sel ? '#241238' : '#180d28';
-    cx.fillRect(16, cy, W - 32, 62);
+    cx.fillRect(12, cy, W - 24, 62);
     cx.strokeStyle = sel ? '#ffd166' : '#3a2352';
-    cx.strokeRect(16.5, cy + 0.5, W - 33, 61);
+    cx.strokeRect(12.5, cy + 0.5, W - 25, 61);
     cx.fillStyle = '#1c1030';
-    cx.fillRect(24, cy + 8, 20, 20);
-    cx.drawImage(c.icon, 24 + Math.floor((20 - c.icon.width) / 2),
+    cx.fillRect(18, cy + 8, 20, 20);
+    cx.drawImage(c.icon, 18 + Math.floor((20 - c.icon.width) / 2),
                  cy + 8 + Math.floor((20 - c.icon.height) / 2));
-    text(c.name, 52, cy + 17, sel ? '#ffffff' : '#b58fd6', 6, 'left');
-    c.lines.forEach((ln, j) => text(ln, 52, cy + 31 + j * 11, '#8f77a8', 6, 'left'));
-    if (c.tag) text(c.tag, W - 22, cy + 17, c.kind === 'passive' ? '#4ecdc4' : '#ffd166', 6, 'right');
-    if (sel && Math.floor(now * 2) % 2 === 0) text('>', 12, cy + 36, '#ffd166', 8, 'left');
+    text(c.name, 44, cy + 16, sel ? '#ffffff' : '#b58fd6', 8, 'left');
+    c.lines.forEach((ln, j) => text(ln, 44, cy + 33 + j * 13, '#8f77a8', 8, 'left'));
+    if (c.tag) text(c.tag, W - 18, cy + 55, c.kind === 'passive' ? '#4ecdc4' : '#ffd166', 8, 'right');
+    if (sel && Math.floor(now * 2) % 2 === 0) text('>', 2, cy + 36, '#ffd166', 8, 'left');
   });
-  text('UP/DOWN pick - Z confirm - or tap', W / 2, 306, '#6b4a8f', 6);
+  text('UP/DOWN + Z, or tap', W / 2, 306, '#6b4a8f', 8);
 }
 
 function draw() {
@@ -1245,15 +1245,15 @@ function draw() {
     cx.drawImage(DEMON, 0, 0, 24, 21, W / 2 - 36, 60 + Math.sin(now * 2) * 3, 72, 63);
     text('ARPEGGIOS', W / 2, 160, '#ffd166', 16);
     text('FROM HELL', W / 2, 184, '#ff6b81', 16);
-    text('a very fast, very cute', W / 2, 210, '#b58fd6', 7);
-    text('roguelike bullet hell', W / 2, 224, '#b58fd6', 7);
+    text('a very fast, very cute', W / 2, 210, '#b58fd6', 8);
+    text('roguelike bullet hell', W / 2, 224, '#b58fd6', 8);
     DIFFS.forEach((d, i) => {
       const dx2 = W / 6 + i * (W / 3);
       const sel = i === diffIdx;
-      text(sel ? '>' + d.name + '<' : d.name, dx2, 252, sel ? d.col : '#5a3a6e', 7);
+      text(sel ? '>' + d.name + '<' : d.name, dx2, 252, sel ? d.col : '#5a3a6e', 8);
     });
-    text(DIFF().sub, W / 2, 266, DIFF().col, 6);
-    if (best > 0) text('BEST ' + String(Math.floor(best)).padStart(6, '0'), W / 2, 281, DIFF().col, 7);
+    text(DIFF().sub, W / 2, 266, DIFF().col, 8);
+    if (best > 0) text('BEST ' + String(Math.floor(best)).padStart(6, '0'), W / 2, 281, DIFF().col, 8);
     if (Math.floor(now * 2) % 2 === 0) text('TAP OR PRESS Z TO SHRED', W / 2, 298, '#ffffff', 8);
     cx.restore();
     drawSkillBar(now);
@@ -1315,22 +1315,22 @@ function draw() {
   }
 
   // HUD
-  text('SCORE ' + String(Math.floor(score)).padStart(6, '0'), 4, 12, '#ffd166', 7, 'left');
+  text('SCORE ' + String(Math.floor(score)).padStart(6, '0'), 4, 12, '#ffd166', 8, 'left');
   const slots = Math.max(3, maxLives());
   for (let i = 0; i < slots; i++) {
     cx.drawImage(i < lives ? HEART : HEART_EMPTY, W - 3 - (slots - i) * 9, 5);
   }
-  // level progress: bars survived this movement
+  // movement label + bar progress, right of the score, left of the hearts
+  text('MOV. ' + roman(level), 177, 12, 'rgba(181,143,214,0.9)', 8, 'right');
   cx.fillStyle = '#3a2352';
-  cx.fillRect(W / 2 - 30, 17, 60, 3);
+  cx.fillRect(117, 14, 60, 3);
   cx.fillStyle = '#ffd166';
-  cx.fillRect(W / 2 - 30, 17, Math.round(60 * Math.min(1, barsThisLevel / BARS_PER_LEVEL)), 3);
-  text('MOV. ' + roman(level), W / 2, 12, 'rgba(181,143,214,0.9)', 6);
+  cx.fillRect(117, 14, Math.round(60 * Math.min(1, barsThisLevel / BARS_PER_LEVEL)), 3);
 
   if (AC && now < bannerUntil && state === 'play') {
     const big = level >= 7;
-    text(bannerText, W / 2, 140, big ? '#ff3355' : '#ffffff', big ? 9 : 9);
-    text(bannerSub, W / 2, 158, '#b58fd6', 7);
+    text(bannerText, W / 2, 140, big ? '#ff3355' : '#ffffff', 8);
+    text(bannerSub, W / 2, 158, '#b58fd6', 8);
   }
 
   if (state === 'draft') drawDraft(now);
@@ -1338,23 +1338,23 @@ function draw() {
   if (paused) {
     cx.fillStyle = 'rgba(11,5,18,0.7)';
     cx.fillRect(0, 0, W, PLAY_H);
-    text('PAUSED', W / 2, PLAY_H / 2, '#ffffff', 12);
+    text('PAUSED', W / 2, PLAY_H / 2, '#ffffff', 16);
   }
 
   if (state === 'dead') {
     cx.fillStyle = 'rgba(11,5,18,0.78)';
     cx.fillRect(0, 0, W, PLAY_H);
-    text('YOU GOT', W / 2, 104, '#ff6b81', 14);
-    text('SHREDDED', W / 2, 126, '#ff6b81', 14);
-    text('in movement ' + roman(level) + ', on ' + DIFF().name, W / 2, 152, DIFF().col, 7);
+    text('YOU GOT', W / 2, 104, '#ff6b81', 16);
+    text('SHREDDED', W / 2, 128, '#ff6b81', 16);
+    text('mov. ' + roman(level) + ', on ' + DIFF().name, W / 2, 152, DIFF().col, 8);
     text('SCORE ' + Math.floor(score), W / 2, 176, '#ffd166', 8);
     text('BEST  ' + Math.floor(best), W / 2, 192, '#4ecdc4', 8);
-    text(dodged + ' notes dodged', W / 2, 212, '#b58fd6', 7);
-    text(grazes + ' harmonic grazes', W / 2, 226, '#b58fd6', 7);
+    text(dodged + ' notes dodged', W / 2, 212, '#b58fd6', 8);
+    text(grazes + ' harmonic grazes', W / 2, 226, '#b58fd6', 8);
     text(Object.values(passives).reduce((a, b) => a + b, 0) + actives.filter(a => a).length
-         + ' skills collected', W / 2, 240, '#b58fd6', 7);
+         + ' skills collected', W / 2, 240, '#b58fd6', 8);
     if (Math.floor(now * 2) % 2 === 0) text('Z / TAP FOR AN ENCORE', W / 2, 272, '#ffffff', 8);
-    text('X FOR MENU', W / 2, 288, '#6b4a8f', 7);
+    text('X FOR MENU', W / 2, 288, '#6b4a8f', 8);
   }
 
   cx.restore();
