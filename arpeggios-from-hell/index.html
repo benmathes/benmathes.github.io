@@ -734,7 +734,7 @@ function reset() {
   score = 0; lives = 3; grazes = 0; dodged = 0; invulnUntil = 0;
   level = 1; barsThisLevel = 0; bar = 0; step = 0;
   bpm = levelBpm(1);
-  actives = [{ id: 'dash', lv: 1, cdLeft: 0 }, null, null, null];
+  actives = [null, null, null, null];
   passives = {};
   demon = { x: W / 2, tx: W / 2 };
   shake = 0;
@@ -842,7 +842,7 @@ function collectPower(p) {
 }
 
 // -------------------------------------------------------------- the draft --
-function draftPool() {
+function draftPool(activesOnly) {
   const pool = [];
   ACTIVES && Object.entries(ACTIVES).forEach(([id, def]) => {
     const owned = actives.find(a => a && a.id === id);
@@ -854,6 +854,7 @@ function draftPool() {
                   lines: def.lines, tag: 'NEW' });
     }
   });
+  if (activesOnly) return pool;
   Object.entries(PASSIVES).forEach(([id, def]) => {
     const count = passives[id] || 0;
     if (count >= def.max) return;
@@ -874,7 +875,7 @@ function enterDraft() {
   spawnQueue = [];
   powers = [];
 
-  const pool = draftPool();
+  const pool = draftPool(openingPicks > 0);
   if (!pool.length) { nextLevel(); return; }
   // shuffle
   for (let i = pool.length - 1; i > 0; i--) {
