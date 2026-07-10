@@ -1,0 +1,1480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Portfolio Survivors</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  background: #08060a;
+  overflow: hidden;
+  touch-action: none;
+  font-family: 'Press Start 2P', monospace;
+}
+
+#wrap {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+canvas {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  background: #140a16;
+  box-shadow: 0 0 40px rgba(255, 77, 109, 0.28), 0 0 120px rgba(78, 205, 196, 0.16);
+  border: 2px solid #3a2340;
+}
+
+#hint {
+  color: #6a4a72;
+  font-size: 8px;
+  letter-spacing: 1px;
+  text-align: center;
+  line-height: 1.8;
+}
+
+#crt {
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.12) 0px, rgba(0,0,0,0.12) 1px, transparent 1px, transparent 3px);
+  pointer-events: none;
+}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game" width="240" height="352"></canvas>
+  <div id="hint">ARROWS move &middot; weapons auto-fire &middot; SHIFT focus &middot; M mute &middot; P pause<br>your only job is to survive the quarter</div>
+</div>
+<div id="crt"></div>
+
+<script>
+(() => {
+'use strict';
+
+// ---------------------------------------------------------------- canvas ---
+const W = 240, PLAY_H = 320, H = 352; // 32px weapon rack below the arena
+const cv = document.getElementById('game');
+const cx = cv.getContext('2d');
+cx.imageSmoothingEnabled = false;
+
+function fit() {
+  const scale = Math.max(1, Math.floor(Math.min(
+    window.innerWidth / W, (window.innerHeight - 30) / H)));
+  cv.style.width = (W * scale) + 'px';
+  cv.style.height = (H * scale) + 'px';
+}
+window.addEventListener('resize', fit);
+fit();
+
+// ---------------------------------------------------------------- sprites --
+function spr(rows, pal) {
+  const c = document.createElement('canvas');
+  c.width = rows[0].length; c.height = rows.length;
+  const g = c.getContext('2d');
+  rows.forEach((row, y) => {
+    for (let x = 0; x < row.length; x++) {
+      const col = pal[row[x]];
+      if (!col) continue;
+      g.fillStyle = col;
+      g.fillRect(x, y, 1, 1);
+    }
+  });
+  return c;
+}
+
+// the general partner, briefcase in hand, walking into the drawdown
+const GP = spr([
+  '..www..',
+  '.wsssw.',
+  '.wsssw.',
+  '..ttt..',
+  '.tTTTt.',
+  'BtTTTtB',
+  'BtTTTtB',
+  '.tTTTt.',
+  '..t.t..',
+  '..k.k..',
+], { w:'#e7f6ff', s:'#ffd9b3', t:'#4ecdc4', T:'#2b8f88', B:'#ffd166', k:'#1b2b2b' });
+
+const GP2 = spr([
+  '..www..',
+  '.wsssw.',
+  '.wsssw.',
+  '..ttt..',
+  '.tTTTt.',
+  'BtTTTtB',
+  'BtTTTtB',
+  '.tTTTt.',
+  '..t.t..',
+  '.k...k.',
+], { w:'#e7f6ff', s:'#ffd9b3', t:'#4ecdc4', T:'#2b8f88', B:'#ffd166', k:'#1b2b2b' });
+
+const GP_FRAMES = [GP, GP2];
+
+// swarm: undercapitalized startups clawing toward your fund
+const INTERN = spr([
+  '.gg.',
+  'gGGg',
+  'gKGg',
+  'GGGG',
+  '.gg.',
+  'g..g',
+], { g:'#7bd88f', G:'#4fae63', K:'#123018' });
+
+const FOUNDER = spr([
+  '.hhhh.',
+  'hHHHHh',
+  'hHKHKh',
+  'hHHHHh',
+  '.mmmm.',
+  '.h.h..',
+  '.h..h.',
+], { h:'#8a7bd8', H:'#5b4fae', K:'#f5f5ff', m:'#3a2f6e' });
+
+const BAGHOLDER = spr([
+  '..ss..',
+  '.ssss.',
+  'sSSSSs',
+  'sS$$Ss',
+  'sSSSSs',
+  'sssss s',
+  '.s..s.',
+  '.k..k.',
+], { s:'#b58a5a', S:'#8a643a', $:'#3a2a12', k:'#241505' });
+
+const CREDITOR = spr([
+  '.rrrr.',
+  'rRRRRr',
+  'rRKRKr',
+  'rRRRRr',
+  'rWWWWr',
+  '.r..r.',
+  '.r..r.',
+], { r:'#ff5b6d', R:'#c0303f', K:'#fff', W:'#1a1a1a' });
+
+const ENEMY_SPR = { intern: INTERN, founder: FOUNDER, bagholder: BAGHOLDER, creditor: CREDITOR };
+
+const GEM = spr([
+  '.g.',
+  'gYg',
+  'YSY',
+  'gYg',
+  '.g.',
+], { g:'#a9781a', Y:'#ffd166', S:'#fff0b0' });
+const GEM_BIG = spr([
+  '.ggg.',
+  'gYYYg',
+  'gYSYg',
+  'gYYYg',
+  '.ggg.',
+], { g:'#a9781a', Y:'#ffd166', S:'#fff0b0' });
+
+const HEART = spr([
+  '.XX.XX.',
+  'XXXXXXX',
+  'XXXXXXX',
+  '.XXXXX.',
+  '..XXX..',
+  '...X...',
+], { X: '#ff5b6d' });
+const HEART_EMPTY = spr([
+  '.XX.XX.',
+  'X..X..X',
+  'X.....X',
+  '.X...X.',
+  '..X.X..',
+  '...X...',
+], { X: '#5a3a52' });
+
+// powerup sprites
+const BRIEFCASE = spr([
+  '..t.t..',
+  '.ttttt.',
+  '.tTTTt.',
+  'tTT+TTt',
+  'tT+++Tt',
+  'tTT+TTt',
+  '.tTTTt.',
+], { t:'#2b6f6a', T:'#4ecdc4', '+':'#e7f6ff' });
+const NUKE = spr([
+  '.XXXXX.',
+  'XX...XX',
+  'X.XXX.X',
+  'X.XXX.X',
+  'X.XXX.X',
+  'XX...XX',
+  '.XXXXX.',
+], { X:'#ff4d6d' });
+const HOURGLASS = spr([
+  'XXXXXXX',
+  '.XwwwX.',
+  '..XwX..',
+  '...X...',
+  '..XwX..',
+  '.XwwwX.',
+  'XXXXXXX',
+], { X:'#8ecae6', w:'#e0f4ff' });
+const POWER_SPRITES = { heal: BRIEFCASE, clear: NUKE, slow: HOURGLASS };
+
+// weapon icons for the rack (shape-distinct)
+const IC_TERM = spr([
+  'XXXXXXX..',
+  'X.....X..',
+  'X.XXX.X..',
+  'X.....X..',
+  'X.XXX.X..',
+  'X.....X..',
+  'XXXXXXX..',
+  '..XXX....',
+  '.XX.XX...',
+], { X:'#ffd166' });
+const IC_DD = spr([
+  '.XXXX....',
+  'X....X...',
+  'X.XX.X...',
+  'X....X...',
+  '.XXXX X..',
+  '....XX...',
+  '.....XX..',
+  '......XX.',
+  '.......X.',
+], { X:'#8ecae6' });
+const IC_BURN = spr([
+  '....X....',
+  '...XwX...',
+  '..XwwwX..',
+  '.XwwYwwX.',
+  '.XwYYYwX.',
+  '.XwwYwwX.',
+  '..XwwwX..',
+  '...XwX...',
+  '....X....',
+], { X:'#ff6b3d', w:'#ffb347', Y:'#ffe066' });
+const IC_MAIL = spr([
+  'XXXXXXXXX',
+  'XX.....XX',
+  'X.XX.XX.X',
+  'X...X...X',
+  'X.XX.XX.X',
+  'XX.....XX',
+  'XXXXXXXXX',
+  '.........',
+  '.........'
+], { X:'#c792ea' });
+const IC_ZAP = spr([
+  '...XXX...',
+  '..XXX....',
+  '.XXX.....',
+  '.XXXXX...',
+  '...XXX...',
+  '..XXX....',
+  '.XXX.....',
+  '.XX......',
+  '.X.......',
+], { X:'#ffe066' });
+const IC_BRIDGE = spr([
+  '.........',
+  'X.......X',
+  'X.......X',
+  'XXXXXXXXX',
+  'X.X.X.X.X',
+  'X.X.X.X.X',
+  'X.X.X.X.X',
+  'X.X.X.X.X',
+  '.........',
+], { X:'#ff9eb5' });
+
+// passive icons
+const IC_RUN = spr([
+  '.........',
+  '.XX...XX.',
+  'X..X.X..X',
+  'X..X.X..X',
+  '.XX...XX.',
+  '..X...X..',
+  '..X...X..',
+  '.XXX.XXX.',
+  '.........',
+], { X:'#ff5b6d' });
+const IC_MOVE = spr([
+  'X..X..X..',
+  '.X..X..X.',
+  '.X..X..X.',
+  '..X..X..X',
+  '..X..X..X',
+  '..X..X..X',
+  '.X..X..X.',
+  '.X..X..X.',
+  'X..X..X..',
+], { X:'#4ecdc4' });
+const IC_CLOCK = spr([
+  '..XXXXX..',
+  '.X.....X.',
+  'X...X...X',
+  'X...X...X',
+  'X...XXX.X',
+  'X.......X',
+  'X.......X',
+  '.X.....X.',
+  '..XXXXX..',
+], { X:'#8ea2ff' });
+const IC_SWORD = spr([
+  '......XX.',
+  '.....XXX.',
+  '....XXX..',
+  '...XXX...',
+  '..XXX....',
+  '.XXX.....',
+  'XXX......',
+  'XX.X.....',
+  'X...X....',
+], { X:'#ff9eb5' });
+const IC_AREA = spr([
+  'X.......X',
+  '.X.....X.',
+  '..XXXXX..',
+  '.X.....X.',
+  'X..XXX..X',
+  '.X.....X.',
+  '..XXXXX..',
+  '.X.....X.',
+  'X.......X',
+], { X:'#c792ea' });
+const IC_MAGNET = spr([
+  '.XX...XX.',
+  '.XX...XX.',
+  '.XX...XX.',
+  '.XX...XX.',
+  '.XX...XX.',
+  'XXX...XXX',
+  'X.......X',
+  'X.......X',
+  '.XXXXXXX.',
+], { X:'#ffd166' });
+const IC_PLUS = spr([
+  '...XXX...',
+  '...XXX...',
+  '...XXX...',
+  'XXXXXXXXX',
+  'XXXXXXXXX',
+  'XXXXXXXXX',
+  '...XXX...',
+  '...XXX...',
+  '...XXX...',
+], { X:'#7bd88f' });
+const IC_COIN = spr([
+  '..XXX..',
+  '.X$$$X.',
+  'X$XXX$X',
+  'X$X$$$X',
+  'X$XXX$X',
+  '.X$$$X.',
+  '..XXX..',
+], { X:'#ffd166', $:'#7a5a12' });
+const IC_STAR = spr([
+  '....X....',
+  '...XXX...',
+  '...XXX...',
+  'XXXXXXXXX',
+  '.XXXXXXX.',
+  '..XXXXX..',
+  '..XX.XX..',
+  '.XX...XX.',
+  'X.......X',
+], { X:'#ffe066' });
+const IC_SHIELD = spr([
+  '..XXXXX..',
+  '.XX...XX.',
+  'X.......X',
+  'X.......X',
+  'X.......X',
+  '.X.....X.',
+  '..X...X..',
+  '...X.X...',
+  '....X....',
+], { X:'#8ecae6' });
+
+// ---------------------------------------------------------------- audio ----
+let AC = null, master, delaySend, muted = false, noiseBuf = null, lastCoinSfx = 0;
+
+function initAudio() {
+  AC = new (window.AudioContext || window.webkitAudioContext)();
+  master = AC.createGain();
+  master.gain.value = 0.5;
+  const comp = AC.createDynamicsCompressor();
+  master.connect(comp);
+  comp.connect(AC.destination);
+
+  const delay = AC.createDelay(0.6);
+  delay.delayTime.value = 0.23;
+  const fb = AC.createGain();
+  fb.gain.value = 0.28;
+  delay.connect(fb); fb.connect(delay);
+  delay.connect(master);
+  delaySend = delay;
+
+  noiseBuf = AC.createBuffer(1, AC.sampleRate * 0.1, AC.sampleRate);
+  const d = noiseBuf.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+}
+
+const freqOf = m => 440 * Math.pow(2, (m - 69) / 12);
+
+function lead(midi, t, dur) {
+  const f = freqOf(midi);
+  const flt = AC.createBiquadFilter();
+  flt.type = 'lowpass';
+  flt.Q.value = 2.5;
+  flt.frequency.setValueAtTime(Math.min(f * 6, 8000), t);
+  flt.frequency.exponentialRampToValueAtTime(Math.min(f * 2.2, 5000), t + dur);
+  const g = AC.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.12, t + 0.006);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur * 1.5);
+  for (const det of [-6, 6]) {
+    const o = AC.createOscillator();
+    o.type = 'sawtooth';
+    o.frequency.value = f;
+    o.detune.value = det;
+    o.connect(flt);
+    o.start(t); o.stop(t + dur * 1.6);
+  }
+  flt.connect(g);
+  g.connect(master);
+  const send = AC.createGain();
+  send.gain.value = 0.35;
+  g.connect(send);
+  send.connect(delaySend);
+}
+
+function bass(midi, t, dur) {
+  const o = AC.createOscillator();
+  o.type = 'triangle';
+  o.frequency.value = freqOf(midi - 24);
+  const g = AC.createGain();
+  g.gain.setValueAtTime(0.16, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  o.connect(g); g.connect(master);
+  o.start(t); o.stop(t + dur);
+}
+
+function kick(t) {
+  const o = AC.createOscillator();
+  o.frequency.setValueAtTime(128, t);
+  o.frequency.exponentialRampToValueAtTime(40, t + 0.09);
+  const g = AC.createGain();
+  g.gain.setValueAtTime(0.5, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.13);
+  o.connect(g); g.connect(master);
+  o.start(t); o.stop(t + 0.15);
+}
+
+function hat(t) {
+  const s = AC.createBufferSource();
+  s.buffer = noiseBuf;
+  const f = AC.createBiquadFilter();
+  f.type = 'highpass'; f.frequency.value = 7000;
+  const g = AC.createGain();
+  g.gain.setValueAtTime(0.09, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+  s.connect(f); f.connect(g); g.connect(master);
+  s.start(t); s.stop(t + 0.05);
+}
+
+function coinSfx() {
+  const t = AC.currentTime;
+  if (t - lastCoinSfx < 0.05) return;
+  lastCoinSfx = t;
+  const o = AC.createOscillator();
+  o.type = 'square';
+  o.frequency.setValueAtTime(880 + Math.random() * 120, t);
+  o.frequency.exponentialRampToValueAtTime(1500, t + 0.05);
+  const g = AC.createGain();
+  g.gain.setValueAtTime(0.05, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+  o.connect(g); g.connect(master);
+  o.start(t); o.stop(t + 0.1);
+}
+
+function zapSfx() {
+  const t = AC.currentTime;
+  const s = AC.createBufferSource();
+  s.buffer = noiseBuf;
+  const f = AC.createBiquadFilter();
+  f.type = 'bandpass'; f.frequency.value = 2600; f.Q.value = 0.8;
+  const g = AC.createGain();
+  g.gain.setValueAtTime(0.14, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+  s.connect(f); f.connect(g); g.connect(master);
+  s.start(t); s.stop(t + 0.14);
+}
+
+function thud(t) {
+  const o = AC.createOscillator();
+  o.type = 'sawtooth';
+  o.frequency.setValueAtTime(180, t);
+  o.frequency.exponentialRampToValueAtTime(50, t + 0.2);
+  const g = AC.createGain();
+  g.gain.setValueAtTime(0.28, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+  o.connect(g); g.connect(master);
+  o.start(t); o.stop(t + 0.27);
+}
+
+function crashSfx(t) {
+  [40, 47, 52].forEach(m => {
+    const o = AC.createOscillator();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(freqOf(m), t);
+    o.frequency.exponentialRampToValueAtTime(freqOf(m - 3), t + 0.6);
+    const f = AC.createBiquadFilter();
+    f.type = 'lowpass'; f.frequency.value = 2200; f.Q.value = 1;
+    const g = AC.createGain();
+    g.gain.setValueAtTime(0.2, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.7);
+    o.connect(f); f.connect(g); g.connect(master);
+    o.start(t); o.stop(t + 0.75);
+  });
+  kick(t);
+}
+
+function jingle(t) { [72, 76, 79, 84].forEach((m, i) => lead(m, t + i * 0.06, 0.1)); }
+function shimmer(t) { [76, 81, 88].forEach((m, i) => lead(m, t + i * 0.04, 0.12)); }
+function diveBomb(t) {
+  const o = AC.createOscillator();
+  o.type = 'sawtooth';
+  o.frequency.setValueAtTime(620, t);
+  o.frequency.exponentialRampToValueAtTime(64, t + 0.7);
+  const g = AC.createGain();
+  g.gain.setValueAtTime(0.14, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.8);
+  o.connect(g); g.connect(master);
+  o.start(t); o.stop(t + 0.85);
+}
+
+// -------------------------------------------------------------- the music --
+const CHORDS = {
+  Am:  [57, 60, 64, 69, 72, 76],
+  F:   [53, 57, 60, 65, 69, 72],
+  C:   [48, 55, 60, 64, 67, 72],
+  G:   [55, 59, 62, 67, 71, 74],
+  dim: [56, 59, 62, 65, 68, 71],
+};
+const PROG = ['Am', 'F', 'C', 'G'];
+const RUN = [0, 2, 4, 2, 5, 4, 2, 0, 4, 2, 5, 4, 0, 2, 4, 5];
+
+// ---------------------------------------------------------------- rounds ---
+const QUARTER_TIME = 30;
+const QUARTER_SUBS = ['(the raise closed)', '(deploying capital)',
+                      '(the market turns)', '(mark-to-market szn)'];
+function roman(n) {
+  const R = [[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']];
+  let s = '';
+  for (const [v, sym] of R) while (n >= v) { s += sym; n -= v; }
+  return s;
+}
+const fyLabel = l => 'FY' + (Math.floor((l - 1) / 4) + 1) + ' Q' + (((l - 1) % 4) + 1);
+const quarterSub = l => l <= 8 ? QUARTER_SUBS[(l - 1) % 4] : '(down market, indefinitely)';
+const levelBpm = l => Math.min(196, 76 + 11 * (l - 1)) * DIFF().tempo;
+
+// ------------------------------------------------------------ difficulty ---
+const DIFFS = [
+  { id: 'lp',      name: 'LP-SAFE',  sub: 'friendly capital',    col: '#4ecdc4',
+    speed: 0.78, tempo: 0.85, power: 0.62, hp: 0.7, dmg: 1, score: 0.6 },
+  { id: 'markt',   name: 'MARKET',   sub: 'as priced in',        col: '#ffd166',
+    speed: 1,    tempo: 1,    power: 1,    hp: 1,   dmg: 1, score: 1 },
+  { id: 'crash',   name: 'CRASH',    sub: 'liquidity event',     col: '#ff4d6d',
+    speed: 1.22, tempo: 1.13, power: 1.5,  hp: 1.5, dmg: 1, score: 1.5 },
+];
+let diffIdx = Math.min(2, +(localStorage.getItem('portfolio-survivors-diff') || 1));
+const DIFF = () => DIFFS[diffIdx];
+function loadBest() { return +(localStorage.getItem('portfolio-survivors-best-' + DIFF().id) || 0); }
+function selectDiff(i) {
+  diffIdx = (i + DIFFS.length) % DIFFS.length;
+  localStorage.setItem('portfolio-survivors-diff', diffIdx);
+  best = loadBest();
+}
+
+// --------------------------------------------------------------- weapons ---
+// four slots, auto-firing. more weapons exist than slots — you cannot carry
+// the whole thesis, so you concentrate. each upgrades x3.
+const dmgMul = () => 1 + 0.16 * (passives.conviction || 0);
+const areaMul = () => Math.pow(1.18, passives.tam || 0);
+const rateMul = () => Math.pow(0.88, passives.overclock || 0);
+const projBonus = () => passives.diversify || 0;
+
+const WEAPONS = {
+  term: {
+    name: 'TERM SHEET', icon: IC_TERM, col: '#ffd166', cd: 0.9,
+    lines: ['spray signed pages', 'at the nearest threat'],
+    up: ['+1 page, +dmg', '+1 page, +pierce'],
+    fire(lv) {
+      const tgt = nearestEnemy(player.x, player.y);
+      if (!tgt) return;
+      const base = Math.atan2(tgt.y - player.y, tgt.x - player.x);
+      const n = 2 + lv + projBonus();
+      for (let i = 0; i < n; i++) {
+        const a = base + (i - (n - 1) / 2) * 0.16;
+        projs.push({ x: player.x, y: player.y, vx: Math.cos(a) * 200, vy: Math.sin(a) * 200,
+          r: 3, dmg: (3 + lv) * dmgMul(), life: 1.1, pierce: lv >= 3 ? 1 : 0,
+          kind: 'paper', ang: a, hit: new Set() });
+      }
+    },
+  },
+  duedil: {
+    name: 'DUE DILIGENCE', icon: IC_DD, col: '#8ecae6', cd: 0.25,
+    lines: ['magnifiers orbit you,', 'grinding whatever they touch'],
+    up: ['+1 orbiter, +radius', '+1 orbiter, +dmg'],
+    fire(lv) {}, // continuous — handled in weaponsTick
+    orbit: true,
+  },
+  burn: {
+    name: 'BURN NOTICE', icon: IC_BURN, col: '#ff6b3d', cd: 0.2,
+    lines: ['a scorching aura of', 'unpaid invoices'],
+    up: ['+radius, +dps', '+radius, +dps'],
+    fire(lv) {}, // continuous
+    aura: true,
+  },
+  mail: {
+    name: 'COLD EMAIL', icon: IC_MAIL, col: '#c792ea', cd: 1.3,
+    lines: ['homing outreach seeks', 'targets across the room'],
+    up: ['+1 email, +dmg', '+1 email, +turn'],
+    fire(lv) {
+      const n = 1 + lv + projBonus();
+      for (let i = 0; i < n; i++) {
+        const a = Math.random() * Math.PI * 2;
+        projs.push({ x: player.x, y: player.y, vx: Math.cos(a) * 90, vy: Math.sin(a) * 90,
+          r: 3, dmg: (4 + lv) * dmgMul(), life: 2.4, pierce: 0, kind: 'mail',
+          homing: 0.9 + lv * 0.4, hit: new Set() });
+      }
+    },
+  },
+  network: {
+    name: 'NETWORK EFFECT', icon: IC_ZAP, col: '#ffe066', cd: 2.0,
+    lines: ['a warm intro arcs', 'from mark to mark'],
+    up: ['+1 jump, +dmg', '+2 jumps, +dmg'],
+    fire(lv) {
+      let src = nearestEnemy(player.x, player.y);
+      if (!src) return;
+      zapSfx();
+      const jumps = 2 + lv * 2;
+      const dmg = (7 + lv * 2) * dmgMul();
+      const seen = new Set();
+      let px = player.x, py = player.y;
+      for (let j = 0; j < jumps && src; j++) {
+        damageEnemy(src, dmg);
+        seen.add(src);
+        for (let k = 0; k < 5; k++)
+          sparks.push({ x: src.x, y: src.y, vx: (Math.random() - 0.5) * 60,
+            vy: (Math.random() - 0.5) * 60, life: 0.2, col: '#ffe066' });
+        bolts.push({ x1: px, y1: py, x2: src.x, y2: src.y, life: 0.12 });
+        px = src.x; py = src.y;
+        src = nearestEnemy(px, py, seen, 70 * areaMul());
+      }
+    },
+  },
+  bridge: {
+    name: 'BRIDGE LOAN', icon: IC_BRIDGE, col: '#ff9eb5', cd: 1.5,
+    lines: ['a heavy tranche rolls', 'through the whole crowd'],
+    up: ['+size, +dmg', 'rolls back through too'],
+    fire(lv) {
+      const tgt = nearestEnemy(player.x, player.y);
+      const a = tgt ? Math.atan2(tgt.y - player.y, tgt.x - player.x) : -Math.PI / 2;
+      projs.push({ x: player.x, y: player.y, vx: Math.cos(a) * 120, vy: Math.sin(a) * 120,
+        r: (5 + lv * 1.5) * Math.sqrt(areaMul()), dmg: (9 + lv * 3) * dmgMul(),
+        life: lv >= 3 ? 2.6 : 1.6, pierce: 999, kind: 'boulder', spin: 0,
+        boomerang: lv >= 3, hit: new Set(), rehit: 0 });
+    },
+  },
+};
+
+const PASSIVES = {
+  runway:    { name: 'RUNWAY', icon: IC_RUN, max: 3, lines: ['+1 max heart,', 'and heal 1'] },
+  momentum:  { name: 'MOMENTUM', icon: IC_MOVE, max: 3, lines: ['move 12% faster'] },
+  overclock: { name: 'OVERCLOCK', icon: IC_CLOCK, max: 3, lines: ['weapons fire', '12% faster'] },
+  conviction:{ name: 'CONVICTION', icon: IC_SWORD, max: 4, lines: ['all damage +16%'] },
+  tam:       { name: 'TAM', icon: IC_AREA, max: 3, lines: ['weapon size &', 'reach +18%'] },
+  prorata:   { name: 'PRO RATA', icon: IC_MAGNET, max: 3, lines: ['pickup radius', '+60%'] },
+  diversify: { name: 'DIVERSIFY', icon: IC_PLUS, max: 2, lines: ['+1 projectile to', 'spray weapons'] },
+  deeppocket:{ name: 'DEEP POCKETS', icon: IC_COIN, max: 3, lines: ['gold value +25%'] },
+  hedge:     { name: 'HEDGE', icon: IC_SHIELD, max: 2, lines: ['+0.4s invuln', 'after a hit'] },
+  angel:     { name: 'ANGEL CHECK', icon: BRIEFCASE, max: 1, lines: ['briefcases heal', '+1 extra heart'] },
+  drypowder: { name: 'DRY POWDER', icon: IC_STAR, max: 1, lines: ['cheat death once:', 'revive w/ 3 hearts'] },
+  moat:      { name: 'MOAT', icon: IC_SHIELD, max: 1, req: 'duedil',
+    lines: ['orbiters also', 'block contact'] },
+  monopoly:  { name: 'MONOPOLY', icon: IC_ZAP, max: 1, req: 'network',
+    lines: ['network effect', 'jumps +3'] },
+  wildfire:  { name: 'WILDFIRE', icon: IC_BURN, max: 1, req: 'burn',
+    lines: ['burn aura leaves', 'scorching gold'] },
+};
+
+// ---------------------------------------------------------------- state ----
+const clampX = x => Math.max(8, Math.min(W - 8, x));
+const clampY = y => Math.max(22, Math.min(PLAY_H - 8, y));
+
+let state = 'title';          // title | play | draft | dead
+let player, enemies, projs, gems, sparks, bolts, powers;
+let powerTimer, spawnTimer, slowUntil, shieldUntil, invulnUntil;
+let score, best, lives, kills, combo, comboUntil, bestCombo;
+let level, quarterLeft, bpm, nextTime, bar, step, orbitAng;
+let weapons, passives, draftCards, draftSel, openingPicks = 0;
+let bannerText, bannerSub, bannerUntil;
+let shake, paused = false;
+let lastDir = { x: 0, y: 1 };
+let schedTimer = null;
+
+best = loadBest();
+
+const maxLives = () => Math.min(6, 3 + (passives.runway || 0));
+const comboMul = () => 1 + Math.min(2, combo * 0.03);
+function addScore(n) { score += n * DIFF().score * Math.pow(1.25, passives.deeppocket || 0); }
+
+function reset() {
+  player = { x: W / 2, y: PLAY_H / 2 };
+  enemies = []; projs = []; gems = []; sparks = []; bolts = []; powers = [];
+  powerTimer = 9 * DIFF().power;
+  spawnTimer = 0.5;
+  slowUntil = 0; shieldUntil = 0; invulnUntil = 0;
+  score = 0; lives = 3; kills = 0; combo = 0; comboUntil = 0; bestCombo = 0;
+  level = 1; quarterLeft = QUARTER_TIME; bpm = levelBpm(1);
+  bar = 0; step = 0; orbitAng = 0;
+  weapons = [null, null, null, null];
+  passives = {};
+  shake = 0;
+  lastDir = { x: 0, y: 1 };
+  banner(fyLabel(1), quarterSub(1));
+}
+
+function banner(txt, sub) {
+  bannerText = txt; bannerSub = sub;
+  bannerUntil = (AC ? AC.currentTime : 0) + 2.4;
+}
+
+// ------------------------------------------------------------- the music ---
+function schedule() {
+  if (state !== 'play' || paused) return;
+  const stepDur = 60 / bpm / 4;
+  while (nextTime < AC.currentTime + 0.15) {
+    const chordName = (level >= 5 && bar % 4 === 3) ? 'dim' : PROG[bar % 4];
+    const chord = CHORDS[chordName];
+    const midi = chord[RUN[step] % chord.length];
+    if (step % 2 === 0) lead(midi, nextTime, stepDur * 1.1);
+    if (step === 0) bass(chord[0], nextTime, stepDur * 8);
+    if (step % 4 === 0) kick(nextTime);
+    if (level >= 3 && step % 2 === 1) hat(nextTime);
+    step++;
+    if (step === 16) { step = 0; bar++; }
+    nextTime += stepDur;
+  }
+}
+
+// --------------------------------------------------------------- combat ----
+function nearestEnemy(x, y, exclude, maxD) {
+  let best = null, bd = maxD ? maxD * maxD : Infinity;
+  for (const e of enemies) {
+    if (exclude && exclude.has(e)) continue;
+    const d = (e.x - x) * (e.x - x) + (e.y - y) * (e.y - y);
+    if (d < bd) { bd = d; best = e; }
+  }
+  return best;
+}
+
+function damageEnemy(e, dmg) {
+  e.hp -= dmg;
+  e.flash = (AC ? AC.currentTime : 0) + 0.06;
+}
+
+const ENEMY_KIND = {
+  intern:    { hp: 3,  r: 4, spd: 34, gold: 1 },
+  creditor:  { hp: 5,  r: 4, spd: 46, gold: 2 },
+  founder:   { hp: 7,  r: 5, spd: 30, gold: 2 },
+  bagholder: { hp: 16, r: 6, spd: 20, gold: 4 },
+  unicorn:   { hp: 130, r: 11, spd: 24, gold: 40 },
+};
+
+function spawnEnemy() {
+  const r = Math.random();
+  let kind;
+  if (level >= 4 && r < 0.04 + level * 0.005) kind = 'unicorn';
+  else if (r < 0.18 && level >= 2) kind = 'bagholder';
+  else if (r < 0.42) kind = 'creditor';
+  else if (r < 0.68 && level >= 2) kind = 'founder';
+  else kind = 'intern';
+  const k = ENEMY_KIND[kind];
+  const hp = k.hp * (1 + (level - 1) * 0.32) * DIFF().hp;
+  // spawn just off a random edge
+  const side = Math.floor(Math.random() * 4);
+  let x, y;
+  if (side === 0) { x = Math.random() * W; y = -10; }
+  else if (side === 1) { x = W + 10; y = Math.random() * PLAY_H; }
+  else if (side === 2) { x = Math.random() * W; y = PLAY_H + 10; }
+  else { x = -10; y = Math.random() * PLAY_H; }
+  enemies.push({ x, y, hp, maxhp: hp, r: k.r, spd: k.spd * (0.85 + Math.random() * 0.3),
+    kind, gold: k.gold, seed: Math.random() * 9, flash: 0,
+    boss: kind === 'unicorn' });
+}
+
+function killEnemy(e) {
+  kills++;
+  combo++; comboUntil = AC.currentTime + 2.2;
+  if (combo > bestCombo) bestCombo = combo;
+  const big = e.boss;
+  gems.push({ x: e.x, y: e.y, val: e.gold, seed: Math.random() * 9, big });
+  for (let i = 0; i < (big ? 16 : 5); i++)
+    sparks.push({ x: e.x, y: e.y, vx: (Math.random() - 0.5) * 60,
+      vy: (Math.random() - 0.5) * 60, life: 0.4, col: big ? '#ffe066' : '#ff9eb5' });
+  if (big) { thud(AC.currentTime); shake = 0.3; }
+}
+
+// --------------------------------------------------------- weapons update --
+function weaponsTick(dt, now) {
+  // fire cooldown weapons
+  weapons.forEach(w => {
+    if (!w) return;
+    const def = WEAPONS[w.id];
+    if (def.orbit || def.aura) return;
+    w.cdLeft -= dt;
+    if (w.cdLeft <= 0) {
+      def.fire(w.lv);
+      w.cdLeft = def.cd * rateMul();
+    }
+  });
+
+  // orbit: due diligence
+  const dd = weapons.find(w => w && w.id === 'duedil');
+  if (dd) {
+    const bodies = 1 + dd.lv;
+    const rad = (24 + dd.lv * 6) * Math.sqrt(areaMul());
+    const dps = (16 + dd.lv * 8) * dmgMul();
+    orbitAng += dt * 2.4;
+    for (let i = 0; i < bodies; i++) {
+      const a = orbitAng + i / bodies * Math.PI * 2;
+      const ox = player.x + Math.cos(a) * rad, oy = player.y + Math.sin(a) * rad;
+      dd._pos = dd._pos || [];
+      dd._pos[i] = { x: ox, y: oy, r: 6 * Math.sqrt(areaMul()) };
+      for (const e of enemies)
+        if ((e.x - ox) ** 2 + (e.y - oy) ** 2 < (6 * Math.sqrt(areaMul()) + e.r) ** 2)
+          damageEnemy(e, dps * dt);
+    }
+    dd._n = bodies;
+  }
+
+  // aura: burn notice
+  const bn = weapons.find(w => w && w.id === 'burn');
+  if (bn) {
+    const rad = (26 + bn.lv * 8) * Math.sqrt(areaMul());
+    const dps = (7 + bn.lv * 4) * dmgMul();
+    bn._r = rad;
+    for (const e of enemies)
+      if ((e.x - player.x) ** 2 + (e.y - player.y) ** 2 < (rad + e.r) ** 2) {
+        damageEnemy(e, dps * dt);
+        if (passives.wildfire && Math.random() < dt * 0.5)
+          gems.push({ x: e.x, y: e.y, val: 1, seed: Math.random() * 9, big: false });
+      }
+  }
+}
+
+// -------------------------------------------------------------- powerups ---
+function spawnPower() {
+  let type = ['heal', 'clear', 'slow'][Math.floor(Math.random() * 3)];
+  if (type === 'heal' && lives >= maxLives()) type = Math.random() < 0.5 ? 'clear' : 'slow';
+  powers.push({ x: 24 + Math.random() * (W - 48), y: 24 + Math.random() * (PLAY_H - 48),
+    type, seed: Math.random() * 9, life: 12 });
+}
+function collectPower(p) {
+  const t = AC.currentTime;
+  let txt, col;
+  if (p.type === 'heal') {
+    lives = Math.min(maxLives(), lives + 1 + (passives.angel || 0));
+    jingle(t); txt = '+RUNWAY!'; col = '#4ecdc4';
+  } else if (p.type === 'clear') {
+    enemies.forEach(e => { addScore(e.gold); killEnemy(e); });
+    enemies = []; crashSfx(t); shake = 0.3; txt = 'WRITE-OFF!'; col = '#ff4d6d';
+  } else {
+    slowUntil = Math.max(slowUntil, t + 5); diveBomb(t); txt = 'DILIGENCE HOLD!'; col = '#8ecae6';
+  }
+  sparks.push({ x: player.x, y: player.y - 12, vx: 0, vy: -14, life: 1, col, txt });
+}
+
+// -------------------------------------------------------------- the draft --
+function draftPool(activesOnly) {
+  const pool = [];
+  Object.entries(WEAPONS).forEach(([id, def]) => {
+    const owned = weapons.find(w => w && w.id === id);
+    if (owned && owned.lv < 3) {
+      pool.push({ kind: 'upgrade', id, name: def.name, icon: def.icon,
+        lines: [def.up[owned.lv - 1]], tag: 'LV' + (owned.lv + 1) });
+    } else if (!owned && weapons.some(w => !w)) {
+      pool.push({ kind: 'weapon', id, name: def.name, icon: def.icon, lines: def.lines, tag: 'NEW' });
+    }
+  });
+  if (activesOnly) return pool;
+  Object.entries(PASSIVES).forEach(([id, def]) => {
+    const count = passives[id] || 0;
+    if (count >= def.max) return;
+    if (def.req && !weapons.find(w => w && w.id === def.req)) return;
+    pool.push({ kind: 'passive', id, name: def.name, icon: def.icon,
+      lines: def.lines, tag: count > 0 ? 'x' + (count + 1) : '' });
+  });
+  return pool;
+}
+
+function enterDraft() {
+  enemies.forEach(e => { addScore(1); });
+  enemies = []; projs = []; powers = []; bolts = [];
+  const pool = draftPool(openingPicks > 0);
+  if (!pool.length) { level++; startPlay(); return; }
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  draftCards = pool.slice(0, 3);
+  const owned = weapons.filter(w => w).length;
+  if (owned < 2 && !draftCards.some(c => c.kind !== 'passive')) {
+    const wep = pool.find(c => c.kind !== 'passive');
+    if (wep) draftCards[0] = wep;
+  }
+  draftSel = 0;
+  state = 'draft';
+  jingle(AC.currentTime);
+}
+
+function applyCard(card) {
+  if (card.kind === 'weapon') {
+    const slot = weapons.findIndex(w => !w);
+    weapons[slot] = { id: card.id, lv: 1, cdLeft: 0 };
+  } else if (card.kind === 'upgrade') {
+    weapons.find(w => w && w.id === card.id).lv++;
+  } else {
+    passives[card.id] = (passives[card.id] || 0) + 1;
+    if (card.id === 'runway') lives = Math.min(maxLives(), lives + 1);
+  }
+  if (openingPicks > 0) {
+    openingPicks--;
+    if (openingPicks > 0) enterDraft(); else startPlay();
+  } else { level++; startPlay(); }
+}
+
+function startPlay() {
+  quarterLeft = QUARTER_TIME;
+  spawnTimer = 0.4;
+  bpm = levelBpm(level);
+  state = 'play';
+  nextTime = AC.currentTime + 0.6;
+  banner(fyLabel(level), quarterSub(level));
+}
+
+// ----------------------------------------------------------------- input ---
+const keys = {};
+window.addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  keys[k] = true;
+  if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k)) e.preventDefault();
+  if (k === 'm' && master) { muted = !muted; master.gain.value = muted ? 0 : 0.5; }
+  if (k === 'p' && state === 'play') togglePause();
+  if (state === 'title') {
+    if (e.key === 'ArrowLeft') selectDiff(diffIdx - 1);
+    if (e.key === 'ArrowRight') selectDiff(diffIdx + 1);
+  }
+  if (state === 'draft') {
+    if (e.key === 'ArrowUp') draftSel = (draftSel + draftCards.length - 1) % draftCards.length;
+    if (e.key === 'ArrowDown') draftSel = (draftSel + 1) % draftCards.length;
+    if (k === 'z' || e.key === 'Enter') applyCard(draftCards[draftSel]);
+    return;
+  }
+  if (state === 'dead' && k === 'x') state = 'title';
+  if (k === 'z' || e.key === 'Enter') advance();
+});
+window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+
+let touchId = null, touchLast = null;
+cv.addEventListener('pointerdown', e => {
+  const r = cv.getBoundingClientRect();
+  const gx = (e.clientX - r.left) / r.width * W;
+  const gy = (e.clientY - r.top) / r.height * H;
+  if (state === 'title') {
+    if (gy > 236 && gy < 262) { selectDiff(Math.min(2, Math.floor(gx / (W / 3)))); return; }
+  }
+  if (state === 'draft') {
+    const i = Math.floor((gy - 74) / 72);
+    if (i >= 0 && i < draftCards.length) applyCard(draftCards[i]);
+    return;
+  }
+  advance();
+  touchId = e.pointerId;
+  touchLast = { x: e.clientX, y: e.clientY };
+});
+cv.addEventListener('pointermove', e => {
+  if (e.pointerId !== touchId || !touchLast || state !== 'play') return;
+  const scale = cv.clientWidth / W;
+  const dx = (e.clientX - touchLast.x) / scale;
+  const dy = (e.clientY - touchLast.y) / scale;
+  player.x = clampX(player.x + dx);
+  player.y = clampY(player.y + dy);
+  if (dx || dy) { const d = Math.hypot(dx, dy); lastDir = { x: dx / d, y: dy / d }; }
+  touchLast = { x: e.clientX, y: e.clientY };
+});
+window.addEventListener('pointerup', () => { touchId = null; touchLast = null; });
+
+function advance() {
+  if (state === 'play' || state === 'draft') return;
+  if (!AC) initAudio();
+  AC.resume();
+  reset();
+  openingPicks = 1;
+  enterDraft();
+  if (!schedTimer) schedTimer = setInterval(schedule, 25);
+}
+
+function togglePause() {
+  paused = !paused;
+  if (paused) AC.suspend(); else { AC.resume(); nextTime = Math.max(nextTime, AC.currentTime + 0.1); }
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && state === 'play' && !paused) togglePause();
+});
+
+// ----------------------------------------------------------------- death ---
+function die() {
+  if (passives.drypowder) {
+    passives.drypowder--;
+    lives = 3;
+    invulnUntil = AC.currentTime + 3;
+    enemies = [];
+    crashSfx(AC.currentTime);
+    banner('DRY POWDER!', '(you had reserves after all)');
+    return;
+  }
+  state = 'dead';
+  if (score > best) { best = score; localStorage.setItem('portfolio-survivors-best-' + DIFF().id, best); }
+  const t = AC.currentTime + 0.1;
+  [72, 68, 64, 60].forEach((m, i) => lead(m, t + i * 0.28, 0.26));
+  [48, 43, 36].forEach((m, i) => bass(m, t + 1.0 + i * 0.2, 1.2));
+}
+
+function hit() {
+  const t = AC.currentTime;
+  lives--;
+  combo = 0;
+  shake = 0.32;
+  invulnUntil = t + 1.3 + 0.4 * (passives.hedge || 0);
+  thud(t);
+  // shove nearby enemies off
+  enemies.forEach(e => {
+    const dx = e.x - player.x, dy = e.y - player.y;
+    const d = Math.hypot(dx, dy) || 1;
+    if (d < 40) { e.x += dx / d * 22; e.y += dy / d * 22; }
+  });
+  for (let i = 0; i < 14; i++) {
+    const a = Math.random() * Math.PI * 2;
+    sparks.push({ x: player.x, y: player.y, vx: Math.cos(a) * 50, vy: Math.sin(a) * 50, life: 0.5, col: '#ff5b6d' });
+  }
+  if (lives <= 0) die();
+}
+
+// ---------------------------------------------------------------- update ---
+function update(dt) {
+  const now = AC ? AC.currentTime : 0;
+  const ts = AC && now < slowUntil ? 0.4 : 1;
+
+  if (state === 'play') {
+    // steering
+    const focus = keys['shift'];
+    const sp = (focus ? 52 : 92) * (1 + 0.12 * (passives.momentum || 0));
+    let mx = 0, my = 0;
+    if (keys['arrowleft']) mx -= 1;
+    if (keys['arrowright']) mx += 1;
+    if (keys['arrowup']) my -= 1;
+    if (keys['arrowdown']) my += 1;
+    if (mx || my) {
+      const d = Math.hypot(mx, my);
+      lastDir = { x: mx / d, y: my / d };
+      player.x = clampX(player.x + mx / d * sp * dt);
+      player.y = clampY(player.y + my / d * sp * dt);
+    }
+
+    addScore(dt * 6 * level);
+
+    // spawn enemies, ramping through the quarter
+    spawnTimer -= dt;
+    if (spawnTimer <= 0 && enemies.length < 150) {
+      const prog = 1 - quarterLeft / QUARTER_TIME;
+      const base = Math.max(0.14, 0.8 - level * 0.05) * (2 - DIFF().speed);
+      spawnTimer = base * (1 - 0.45 * prog);
+      const burst = 1 + (Math.random() < 0.3 ? 1 : 0) + (level >= 5 ? 1 : 0);
+      for (let i = 0; i < burst; i++) spawnEnemy();
+    }
+
+    // powerups
+    powerTimer -= dt;
+    if (powerTimer <= 0) { spawnPower(); powerTimer = (11 + Math.random() * 7) * DIFF().power; }
+    for (let i = powers.length - 1; i >= 0; i--) {
+      const p = powers[i];
+      p.life -= dt;
+      if (p.life <= 0) { powers.splice(i, 1); continue; }
+      if (Math.hypot(p.x - player.x, p.y - player.y) < 10) { collectPower(p); powers.splice(i, 1); }
+    }
+
+    // enemies move toward player + contact
+    const inv = now < invulnUntil;
+    for (const e of enemies) {
+      const dx = player.x - e.x, dy = player.y - e.y;
+      const d = Math.hypot(dx, dy) || 1;
+      e.x += dx / d * e.spd * ts * dt;
+      e.y += dy / d * e.spd * ts * dt;
+      if (d < e.r + 4) {
+        if (passives.moat) {
+          const dd = weapons.find(w => w && w.id === 'duedil');
+          if (dd && dd._pos && dd._pos.some(o => (o.x - e.x) ** 2 + (o.y - e.y) ** 2 < 100)) continue;
+        }
+        if (!inv) hit();
+      }
+    }
+
+    // weapons
+    weaponsTick(dt, now);
+
+    // projectiles
+    for (let i = projs.length - 1; i >= 0; i--) {
+      const p = projs[i];
+      if (p.homing) {
+        const tgt = nearestEnemy(p.x, p.y, p.hit);
+        if (tgt) {
+          const a = Math.atan2(tgt.y - p.y, tgt.x - p.x);
+          const sp2 = Math.hypot(p.vx, p.vy) || 100;
+          const ca = Math.atan2(p.vy, p.vx);
+          let na = ca + Math.max(-p.homing * dt * 4, Math.min(p.homing * dt * 4, ((a - ca + Math.PI * 3) % (Math.PI * 2)) - Math.PI));
+          p.vx = Math.cos(na) * sp2; p.vy = Math.sin(na) * sp2;
+        }
+      }
+      if (p.kind === 'boulder') {
+        p.spin += dt * 8;
+        if (p.boomerang && p.life < 1.3 && p.rehit === 0) { p.vx *= -1; p.vy *= -1; p.rehit = 1; p.hit.clear(); }
+      }
+      p.x += p.vx * dt * ts; p.y += p.vy * dt * ts;
+      p.life -= dt;
+      if (p.life <= 0 || p.x < -14 || p.x > W + 14 || p.y < -14 || p.y > PLAY_H + 14) { projs.splice(i, 1); continue; }
+      for (const e of enemies) {
+        if (p.hit.has(e)) continue;
+        if ((e.x - p.x) ** 2 + (e.y - p.y) ** 2 < (e.r + p.r) ** 2) {
+          damageEnemy(e, p.dmg);
+          p.hit.add(e);
+          p.pierce--;
+          if (p.pierce < 0) { projs.splice(i, 1); break; }
+        }
+      }
+    }
+
+    // sweep dead
+    for (let i = enemies.length - 1; i >= 0; i--) {
+      if (enemies[i].hp <= 0) { killEnemy(enemies[i]); enemies.splice(i, 1); }
+    }
+
+    // gems
+    const mag = 14 * (1 + 0.6 * (passives.prorata || 0));
+    for (let i = gems.length - 1; i >= 0; i--) {
+      const g = gems[i];
+      const dx = player.x - g.x, dy = player.y - g.y;
+      const d = Math.hypot(dx, dy);
+      if (d < mag) { g.x += dx / d * 140 * dt; g.y += dy / d * 140 * dt; }
+      if (d < 7) {
+        addScore(g.val * 4 * comboMul());
+        coinSfx();
+        gems.splice(i, 1);
+      }
+    }
+
+    // combo decay
+    if (combo > 0 && now > comboUntil) combo = 0;
+
+    // quarter clock
+    quarterLeft -= dt;
+    if (quarterLeft <= 0) enterDraft();
+  }
+
+  for (let i = bolts.length - 1; i >= 0; i--) { bolts[i].life -= dt; if (bolts[i].life <= 0) bolts.splice(i, 1); }
+  for (let i = sparks.length - 1; i >= 0; i--) {
+    const s = sparks[i];
+    s.x += s.vx * dt; s.y += s.vy * dt; s.life -= dt;
+    if (s.life <= 0) sparks.splice(i, 1);
+  }
+  shake = Math.max(0, shake - dt);
+}
+
+// ------------------------------------------------------------------ draw ---
+function text(str, x, y, col, size = 8, align = 'center') {
+  cx.font = size + 'px "Press Start 2P"';
+  cx.textAlign = align;
+  cx.fillStyle = col;
+  cx.fillText(str, Math.round(x), Math.round(y));
+}
+
+function drawEnemy(e, now) {
+  const s = ENEMY_SPR[e.kind];
+  const sc = e.boss ? 2.6 : 1;
+  const w = s.width * sc, h = s.height * sc;
+  if (e.flash > now) {
+    cx.save();
+    cx.globalCompositeOperation = 'lighter';
+    cx.globalAlpha = 0.7;
+    cx.drawImage(s, Math.round(e.x - w / 2), Math.round(e.y - h / 2), w, h);
+    cx.restore();
+  } else {
+    cx.drawImage(s, Math.round(e.x - w / 2), Math.round(e.y - h / 2), w, h);
+  }
+  if (e.boss) {
+    cx.fillStyle = '#3a2340';
+    cx.fillRect(e.x - 12, e.y - h / 2 - 5, 24, 3);
+    cx.fillStyle = '#ff4d6d';
+    cx.fillRect(e.x - 12, e.y - h / 2 - 5, Math.round(24 * Math.max(0, e.hp / e.maxhp)), 3);
+  }
+}
+
+function drawWeaponRack(now) {
+  cx.fillStyle = '#0c0710';
+  cx.fillRect(0, PLAY_H, W, H - PLAY_H);
+  cx.fillStyle = '#3a2340';
+  cx.fillRect(0, PLAY_H, W, 1);
+  for (let i = 0; i < 4; i++) {
+    const bx = 12 + i * 58, by = PLAY_H + 3, bs = 20;
+    const slot = weapons[i];
+    cx.fillStyle = '#1a1020';
+    cx.fillRect(bx, by, bs, bs);
+    if (slot) {
+      const def = WEAPONS[slot.id];
+      cx.drawImage(def.icon, bx + Math.floor((bs - def.icon.width) / 2),
+        by + Math.floor((bs - def.icon.height) / 2));
+      // auto-fire pulse ring
+      if (Math.floor(now * 5) % 2 === 0) {
+        cx.strokeStyle = def.col;
+        cx.strokeRect(bx + 0.5, by + 0.5, bs - 1, bs - 1);
+      }
+      if (slot.lv > 1) text('' + slot.lv, bx + bs - 1, by + bs - 1, '#ffd166', 8, 'right');
+    } else {
+      cx.strokeStyle = '#3a2340';
+      cx.strokeRect(bx + 0.5, by + 0.5, bs - 1, bs - 1);
+    }
+    text('AUTO', bx + bs / 2, 350, slot ? '#8a6a92' : '#4a3152', 8);
+  }
+}
+
+function drawDraft(now) {
+  cx.fillStyle = 'rgba(8,6,10,0.9)';
+  cx.fillRect(0, 0, W, PLAY_H);
+  if (openingPicks > 0) {
+    text('BUILD YOUR FUND', W / 2, 38, '#ffd166', 16);
+    text('pick your first weapon', W / 2, 56, '#c99ad0', 8);
+  } else {
+    text('QUARTER CLOSED', W / 2, 38, '#ffd166', 16);
+    text('rebalance the book', W / 2, 56, '#c99ad0', 8);
+  }
+  draftCards.forEach((c, i) => {
+    const cy = 74 + i * 72;
+    const sel = i === draftSel;
+    cx.fillStyle = sel ? '#241436' : '#150c1e';
+    cx.fillRect(12, cy, W - 24, 62);
+    cx.strokeStyle = sel ? '#ffd166' : '#3a2340';
+    cx.strokeRect(12.5, cy + 0.5, W - 25, 61);
+    cx.fillStyle = '#1a1020';
+    cx.fillRect(18, cy + 8, 20, 20);
+    cx.drawImage(c.icon, 18 + Math.floor((20 - c.icon.width) / 2), cy + 8 + Math.floor((20 - c.icon.height) / 2));
+    text(c.name, 44, cy + 16, sel ? '#ffffff' : '#c99ad0', 8, 'left');
+    c.lines.forEach((ln, j) => text(ln, 44, cy + 33 + j * 13, '#9a7aa8', 8, 'left'));
+    if (c.tag) text(c.tag, W - 18, cy + 55, c.kind === 'passive' ? '#4ecdc4' : '#ffd166', 8, 'right');
+    if (sel && Math.floor(now * 2) % 2 === 0) text('>', 2, cy + 36, '#ffd166', 8, 'left');
+  });
+  text('UP/DOWN + Z, or tap', W / 2, 306, '#6a4a72', 8);
+}
+
+function draw() {
+  const now = AC ? AC.currentTime : performance.now() / 1000;
+
+  cx.save();
+  if (shake > 0) cx.translate((Math.random() - 0.5) * 4, (Math.random() - 0.5) * 4);
+
+  const deep = state === 'title' ? 0 : Math.min(1, (level - 1) / 8);
+  cx.fillStyle = `rgb(${20 + deep * 18},${10},${22 - deep * 6})`;
+  cx.fillRect(-4, -4, W + 8, PLAY_H + 8);
+  // subtle floor grid
+  cx.strokeStyle = 'rgba(255,255,255,0.03)';
+  for (let i = 0; i < 8; i++) { cx.beginPath(); cx.moveTo(0, i * 44); cx.lineTo(W, i * 44); cx.stroke(); }
+
+  if (state === 'title') {
+    cx.drawImage(GP2, W / 2 - 10, 60 + Math.sin(now * 2) * 3, 21, 30);
+    text('PORTFOLIO', W / 2, 152, '#ffd166', 16);
+    text('SURVIVORS', W / 2, 176, '#ff4d6d', 16);
+    text('a roguelike auto-shooter', W / 2, 202, '#c99ad0', 8);
+    text('through a market crash', W / 2, 216, '#c99ad0', 8);
+    DIFFS.forEach((d, i) => {
+      const dx2 = W / 6 + i * (W / 3);
+      const sel = i === diffIdx;
+      text(sel ? '>' + d.name + '<' : d.name, dx2, 252, sel ? d.col : '#4a3152', 8);
+    });
+    text(DIFF().sub, W / 2, 266, DIFF().col, 8);
+    if (best > 0) text('BEST ' + String(Math.floor(best)).padStart(6, '0'), W / 2, 281, DIFF().col, 8);
+    if (Math.floor(now * 2) % 2 === 0) text('TAP OR PRESS Z TO DEPLOY', W / 2, 298, '#ffffff', 8);
+    cx.restore();
+    drawWeaponRack(now);
+    return;
+  }
+
+  // gems
+  gems.forEach(g => {
+    const gb = Math.sin(now * 5 + g.seed) * 1;
+    cx.drawImage(g.big ? GEM_BIG : GEM, Math.round(g.x - (g.big ? 2.5 : 1.5)), Math.round(g.y - 2.5 + gb));
+  });
+
+  // burn aura
+  const bn = weapons && weapons.find(w => w && w.id === 'burn');
+  if (bn && bn._r) {
+    cx.fillStyle = 'rgba(255,107,61,0.10)';
+    cx.beginPath(); cx.arc(player.x, player.y, bn._r, 0, Math.PI * 2); cx.fill();
+    cx.strokeStyle = 'rgba(255,179,71,' + (0.3 + 0.15 * Math.sin(now * 8)) + ')';
+    cx.beginPath(); cx.arc(player.x, player.y, bn._r, 0, Math.PI * 2); cx.stroke();
+  }
+
+  // powerups
+  powers.forEach(p => {
+    if (p.life < 3 && Math.floor(now * 6) % 2 === 0) return;
+    const s = POWER_SPRITES[p.type];
+    const pb = Math.sin(now * 3 + p.seed) * 1.5;
+    cx.strokeStyle = 'rgba(255,255,255,' + (0.15 + 0.15 * Math.sin(now * 5 + p.seed)) + ')';
+    cx.beginPath(); cx.arc(Math.round(p.x), Math.round(p.y + pb), 8, 0, Math.PI * 2); cx.stroke();
+    cx.drawImage(s, Math.round(p.x - s.width / 2), Math.round(p.y + pb - s.height / 2));
+  });
+
+  // enemies
+  enemies.forEach(e => drawEnemy(e, now));
+
+  // projectiles
+  projs.forEach(p => {
+    if (p.kind === 'paper') {
+      cx.save(); cx.translate(p.x, p.y); cx.rotate(p.ang);
+      cx.fillStyle = '#fff3c4'; cx.fillRect(-3, -2, 6, 4);
+      cx.fillStyle = '#ffd166'; cx.fillRect(-3, -2, 6, 1);
+      cx.restore();
+    } else if (p.kind === 'mail') {
+      cx.fillStyle = '#c792ea'; cx.fillRect(Math.round(p.x - 3), Math.round(p.y - 2), 6, 4);
+      cx.fillStyle = '#e7d4ff'; cx.fillRect(Math.round(p.x - 3), Math.round(p.y - 2), 6, 1);
+    } else if (p.kind === 'boulder') {
+      cx.save(); cx.translate(p.x, p.y); cx.rotate(p.spin);
+      cx.fillStyle = '#ff9eb5';
+      cx.fillRect(-p.r, -p.r, p.r * 2, p.r * 2);
+      cx.fillStyle = '#c0304f';
+      cx.fillRect(-p.r + 1, -p.r + 1, p.r, p.r);
+      cx.restore();
+    }
+  });
+
+  // orbiters (due diligence)
+  const dd = weapons && weapons.find(w => w && w.id === 'duedil');
+  if (dd && dd._pos) {
+    for (let i = 0; i < (dd._n || 0); i++) {
+      const o = dd._pos[i]; if (!o) continue;
+      cx.strokeStyle = '#8ecae6';
+      cx.beginPath(); cx.arc(Math.round(o.x), Math.round(o.y), o.r, 0, Math.PI * 2); cx.stroke();
+      cx.strokeStyle = 'rgba(142,202,230,0.6)';
+      cx.beginPath(); cx.moveTo(o.x + 2, o.y + 2); cx.lineTo(o.x + o.r, o.y + o.r); cx.stroke();
+    }
+  }
+
+  // lightning bolts
+  bolts.forEach(b => {
+    cx.strokeStyle = 'rgba(255,224,102,' + Math.min(1, b.life * 8) + ')';
+    cx.lineWidth = 2;
+    cx.beginPath();
+    cx.moveTo(b.x1, b.y1);
+    const mx = (b.x1 + b.x2) / 2 + (Math.random() - 0.5) * 8;
+    const my = (b.y1 + b.y2) / 2 + (Math.random() - 0.5) * 8;
+    cx.lineTo(mx, my); cx.lineTo(b.x2, b.y2);
+    cx.stroke(); cx.lineWidth = 1;
+  });
+
+  // the GP
+  const inv = AC && now < invulnUntil;
+  if (!inv || Math.floor(now * 10) % 2 === 0) {
+    const moving = keys['arrowleft'] || keys['arrowright'] || keys['arrowup'] || keys['arrowdown'];
+    const frame = GP_FRAMES[moving ? Math.floor(now * 8) % 2 : 0];
+    cx.drawImage(frame, Math.round(player.x - frame.width / 2), Math.round(player.y - 5));
+  }
+  if (AC && now < shieldUntil) {
+    cx.strokeStyle = 'rgba(142,202,230,' + (0.5 + 0.3 * Math.sin(now * 12)) + ')';
+    cx.beginPath(); cx.arc(player.x, player.y, 11, 0, Math.PI * 2); cx.stroke();
+  }
+
+  sparks.forEach(s => {
+    if (s.txt) text(s.txt, s.x, s.y, s.col, 8);
+    else { cx.fillStyle = s.col; cx.fillRect(Math.round(s.x), Math.round(s.y), 2, 2); }
+  });
+
+  if (AC && now < slowUntil && state !== 'dead') {
+    cx.fillStyle = 'rgba(120,180,255,0.08)';
+    cx.fillRect(0, 0, W, PLAY_H);
+  }
+
+  // HUD
+  text('AUM ' + String(Math.floor(score)).padStart(6, '0'), 4, 12, '#ffd166', 8, 'left');
+  const slots = Math.max(3, maxLives());
+  for (let i = 0; i < slots; i++) cx.drawImage(i < lives ? HEART : HEART_EMPTY, W - 3 - (slots - i) * 9, 5);
+  // quarter timer bar
+  text(fyLabel(level), 150, 12, 'rgba(201,154,208,0.9)', 8, 'right');
+  cx.fillStyle = '#3a2340'; cx.fillRect(155, 8, 40, 3);
+  cx.fillStyle = '#4ecdc4'; cx.fillRect(155, 8, Math.round(40 * Math.max(0, quarterLeft / QUARTER_TIME)), 3);
+  if (combo >= 4) text('CONVICTION x' + comboMul().toFixed(1), W / 2, 22, '#ffe066', 8);
+
+  if (AC && now < bannerUntil && state === 'play') {
+    text(bannerText, W / 2, 150, level >= 9 ? '#ff4d6d' : '#ffffff', 16);
+    text(bannerSub, W / 2, 168, '#c99ad0', 8);
+  }
+
+  if (state === 'draft') drawDraft(now);
+
+  if (paused) {
+    cx.fillStyle = 'rgba(8,6,10,0.7)'; cx.fillRect(0, 0, W, PLAY_H);
+    text('PAUSED', W / 2, PLAY_H / 2, '#ffffff', 16);
+  }
+
+  if (state === 'dead') {
+    cx.fillStyle = 'rgba(8,6,10,0.8)'; cx.fillRect(0, 0, W, PLAY_H);
+    text('THE FUND', W / 2, 104, '#ff5b6d', 16);
+    text('WOUND DOWN', W / 2, 128, '#ff5b6d', 16);
+    text(fyLabel(level) + ', on ' + DIFF().name, W / 2, 152, DIFF().col, 8);
+    text('AUM   ' + Math.floor(score), W / 2, 176, '#ffd166', 8);
+    text('BEST  ' + Math.floor(best), W / 2, 192, '#4ecdc4', 8);
+    text(kills + ' startups written off', W / 2, 212, '#c99ad0', 8);
+    text('best conviction x' + (1 + Math.min(2, bestCombo * 0.03)).toFixed(1), W / 2, 226, '#c99ad0', 8);
+    text(Object.values(passives).reduce((a, b) => a + b, 0) + weapons.filter(w => w).length
+      + ' positions held', W / 2, 240, '#c99ad0', 8);
+    if (Math.floor(now * 2) % 2 === 0) text('Z / TAP TO RAISE FUND II', W / 2, 272, '#ffffff', 8);
+    text('X FOR MENU', W / 2, 288, '#6a4a72', 8);
+  }
+
+  cx.restore();
+  drawWeaponRack(now);
+}
+
+// ------------------------------------------------------------------ loop ---
+let last = performance.now();
+function frame(t) {
+  const dt = Math.min(0.033, (t - last) / 1000);
+  last = t;
+  if (!paused) update(dt);
+  draw();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+reset();
+})();
+</script>
+</body>
+</html>
