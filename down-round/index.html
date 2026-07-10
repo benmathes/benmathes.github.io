@@ -1,0 +1,1455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Down Round</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  background: #05060f;
+  overflow: hidden;
+  touch-action: none;
+  font-family: 'Press Start 2P', monospace;
+}
+
+#wrap {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+canvas {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  background: #0a1030;
+  box-shadow: 0 0 40px rgba(91, 140, 255, 0.3), 0 0 120px rgba(255, 77, 157, 0.18);
+  border: 2px solid #23306a;
+}
+
+#hint {
+  color: #55639f;
+  font-size: 8px;
+  letter-spacing: 1px;
+  text-align: center;
+  line-height: 1.8;
+}
+
+#crt {
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.12) 0px, rgba(0,0,0,0.12) 1px, transparent 1px, transparent 3px);
+  pointer-events: none;
+}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game" width="240" height="352"></canvas>
+  <div id="hint">ARROWS steer &middot; ASDF clauses &middot; SHIFT focus &middot; M mute &middot; P pause<br>the only way out is down</div>
+</div>
+<div id="crt"></div>
+
+<script>
+(() => {
+'use strict';
+
+// ---------------------------------------------------------------- canvas ---
+const W = 240, PLAY_H = 320, H = 352; // 32px clause bar below the shaft
+const cv = document.getElementById('game');
+const cx = cv.getContext('2d');
+cx.imageSmoothingEnabled = false;
+
+function fit() {
+  const scale = Math.max(1, Math.floor(Math.min(
+    window.innerWidth / W, (window.innerHeight - 30) / H)));
+  cv.style.width = (W * scale) + 'px';
+  cv.style.height = (H * scale) + 'px';
+}
+window.addEventListener('resize', fit);
+fit();
+
+// ---------------------------------------------------------------- sprites --
+function spr(rows, pal) {
+  const c = document.createElement('canvas');
+  c.width = rows[0].length; c.height = rows.length;
+  const g = c.getContext('2d');
+  rows.forEach((row, y) => {
+    for (let x = 0; x < row.length; x++) {
+      const col = pal[row[x]];
+      if (!col) continue;
+      g.fillStyle = col;
+      g.fillRect(x, y, 1, 1);
+    }
+  });
+  return c;
+}
+
+// the founder, arms out, hoodie flapping, plummeting through the cap table
+const HERO = spr([
+  '...www...',
+  '..wsssw..',
+  '..wsssw..',
+  '..wsssw..',
+  '.hHHHHHh.',
+  'hhHHHHHhh',
+  'hHHHHHHHh',
+  '.HHHHHHH.',
+  '..H.H.H..',
+  '..H...H..',
+  '.HH...HH.',
+  '.h.....h.',
+], { w:'#dfe9ff', s:'#ffd9b3', H:'#5b8cff', h:'#3f63c9' });
+
+// falling animation frame 2 (arms up)
+const HERO2 = spr([
+  'h..www..h',
+  'hh.sss.hh',
+  '.hwssswh.',
+  '..wsssw..',
+  '.HHHHHHH.',
+  '.HHHHHHH.',
+  '.HHHHHHH.',
+  '..HHHHH..',
+  '..H.H.H..',
+  '..H...H..',
+  '.HH...HH.',
+  '.h.....h.',
+], { w:'#dfe9ff', s:'#ffd9b3', H:'#5b8cff', h:'#3f63c9' });
+
+const HERO_FRAMES = [HERO, HERO2];
+
+const COIN = spr([
+  '.ggg.',
+  'gGYGg',
+  'gYSYg',
+  'gGYGg',
+  '.ggg.',
+], { g:'#a9781a', G:'#ffd166', Y:'#fff0b0', S:'#7a5a12' });
+
+const HEART = spr([
+  '.XX.XX.',
+  'XXXXXXX',
+  'XXXXXXX',
+  '.XXXXX.',
+  '..XXX..',
+  '...X...',
+], { X: '#ff6b9d' });
+
+const HEART_EMPTY = spr([
+  '.XX.XX.',
+  'X..X..X',
+  'X.....X',
+  '.X...X.',
+  '..X.X..',
+  '...X...',
+], { X: '#4a3a6e' });
+
+// powerup sprites
+const BAG = spr([
+  '..t.t..',
+  '.ttttt.',
+  '.tTTTt.',
+  'tTT$TTt',
+  'tT$$$Tt',
+  'tTT$TTt',
+  '.tTTTt.',
+], { t:'#7a5a12', T:'#ffd166', $:'#3a2a06' });
+
+const RESET = spr([
+  '.XXXXX.',
+  'XX...XX',
+  'X..X..X',
+  'X.XXX.X',
+  'X..X..X',
+  'XX...XX',
+  '.XXXXX.',
+], { X:'#ff4d9d' });
+
+const HOURGLASS = spr([
+  'XXXXXXX',
+  '.XwwwX.',
+  '..XwX..',
+  '...X...',
+  '..XwX..',
+  '.XwwwX.',
+  'XXXXXXX',
+], { X:'#8ecae6', w:'#e0f4ff' });
+
+const POWER_SPRITES = { bag: BAG, reset: RESET, slow: HOURGLASS };
+
+// clause icons for the ASDF bar — shape-distinct so they read at a glance
+const PIVOT_IC = spr([
+  'X.......X',
+  '.X.....X.',
+  '..X...X..',
+  '...X.X...',
+  '....X....',
+  '...X.X...',
+  '..X...X..',
+  '.X.....X.',
+  'X.......X',
+], { X:'#ff9eb5' });
+
+const SHIELD_IC = spr([
+  '..XXXXX..',
+  '.X.....X.',
+  'X.......X',
+  'X.......X',
+  'X.......X',
+  'X.......X',
+  'X.......X',
+  '.X.....X.',
+  '..XXXXX..',
+], { X:'#8ecae6' });
+
+const SELL_IC = spr([
+  '....X....',
+  '....X....',
+  '.X..X..X.',
+  '..X.X.X..',
+  'XXXX.XXXX',
+  '..X.X.X..',
+  '.X..X..X.',
+  '....X....',
+  '....X....',
+], { X:'#ffd166' });
+
+const BRIDGE_IC = spr([
+  '.........',
+  'X.......X',
+  'X.......X',
+  'XXXXXXXXX',
+  'X.X.X.X.X',
+  'X.X.X.X.X',
+  'X.X.X.X.X',
+  'X.X.X.X.X',
+  '.........',
+], { X:'#c792ea' });
+
+const HYPE_IC = spr([
+  'X...X...X',
+  '.X..X..X.',
+  '..X.X.X..',
+  '...XXX...',
+  'XXXX.XXXX',
+  '...XXX...',
+  '..X.X.X..',
+  '.X..X..X.',
+  'X...X...X',
+], { X:'#ff6b9d' });
+
+const BURN_IC = spr([
+  '..XXXXX..',
+  '.X.....X.',
+  'X...X...X',
+  'X...X...X',
+  'X...XXX.X',
+  'X.......X',
+  'X.......X',
+  '.X.....X.',
+  '..XXXXX..',
+], { X:'#4ecdc4' });
+
+const NUKE_IC = spr([
+  '....X....',
+  '..X.X.X..',
+  '.XXXXXXX.',
+  '...XXX...',
+  'X..XXX..X',
+  '...XXX...',
+  '.XXXXXXX.',
+  '..X.X.X..',
+  '....X....',
+], { X:'#ffe066' });
+
+// passive icons
+const RUN_IC = spr([
+  '.........',
+  '.XX...XX.',
+  'X..X.X..X',
+  'X..X.X..X',
+  '.XX...XX.',
+  '..X...X..',
+  '..X...X..',
+  '.XXX.XXX.',
+  '.........',
+], { X:'#5b8cff' });
+
+const CLOCK_IC = spr([
+  '..XXXXX..',
+  '.X.....X.',
+  'X...X...X',
+  'X...X...X',
+  'X...XXX.X',
+  'X.......X',
+  'X.......X',
+  '.X.....X.',
+  '..XXXXX..',
+], { X:'#4ecdc4' });
+
+const MAGNET_IC = spr([
+  '.XX...XX.',
+  '.XX...XX.',
+  '.XX...XX.',
+  '.XX...XX.',
+  '.XX...XX.',
+  'XXX...XXX',
+  'X.......X',
+  'X.......X',
+  '.XXXXXXX.',
+], { X:'#ffd166' });
+
+const STAR_IC = spr([
+  '....X....',
+  '...XXX...',
+  '...XXX...',
+  'XXXXXXXXX',
+  '.XXXXXXX.',
+  '..XXXXX..',
+  '..XX.XX..',
+  '.XX...XX.',
+  'X.......X',
+], { X:'#ffe066' });
+
+const WAVE_IC = spr([
+  'X..X..X..',
+  '.X..X..X.',
+  '.X..X..X.',
+  '..X..X..X',
+  '..X..X..X',
+  '..X..X..X',
+  '.X..X..X.',
+  '.X..X..X.',
+  'X..X..X..',
+], { X:'#c792ea' });
+
+const UP_IC = spr([
+  '....X....',
+  '...XXX...',
+  '..XXXXX..',
+  '.XXXXXXX.',
+  'XXXXXXXXX',
+  '...XXX...',
+  '...XXX...',
+  '...XXX...',
+  '...XXX...',
+], { X:'#4ecdc4' });
+
+const COIN_IC = spr([
+  '..XXX..',
+  '.X$$$X.',
+  'X$XXX$X',
+  'X$X$$$X',
+  'X$XXX$X',
+  '.X$$$X.',
+  '..XXX..',
+], { X:'#ffd166', $:'#7a5a12' });
+
+const SHIELD_P = spr([
+  '..XXXXX..',
+  '.XX...XX.',
+  'X.......X',
+  'X.......X',
+  'X.......X',
+  '.X.....X.',
+  '..X...X..',
+  '...X.X...',
+  '....X....',
+], { X:'#8ecae6' });
+
+// ---------------------------------------------------------------- audio ----
+let AC = null, master, delaySend, muted = false, noiseBuf = null;
+
+function initAudio() {
+  AC = new (window.AudioContext || window.webkitAudioContext)();
+  master = AC.createGain();
+  master.gain.value = 0.5;
+  const comp = AC.createDynamicsCompressor();
+  master.connect(comp);
+  comp.connect(AC.destination);
+
+  const delay = AC.createDelay(0.6);
+  delay.delayTime.value = 0.24;
+  const fb = AC.createGain();
+  fb.gain.value = 0.3;
+  delay.connect(fb); fb.connect(delay);
+  delay.connect(master);
+  delaySend = delay;
+
+  noiseBuf = AC.createBuffer(1, AC.sampleRate * 0.1, AC.sampleRate);
+  const d = noiseBuf.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+}
+
+const freqOf = m => 440 * Math.pow(2, (m - 69) / 12);
+
+function lead(midi, t, dur) {
+  const f = freqOf(midi);
+  const flt = AC.createBiquadFilter();
+  flt.type = 'lowpass';
+  flt.Q.value = 2.5;
+  flt.frequency.setValueAtTime(Math.min(f * 6, 8000), t);
+  flt.frequency.exponentialRampToValueAtTime(Math.min(f * 2.2, 5000), t + dur);
+  const g = AC.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.14, t + 0.006);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur * 1.5);
+  for (const det of [-6, 6]) {
+    const o = AC.createOscillator();
+    o.type = 'sawtooth';
+    o.frequency.value = f;
+    o.detune.value = det;
+    o.connect(flt);
+    o.start(t); o.stop(t + dur * 1.6);
+  }
+  flt.connect(g);
+  g.connect(master);
+  const send = AC.createGain();
+  send.gain.value = 0.4;
+  g.connect(send);
+  send.connect(delaySend);
+}
+
+function bass(midi, t, dur) {
+  const o = AC.createOscillator();
+  o.type = 'triangle';
+  o.frequency.value = freqOf(midi - 24);
+  const g = AC.createGain();
+  g.gain.setValueAtTime(0.15, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  o.connect(g); g.connect(master);
+  o.start(t); o.stop(t + dur);
+}
+
+function kick(t) {
+  const o = AC.createOscillator();
+  o.frequency.setValueAtTime(128, t);
+  o.frequency.exponentialRampToValueAtTime(40, t + 0.09);
+  const g = AC.createGain();
+  g.gain.setValueAtTime(0.5, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.13);
+  o.connect(g); g.connect(master);
+  o.start(t); o.stop(t + 0.15);
+}
+
+function hat(t) {
+  const s = AC.createBufferSource();
+  s.buffer = noiseBuf;
+  const f = AC.createBiquadFilter();
+  f.type = 'highpass'; f.frequency.value = 7000;
+  const g = AC.createGain();
+  g.gain.setValueAtTime(0.1, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+  s.connect(f); f.connect(g); g.connect(master);
+  s.start(t); s.stop(t + 0.05);
+}
+
+function crashSfx(t) {
+  // the "down round reset" — a heavy, deflating power chord
+  [40, 47, 52].forEach(m => {
+    const o = AC.createOscillator();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(freqOf(m), t);
+    o.frequency.exponentialRampToValueAtTime(freqOf(m - 3), t + 0.6);
+    const f = AC.createBiquadFilter();
+    f.type = 'lowpass'; f.frequency.value = 2200; f.Q.value = 1;
+    const g = AC.createGain();
+    g.gain.setValueAtTime(0.2, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.7);
+    o.connect(f); f.connect(g); g.connect(master);
+    o.start(t); o.stop(t + 0.75);
+  });
+  kick(t);
+}
+
+function cashSfx(t) {
+  [72, 76, 79, 84].forEach((m, i) => lead(m, t + i * 0.05, 0.08));
+}
+
+function diveBomb(t) {
+  const o = AC.createOscillator();
+  o.type = 'sawtooth';
+  o.frequency.setValueAtTime(620, t);
+  o.frequency.exponentialRampToValueAtTime(64, t + 0.7);
+  const g = AC.createGain();
+  g.gain.setValueAtTime(0.14, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.8);
+  o.connect(g); g.connect(master);
+  o.start(t); o.stop(t + 0.85);
+}
+
+function gliss(t, up) {
+  const o = AC.createOscillator();
+  o.type = 'square';
+  o.frequency.setValueAtTime(up ? 300 : 900, t);
+  o.frequency.exponentialRampToValueAtTime(up ? 900 : 300, t + 0.12);
+  const g = AC.createGain();
+  g.gain.setValueAtTime(0.07, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+  o.connect(g); g.connect(master);
+  o.start(t); o.stop(t + 0.16);
+}
+
+function squeal(t) {
+  const o = AC.createOscillator();
+  o.type = 'sine';
+  o.frequency.setValueAtTime(1300, t);
+  o.frequency.exponentialRampToValueAtTime(2500, t + 0.18);
+  const g = AC.createGain();
+  g.gain.setValueAtTime(0.09, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+  o.connect(g); g.connect(master);
+  o.start(t); o.stop(t + 0.32);
+}
+
+function shimmer(t) {
+  [76, 81, 88].forEach((m, i) => lead(m, t + i * 0.04, 0.12));
+}
+
+// -------------------------------------------------------------- the music --
+// minor progression, but every round transposes DOWN a semitone — the melody
+// literally sinks as your valuation does. that's the whole joke.
+const CHORDS = {
+  Am:  [57, 60, 64, 69, 72, 76, 81],
+  G:   [55, 59, 62, 67, 71, 74, 79],
+  F:   [53, 57, 60, 65, 69, 72, 77],
+  E:   [52, 56, 59, 64, 68, 71, 76],
+  dim: [56, 59, 62, 65, 68, 71, 74, 77],
+};
+const PROG = ['Am', 'G', 'F', 'E'];
+// a descending run — high notes tumbling down to low
+const FALL = [6, 5, 4, 3, 2, 1, 0, 3, 2, 1, 0, 4, 3, 2, 1, 0];
+const DROP = [6, 4, 5, 3, 4, 2, 3, 1, 2, 0, 4, 2, 3, 1, 2, 0];
+const downShift = () => -Math.min(11, level - 1);
+
+// ---------------------------------------------------------------- rounds ---
+const DEPTH_PER_ROUND = 1500;
+const ROUND_NAMES = ['PRE-SEED', 'SEED', 'SERIES A', 'SERIES B', 'SERIES C',
+                     'SERIES D', 'MEZZANINE'];
+const ROUND_SUBS = ['(napkin valuation)', '(the friendly money)',
+                    '(now they want a board seat)', '(growth at all costs)',
+                    '(where is the growth)', '(the flat round)',
+                    '(pray for an exit)'];
+
+function roman(n) {
+  const R = [[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']];
+  let s = '';
+  for (const [v, sym] of R) while (n >= v) { s += sym; n -= v; }
+  return s;
+}
+const roundName = l => l <= 7 ? ROUND_NAMES[l - 1] : 'DOWN ROUND, PART ' + roman(l - 7);
+const roundSub = l => l <= 7 ? ROUND_SUBS[l - 1] : '(cram down)';
+const levelBpm = l => Math.min(200, 74 + 13 * (l - 1)) * DIFF().tempo;
+const scrollSpeed = () => (52 + level * 9) * DIFF().speed;
+
+// ------------------------------------------------------------ difficulty ---
+const DIFFS = [
+  { id: 'ff',      name: 'F&F',      sub: 'friends & family',   col: '#4ecdc4',
+    speed: 0.74, tempo: 0.85, power: 0.62, gap: 1.28, score: 0.6 },
+  { id: 'seriesa', name: 'SERIES A', sub: 'as the market intended', col: '#ffd166',
+    speed: 1,    tempo: 1,    power: 1,    gap: 1,    score: 1 },
+  { id: 'hostile', name: 'HOSTILE',  sub: 'takeover conditions', col: '#ff4d9d',
+    speed: 1.24, tempo: 1.14, power: 1.5,  gap: 0.82, score: 1.5 },
+];
+let diffIdx = Math.min(2, +(localStorage.getItem('down-round-diff') || 1));
+const DIFF = () => DIFFS[diffIdx];
+
+function loadBest() { return +(localStorage.getItem('down-round-best-' + DIFF().id) || 0); }
+function selectDiff(i) {
+  diffIdx = (i + DIFFS.length) % DIFFS.length;
+  localStorage.setItem('down-round-diff', diffIdx);
+  best = loadBest();
+}
+
+// ---------------------------------------------------------------- clauses --
+// the build pool: 7 actives (x3 levels) + 18 passives, several gated behind
+// the clause they riff on. far more than one descent can hold — the point.
+const ACTIVES = {
+  pivot: {
+    name: 'PIVOT', icon: PIVOT_IC, col: '#ff9eb5',
+    cds: [4, 3, 2],
+    lines: ['blink your held dir,', 'brief invuln'],
+    up: ['cooldown 4s > 3s', 'cooldown 3s > 2s'],
+    use() {
+      const t = AC.currentTime;
+      const from = { x: player.x, y: player.y };
+      player.x = clampX(player.x + lastDir.x * 52);
+      player.y = clampY(player.y + lastDir.y * 40);
+      invulnUntil = Math.max(invulnUntil, t + 0.35);
+      gliss(t, false);
+      for (let i = 0; i < 6; i++) {
+        const f = i / 5;
+        sparks.push({ x: from.x + (player.x - from.x) * f,
+                      y: from.y + (player.y - from.y) * f,
+                      vx: 0, vy: 0, life: 0.25, col: '#ff9eb5' });
+      }
+      if (passives.scorched) {
+        for (let i = hazards.length - 1; i >= 0; i--) {
+          const h = hazards[i];
+          if (segRectDist(from, player, h) < 16) {
+            addScore(6);
+            burstHazard(h);
+            hazards.splice(i, 1);
+          }
+        }
+      }
+    },
+  },
+  reset: {
+    name: 'DOWN-ROUND RESET', icon: NUKE_IC, col: '#ffe066',
+    cds: [26, 19, 13],
+    lines: ['wipe every hazard', 'on screen'],
+    up: ['cooldown 26s > 19s', 'cooldown 19s > 13s'],
+    use() {
+      const t = AC.currentTime;
+      hazards.forEach(h => { addScore(6); burstHazard(h); });
+      hazards = [];
+      crashSfx(t);
+      shake = 0.25;
+      if (passives.board) slowUntil = Math.max(slowUntil, t + 3);
+    },
+  },
+  burn: {
+    name: 'BURN RATE', icon: BURN_IC, col: '#4ecdc4',
+    cds: [17, 13, 10],
+    lines: ['spend to survive:', 'the shaft crawls 4s'],
+    up: ['cooldown 17s > 13s', 'cooldown 13s > 10s'],
+    use() {
+      const t = AC.currentTime;
+      slowUntil = Math.max(slowUntil, t + 4 + 1.5 * (passives.warmth || 0));
+      diveBomb(t);
+    },
+  },
+  liqpref: {
+    name: 'LIQ. PREFERENCE', icon: SHIELD_IC, col: '#8ecae6',
+    cds: [14, 11, 8],
+    lines: ['1.6s of downside', 'protection'],
+    up: ['cooldown 14s > 11s', 'cooldown 11s > 8s'],
+    use() {
+      const t = AC.currentTime;
+      invulnUntil = Math.max(invulnUntil, t + 1.6);
+      shieldUntil = t + 1.6;
+      shimmer(t);
+    },
+  },
+  secondary: {
+    name: 'SECONDARY SALE', icon: SELL_IC, col: '#ffd166',
+    cds: [9, 7, 5],
+    lines: ['cash out hazards', 'near you, for pts'],
+    up: ['cooldown 9s > 7s', 'cooldown 7s > 5s'],
+    use() {
+      const t = AC.currentTime;
+      squeal(t);
+      for (let i = hazards.length - 1; i >= 0; i--) {
+        const h = hazards[i];
+        if (rectDist(h, player.x, player.y) < 52) {
+          addScore(9);
+          burstHazard(h);
+          hazards.splice(i, 1);
+        }
+      }
+      sparks.push({ x: player.x, y: player.y, vx: 0, vy: 0, life: 0.3, col: '#ffd166', ring: 52 });
+    },
+  },
+  bridge: {
+    name: 'BRIDGE ROUND', icon: BRIDGE_IC, col: '#c792ea',
+    cds: [12, 9, 7],
+    lines: ['1.2s hover: descent', 'stalls, hazards shoved'],
+    up: ['cooldown 12s > 9s', 'cooldown 9s > 7s'],
+    use() {
+      const t = AC.currentTime;
+      gliss(t, true);
+      hoverUntil = t + 1.2;
+      hazards.forEach(h => { h.y -= 26; });
+      sparks.push({ x: player.x, y: player.y, vx: 0, vy: 0, life: 0.4, col: '#c792ea', ring: 66 });
+    },
+  },
+  hype: {
+    name: 'HYPE TRAIN', icon: HYPE_IC, col: '#ff6b9d',
+    cds: [13, 11, 9],
+    lines: ['4s: graze radius x2,', 'graze points x3'],
+    up: ['cooldown 13s > 11s', 'cooldown 11s > 9s'],
+    use() {
+      const t = AC.currentTime;
+      hypeUntil = t + 4;
+      squeal(t);
+    },
+  },
+};
+
+const PASSIVES = {
+  momentum:  { name: 'MOMENTUM', icon: WAVE_IC, max: 3,
+    lines: ['steer 12% faster'] },
+  runway:    { name: 'RUNWAY', icon: RUN_IC, max: 3,
+    lines: ['+1 max heart,', 'and heal 1'] },
+  termsheet: { name: 'TERM SHEET', icon: CLOCK_IC, max: 3,
+    lines: ['clause cooldowns -12%'] },
+  prorata:   { name: 'PRO RATA', icon: MAGNET_IC, max: 2,
+    lines: ['cash drifts', 'toward you'] },
+  network:   { name: 'NETWORK', icon: STAR_IC, max: 2,
+    lines: ['powerups arrive', '20% more often'] },
+  vesting:   { name: 'VESTING', icon: WAVE_IC, max: 2,
+    lines: ['graze radius +35%'] },
+  markup:    { name: 'MARKUP', icon: UP_IC, max: 2,
+    lines: ['graze points +50%'] },
+  antidil:   { name: 'ANTI-DILUTION', icon: SHIELD_P, max: 3,
+    lines: ['hazards 6% slower'] },
+  lucky:     { name: 'LUCKY BREAK', icon: STAR_IC, max: 2,
+    lines: ['12% chance a hit', 'counts as a graze'] },
+  compound:  { name: 'COMPOUNDING', icon: COIN_IC, max: 3,
+    lines: ['all points +20%'] },
+  warmth:    { name: 'DEEP POCKETS', icon: BURN_IC, max: 2,
+    lines: ['burn rate lasts', '+1.5s longer'] },
+  angel:     { name: 'ANGEL', icon: BAG, max: 1,
+    lines: ['cash bags heal', '+1 extra heart'] },
+  bridgefin: { name: 'BRIDGE FINANCING', icon: STAR_IC, max: 1,
+    lines: ['cheat death once:', 'revive w/ 2 hearts'] },
+  scorched:  { name: 'SCORCHED CAP TABLE', icon: PIVOT_IC, max: 1, req: 'pivot',
+    lines: ['pivot clears hazards', 'in its path'] },
+  boardctrl: { name: 'BOARD CONTROL', icon: NUKE_IC, max: 1, req: 'reset',
+    lines: ['down-round reset', 'also slows time 3s'] },
+  burndown:  { name: 'BURN DOWN', icon: WAVE_IC, max: 1,
+    lines: ['a hit clears screen', '+ 2s slow-mo'] },
+  conviction:{ name: 'CONVICTION', icon: BURN_IC, max: 1,
+    lines: ['during burn rate,', 'graze points x2'] },
+};
+
+// ---------------------------------------------------------------- state ----
+const PY_MIN = 34, PY_MAX = 258;
+const clampX = x => Math.max(8, Math.min(W - 8, x));
+const clampY = y => Math.max(PY_MIN, Math.min(PY_MAX, y));
+
+function rectDist(h, px, py) {
+  const nx = Math.max(h.x, Math.min(px, h.x + h.w));
+  const ny = Math.max(h.y, Math.min(py, h.y + h.h));
+  return Math.hypot(px - nx, py - ny);
+}
+function segRectDist(a, b, h) {
+  // sample the dash segment against the rect; good enough for clearing hazards
+  let best = Infinity;
+  for (let i = 0; i <= 6; i++) {
+    const f = i / 6;
+    best = Math.min(best, rectDist(h, a.x + (b.x - a.x) * f, a.y + (b.y - a.y) * f));
+  }
+  return best;
+}
+
+let state = 'title';          // title | play | draft | dead
+let player, hazards, cash, sparks, powers, powerTimer, spawnTimer, cashTimer;
+let slowUntil, shieldUntil, hypeUntil, hoverUntil, invulnUntil;
+let score, best, lives, grazes, dodged;
+let level, depth, bpm, nextTime, bar, step;
+let actives, passives, draftCards, draftSel, openingPicks = 0;
+let bannerText, bannerSub, bannerUntil;
+let shake, paused = false, bgScroll = 0;
+let lastDir = { x: 0, y: 1 };
+let schedTimer = null;
+
+best = loadBest();
+
+const maxLives = () => Math.min(6, 3 + (passives.runway || 0));
+const cdMul = () => Math.pow(0.88, passives.termsheet || 0);
+function addScore(n) {
+  score += n * DIFF().score * Math.pow(1.2, passives.compound || 0);
+}
+
+function burstHazard(h) {
+  for (let i = 0; i < 4; i++) {
+    sparks.push({ x: h.x + Math.random() * h.w, y: h.y + Math.random() * h.h,
+                  vx: (Math.random() - 0.5) * 40, vy: -30, life: 0.4, col: '#ff4d9d' });
+  }
+}
+
+function reset() {
+  player = { x: W / 2, y: 96 };
+  hazards = []; cash = []; sparks = []; powers = [];
+  powerTimer = 8 * DIFF().power;
+  spawnTimer = 1.2; cashTimer = 0.8;
+  slowUntil = 0; shieldUntil = 0; hypeUntil = 0; hoverUntil = 0; invulnUntil = 0;
+  score = 0; lives = 3; grazes = 0; dodged = 0;
+  level = 1; depth = 0; bar = 0; step = 0;
+  bpm = levelBpm(1);
+  actives = [null, null, null, null];
+  passives = {};
+  shake = 0; bgScroll = 0;
+  lastDir = { x: 0, y: 1 };
+  banner('ROUND I: ' + roundName(1), roundSub(1));
+}
+
+function banner(txt, sub) {
+  bannerText = txt;
+  bannerSub = sub;
+  bannerUntil = (AC ? AC.currentTime : 0) + 2.4;
+}
+
+// ------------------------------------------------------------- the music ---
+// purely atmospheric — the descent is timed, the tune just sinks alongside it
+function schedule() {
+  if (state !== 'play' || paused) return;
+  const stepDur = 60 / bpm / 4;
+  while (nextTime < AC.currentTime + 0.15) {
+    const chordName = (level >= 5 && bar % 4 === 3) ? 'dim' : PROG[bar % 4];
+    const chord = CHORDS[chordName];
+    const pat = chordName === 'dim' ? DROP : FALL;
+    const midi = chord[pat[step] % chord.length] + downShift();
+
+    lead(midi, nextTime, stepDur * 1.1);
+    if (step === 0) bass(chord[0] + downShift(), nextTime, stepDur * 8);
+    if (step % 4 === 0) kick(nextTime);
+    if (level >= 3 && step % 2 === 1) hat(nextTime);
+
+    step++;
+    if (step === 16) { step = 0; bar++; }
+    nextTime += stepDur;
+  }
+}
+
+// --------------------------------------------------------------- spawning --
+function pushHazard(x, w, h) {
+  hazards.push({ x, y: PLAY_H + 12, w, h: h || 13, seed: Math.random() * 9, grazed: false });
+}
+
+function spawnFormation() {
+  const gap = (58 + Math.max(0, 22 - level * 2)) * DIFF().gap;
+  const roll = Math.random();
+  if (level <= 1 || roll < 0.42) {
+    // scattered dilution shards
+    const n = 1 + (Math.random() < 0.5 ? 1 : 0) + (level >= 4 ? 1 : 0);
+    for (let i = 0; i < n; i++) {
+      const w = 26 + Math.random() * 34;
+      pushHazard(10 + Math.random() * (W - 20 - w), w);
+    }
+  } else if (roll < 0.74) {
+    // a term-sheet wall with a single gap to thread
+    const gx = 14 + Math.random() * (W - 28 - gap);
+    if (gx - 6 > 6) pushHazard(6, gx - 6);
+    const right = gx + gap;
+    if (W - 6 - right > 6) pushHazard(right, W - 6 - right);
+  } else {
+    // side pillars, gap in the middle-ish
+    const cxg = 40 + Math.random() * (W - 80);
+    const half = gap / 2;
+    if (cxg - half - 6 > 6) pushHazard(6, cxg - half - 6, 20);
+    if (W - 6 - (cxg + half) > 6) pushHazard(cxg + half, W - 6 - (cxg + half), 20);
+  }
+}
+
+function spawnCash() {
+  const n = 1 + (Math.random() < 0.35 ? 1 : 0);
+  const bx = 16 + Math.random() * (W - 32);
+  for (let i = 0; i < n; i++) {
+    cash.push({ x: clampX(bx + i * 12), y: PLAY_H + 8 + i * 12, seed: Math.random() * 9 });
+  }
+}
+
+// -------------------------------------------------------------- powerups ---
+function spawnPower() {
+  let type = ['bag', 'reset', 'slow'][Math.floor(Math.random() * 3)];
+  if (type === 'bag' && lives >= maxLives()) type = Math.random() < 0.5 ? 'reset' : 'slow';
+  powers.push({ x: 24 + Math.random() * (W - 48), y: PLAY_H + 8, type, seed: Math.random() * 9 });
+}
+
+function collectPower(p) {
+  const t = AC.currentTime;
+  let txt, col;
+  if (p.type === 'bag') {
+    lives = Math.min(maxLives(), lives + 1 + (passives.angel || 0));
+    cashSfx(t);
+    txt = '+RUNWAY!'; col = '#4ecdc4';
+  } else if (p.type === 'reset') {
+    hazards.forEach(h => { addScore(6); burstHazard(h); });
+    hazards = [];
+    crashSfx(t);
+    shake = 0.25;
+    txt = 'RESET!'; col = '#ffe066';
+  } else {
+    slowUntil = Math.max(slowUntil, t + 5 + 1.5 * (passives.warmth || 0));
+    diveBomb(t);
+    txt = 'BURN RATE!'; col = '#8ecae6';
+  }
+  sparks.push({ x: player.x, y: player.y - 12, vx: 0, vy: -14, life: 1, col, txt });
+}
+
+// -------------------------------------------------------------- the draft --
+function draftPool(activesOnly) {
+  const pool = [];
+  Object.entries(ACTIVES).forEach(([id, def]) => {
+    const owned = actives.find(a => a && a.id === id);
+    if (owned && owned.lv < 3) {
+      pool.push({ kind: 'upgrade', id, name: def.name, icon: def.icon,
+                  lines: [def.up[owned.lv - 1]], tag: 'LV' + (owned.lv + 1) });
+    } else if (!owned && actives.some(a => !a)) {
+      pool.push({ kind: 'active', id, name: def.name, icon: def.icon,
+                  lines: def.lines, tag: 'NEW' });
+    }
+  });
+  if (activesOnly) return pool;
+  Object.entries(PASSIVES).forEach(([id, def]) => {
+    const count = passives[id] || 0;
+    if (count >= def.max) return;
+    if (def.req && !actives.find(a => a && a.id === def.req)) return;
+    pool.push({ kind: 'passive', id, name: def.name, icon: def.icon,
+                lines: def.lines, tag: count > 0 ? 'x' + (count + 1) : '' });
+  });
+  return pool;
+}
+
+function enterDraft() {
+  hazards.forEach(h => { addScore(2); burstHazard(h); });
+  hazards = []; cash = []; powers = [];
+
+  const pool = draftPool(openingPicks > 0);
+  if (!pool.length) { level++; startPlay(); return; }
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  draftCards = pool.slice(0, 3);
+  const activesOwned = actives.filter(a => a).length;
+  if (activesOwned < 2 && !draftCards.some(c => c.kind !== 'passive')) {
+    const act = pool.find(c => c.kind !== 'passive');
+    if (act) draftCards[0] = act;
+  }
+  draftSel = 0;
+  state = 'draft';
+  cashSfx(AC.currentTime);
+}
+
+function applyCard(card) {
+  if (card.kind === 'active') {
+    const slot = actives.findIndex(a => !a);
+    actives[slot] = { id: card.id, lv: 1, cdLeft: 0 };
+  } else if (card.kind === 'upgrade') {
+    actives.find(a => a && a.id === card.id).lv++;
+  } else {
+    passives[card.id] = (passives[card.id] || 0) + 1;
+    if (card.id === 'runway') lives = Math.min(maxLives(), lives + 1);
+  }
+  if (openingPicks > 0) {
+    openingPicks--;
+    if (openingPicks > 0) enterDraft();
+    else startPlay();
+  } else {
+    level++;
+    startPlay();
+  }
+}
+
+function startPlay() {
+  depth = 0;
+  spawnTimer = 0.8; cashTimer = 0.6;
+  bpm = levelBpm(level);
+  state = 'play';
+  nextTime = AC.currentTime + 0.6;
+  banner('ROUND ' + roman(level) + ': ' + roundName(level), roundSub(level));
+}
+
+// ----------------------------------------------------------------- clauses --
+function useSkill(i) {
+  if (state !== 'play' || paused) return;
+  const slot = actives[i];
+  if (!slot || slot.cdLeft > 0) return;
+  const def = ACTIVES[slot.id];
+  def.use(slot.lv);
+  slot.cdLeft = def.cds[slot.lv - 1] * cdMul();
+}
+
+// ----------------------------------------------------------------- input ---
+const keys = {};
+const SKILL_KEYS = { a: 0, s: 1, d: 2, f: 3 };
+window.addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  keys[k] = true;
+  if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k)) e.preventDefault();
+  if (k === 'm' && master) { muted = !muted; master.gain.value = muted ? 0 : 0.5; }
+  if (k === 'p' && state === 'play') togglePause();
+  if (state === 'play' && k in SKILL_KEYS && !e.repeat) useSkill(SKILL_KEYS[k]);
+  if (state === 'title') {
+    if (e.key === 'ArrowLeft') selectDiff(diffIdx - 1);
+    if (e.key === 'ArrowRight') selectDiff(diffIdx + 1);
+  }
+  if (state === 'draft') {
+    if (e.key === 'ArrowUp') draftSel = (draftSel + draftCards.length - 1) % draftCards.length;
+    if (e.key === 'ArrowDown') draftSel = (draftSel + 1) % draftCards.length;
+    if (k === 'z' || e.key === 'Enter') applyCard(draftCards[draftSel]);
+    return;
+  }
+  if (state === 'dead' && k === 'x') state = 'title';
+  if (k === 'z' || e.key === 'Enter') advance();
+});
+window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+
+let touchId = null, touchLast = null;
+cv.addEventListener('pointerdown', e => {
+  const r = cv.getBoundingClientRect();
+  const gx = (e.clientX - r.left) / r.width * W;
+  const gy = (e.clientY - r.top) / r.height * H;
+  if (state === 'title') {
+    if (gy > 236 && gy < 262) { selectDiff(Math.min(2, Math.floor(gx / (W / 3)))); return; }
+  }
+  if (state === 'draft') {
+    const i = Math.floor((gy - 74) / 72);
+    if (i >= 0 && i < draftCards.length) applyCard(draftCards[i]);
+    return;
+  }
+  if (state === 'play' && gy > PLAY_H) { useSkill(Math.min(3, Math.floor(gx / (W / 4)))); return; }
+  advance();
+  touchId = e.pointerId;
+  touchLast = { x: e.clientX, y: e.clientY };
+});
+cv.addEventListener('pointermove', e => {
+  if (e.pointerId !== touchId || !touchLast || state !== 'play') return;
+  const scale = cv.clientWidth / W;
+  const dx = (e.clientX - touchLast.x) / scale;
+  const dy = (e.clientY - touchLast.y) / scale;
+  player.x = clampX(player.x + dx);
+  player.y = clampY(player.y + dy);
+  if (dx || dy) {
+    const d = Math.hypot(dx, dy);
+    lastDir = { x: dx / d, y: dy / d };
+  }
+  touchLast = { x: e.clientX, y: e.clientY };
+});
+window.addEventListener('pointerup', () => { touchId = null; touchLast = null; });
+
+function advance() {
+  if (state === 'play' || state === 'draft') return;
+  if (!AC) initAudio();
+  AC.resume();
+  reset();
+  openingPicks = 1;
+  enterDraft();
+  if (!schedTimer) schedTimer = setInterval(schedule, 25);
+}
+
+function togglePause() {
+  paused = !paused;
+  if (paused) AC.suspend(); else { AC.resume(); nextTime = Math.max(nextTime, AC.currentTime + 0.1); }
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && state === 'play' && !paused) togglePause();
+});
+
+// ----------------------------------------------------------------- death ---
+function die() {
+  if (passives.bridgefin) {
+    passives.bridgefin--;
+    lives = 2;
+    invulnUntil = AC.currentTime + 3;
+    hazards = [];
+    crashSfx(AC.currentTime);
+    banner('BRIDGE FINANCING!', '(one more shot at an exit)');
+    return;
+  }
+  state = 'dead';
+  if (score > best) { best = score; localStorage.setItem('down-round-best-' + DIFF().id, best); }
+  const t = AC.currentTime + 0.1;
+  [76, 72, 68, 64].forEach((m, i) => lead(m + downShift(), t + i * 0.28, 0.26));
+  [57, 53, 48].forEach((m, i) => bass(m + downShift(), t + 1.0 + i * 0.2, 1.2));
+}
+
+function hit() {
+  const t = AC.currentTime;
+  if ((passives.lucky || 0) > 0 && Math.random() < 0.12 * passives.lucky) {
+    grazes++;
+    addScore(25);
+    sparks.push({ x: player.x, y: player.y - 10, vx: 0, vy: -16, life: 0.7, col: '#4ecdc4', txt: 'LUCKY!' });
+    invulnUntil = Math.max(invulnUntil, t + 0.5);
+    return;
+  }
+  lives--;
+  shake = 0.35;
+  invulnUntil = t + 2;
+  if (passives.burndown) {
+    hazards.forEach(h => burstHazard(h));
+    hazards = [];
+    slowUntil = Math.max(slowUntil, t + 2);
+  } else {
+    hazards = hazards.filter(h => rectDist(h, player.x, player.y) > 40);
+  }
+  for (let i = 0; i < 14; i++) {
+    const a = Math.random() * Math.PI * 2;
+    sparks.push({ x: player.x, y: player.y, vx: Math.cos(a) * 50, vy: Math.sin(a) * 50, life: 0.5, col: '#ff6b9d' });
+  }
+  if (lives <= 0) die();
+}
+
+// ---------------------------------------------------------------- update ---
+function update(dt) {
+  const now = AC ? AC.currentTime : 0;
+  const ts = AC && now < slowUntil ? 0.35 : 1;
+
+  if (state === 'play') {
+    const hovering = now < hoverUntil;
+    const scroll = (hovering ? 6 : scrollSpeed()) * ts * Math.pow(0.94, passives.antidil || 0);
+    depth += scroll * dt;
+    bgScroll += scroll * dt;
+
+    // steering
+    const focus = keys['shift'];
+    const sp = (focus ? 58 : 116) * (1 + 0.12 * (passives.momentum || 0));
+    let mx = 0, my = 0;
+    if (keys['arrowleft']) mx -= 1;
+    if (keys['arrowright']) mx += 1;
+    if (keys['arrowup']) my -= 1;
+    if (keys['arrowdown']) my += 1;
+    if (mx || my) {
+      const d = Math.hypot(mx, my);
+      lastDir = { x: mx / d, y: my / d };
+      player.x += mx / d * sp * dt;
+      player.y += my / d * sp * dt;
+    }
+    player.x = clampX(player.x);
+    player.y = clampY(player.y);
+
+    addScore(dt * 10 * level);
+
+    actives.forEach(a => { if (a && a.cdLeft > 0) a.cdLeft = Math.max(0, a.cdLeft - dt); });
+
+    // spawns
+    spawnTimer -= dt;
+    if (spawnTimer <= 0) {
+      spawnFormation();
+      spawnTimer = (1.35 - Math.min(0.7, level * 0.08)) * (2 - DIFF().speed);
+    }
+    cashTimer -= dt;
+    if (cashTimer <= 0) { spawnCash(); cashTimer = 1.1 + Math.random() * 1.2; }
+    powerTimer -= dt;
+    if (powerTimer <= 0) {
+      spawnPower();
+      powerTimer = (10 + Math.random() * 7) * DIFF().power * Math.pow(0.8, passives.network || 0);
+    }
+
+    // move + collide hazards
+    const inv = now < invulnUntil;
+    const grazeR = 12 * Math.pow(1.35, passives.vesting || 0) * (now < hypeUntil ? 2 : 1);
+    const grazePts = 25 * Math.pow(1.5, passives.markup || 0)
+      * (now < hypeUntil ? 3 : 1)
+      * (passives.conviction && now < slowUntil ? 2 : 1);
+    for (let i = hazards.length - 1; i >= 0; i--) {
+      const h = hazards[i];
+      h.y -= scroll * dt;
+      if (h.y + h.h < -8) { hazards.splice(i, 1); dodged++; continue; }
+      const d = rectDist(h, player.x, player.y);
+      if (!inv && d < 3.5) { hit(); break; }
+      if (!h.grazed && d < grazeR && d >= 3.5) {
+        h.grazed = true;
+        grazes++;
+        addScore(grazePts);
+        const nx = Math.max(h.x, Math.min(player.x, h.x + h.w));
+        const ny = Math.max(h.y, Math.min(player.y, h.y + h.h));
+        sparks.push({ x: (player.x + nx) / 2, y: (player.y + ny) / 2,
+                      vx: 0, vy: -20, life: 0.4, col: '#ffd166', txt: '+' });
+      }
+    }
+
+    // cash
+    for (let i = cash.length - 1; i >= 0; i--) {
+      const c = cash[i];
+      c.y -= scroll * dt;
+      c.x += Math.sin(now * 2 + c.seed) * 8 * dt;
+      if (passives.prorata) {
+        const dx = player.x - c.x, dy = player.y - c.y;
+        const d = Math.hypot(dx, dy);
+        if (d < 80) { c.x += dx / d * 50 * passives.prorata * dt; c.y += dy / d * 50 * passives.prorata * dt; }
+      }
+      if (c.y < -10) { cash.splice(i, 1); continue; }
+      if (Math.hypot(c.x - player.x, c.y - player.y) < 9) {
+        addScore(12);
+        sparks.push({ x: c.x, y: c.y, vx: 0, vy: -20, life: 0.4, col: '#ffd166', txt: '$' });
+        cash.splice(i, 1);
+      }
+    }
+
+    // powers
+    for (let i = powers.length - 1; i >= 0; i--) {
+      const p = powers[i];
+      p.y -= scroll * dt;
+      p.x += Math.sin(now * 2 + p.seed) * 12 * dt;
+      if (passives.prorata) {
+        const dx = player.x - p.x, dy = player.y - p.y;
+        const d = Math.hypot(dx, dy);
+        if (d < 90) { const pull = 45 * passives.prorata; p.x += dx / d * pull * dt; p.y += dy / d * pull * dt; }
+      }
+      if (p.y < -12) { powers.splice(i, 1); continue; }
+      if (Math.hypot(p.x - player.x, p.y - player.y) < 10) { collectPower(p); powers.splice(i, 1); }
+    }
+
+    if (depth >= DEPTH_PER_ROUND) enterDraft();
+  }
+
+  for (let i = sparks.length - 1; i >= 0; i--) {
+    const s = sparks[i];
+    s.x += s.vx * dt; s.y += s.vy * dt; s.life -= dt;
+    if (s.life <= 0) sparks.splice(i, 1);
+  }
+  shake = Math.max(0, shake - dt);
+}
+
+// ------------------------------------------------------------------ draw ---
+function text(str, x, y, col, size = 8, align = 'center') {
+  cx.font = size + 'px "Press Start 2P"';
+  cx.textAlign = align;
+  cx.fillStyle = col;
+  cx.fillText(str, Math.round(x), Math.round(y));
+}
+
+function drawHazard(h, now) {
+  const x = Math.round(h.x), y = Math.round(h.y), w = h.w, hh = h.h;
+  const flash = h.grazed ? '#ff86c2' : '#b3266b';
+  cx.fillStyle = flash;
+  cx.fillRect(x, y + 3, w, hh - 3);
+  // serrated leading edge (the top, the side rising into you)
+  cx.fillStyle = '#ff4d9d';
+  cx.beginPath();
+  for (let i = 0; i < w; i += 5) {
+    cx.moveTo(x + i, y + 4);
+    cx.lineTo(x + Math.min(i + 2.5, w), y);
+    cx.lineTo(x + Math.min(i + 5, w), y + 4);
+  }
+  cx.closePath();
+  cx.fill();
+  // inner detail lines
+  cx.fillStyle = 'rgba(0,0,0,0.22)';
+  for (let i = 3; i < w; i += 8) cx.fillRect(x + i, y + 5, 1, hh - 6);
+  cx.fillStyle = 'rgba(255,255,255,0.14)';
+  cx.fillRect(x, y + 3, w, 1);
+}
+
+function drawSkillBar(now) {
+  cx.fillStyle = '#070a1c';
+  cx.fillRect(0, PLAY_H, W, H - PLAY_H);
+  cx.fillStyle = '#23306a';
+  cx.fillRect(0, PLAY_H, W, 1);
+  const KEYS = ['A', 'S', 'D', 'F'];
+  for (let i = 0; i < 4; i++) {
+    const bx = 12 + i * 58, by = PLAY_H + 3, bs = 20;
+    const slot = actives[i];
+    cx.fillStyle = '#111838';
+    cx.fillRect(bx, by, bs, bs);
+    if (slot) {
+      const def = ACTIVES[slot.id];
+      const cd = def.cds[slot.lv - 1] * cdMul();
+      const frac = slot.cdLeft / cd;
+      cx.globalAlpha = frac > 0 ? 0.35 : 1;
+      cx.drawImage(def.icon, bx + Math.floor((bs - def.icon.width) / 2),
+                   by + Math.floor((bs - def.icon.height) / 2));
+      cx.globalAlpha = 1;
+      if (frac > 0) {
+        cx.fillStyle = 'rgba(10,16,48,0.75)';
+        cx.fillRect(bx, by, bs, Math.ceil(bs * frac));
+      } else if (Math.floor(now * 4) % 4 === 0) {
+        cx.strokeStyle = def.col;
+        cx.strokeRect(bx + 0.5, by + 0.5, bs - 1, bs - 1);
+      }
+      if (slot.lv > 1) text('' + slot.lv, bx + bs - 1, by + bs - 1, '#ffd166', 8, 'right');
+    } else {
+      cx.strokeStyle = '#23306a';
+      cx.strokeRect(bx + 0.5, by + 0.5, bs - 1, bs - 1);
+    }
+    text(KEYS[i], bx + bs / 2, 350, slot ? '#8ea2ff' : '#3a4680', 8);
+  }
+}
+
+function drawDraft(now) {
+  cx.fillStyle = 'rgba(5,6,15,0.9)';
+  cx.fillRect(0, 0, W, PLAY_H);
+  if (openingPicks > 0) {
+    text('RAISE YOUR ROUND', W / 2, 38, '#ffd166', 16);
+    text('pick your first clause', W / 2, 56, '#8ea2ff', 8);
+  } else {
+    text('ROUND CLOSED', W / 2, 38, '#ffd166', 16);
+    text('negotiate your terms', W / 2, 56, '#8ea2ff', 8);
+  }
+  draftCards.forEach((c, i) => {
+    const cy = 74 + i * 72;
+    const sel = i === draftSel;
+    cx.fillStyle = sel ? '#182248' : '#0e1430';
+    cx.fillRect(12, cy, W - 24, 62);
+    cx.strokeStyle = sel ? '#ffd166' : '#23306a';
+    cx.strokeRect(12.5, cy + 0.5, W - 25, 61);
+    cx.fillStyle = '#111838';
+    cx.fillRect(18, cy + 8, 20, 20);
+    cx.drawImage(c.icon, 18 + Math.floor((20 - c.icon.width) / 2),
+                 cy + 8 + Math.floor((20 - c.icon.height) / 2));
+    text(c.name, 44, cy + 16, sel ? '#ffffff' : '#8ea2ff', 8, 'left');
+    c.lines.forEach((ln, j) => text(ln, 44, cy + 33 + j * 13, '#7385c0', 8, 'left'));
+    if (c.tag) text(c.tag, W - 18, cy + 55, c.kind === 'passive' ? '#4ecdc4' : '#ffd166', 8, 'right');
+    if (sel && Math.floor(now * 2) % 2 === 0) text('>', 2, cy + 36, '#ffd166', 8, 'left');
+  });
+  text('UP/DOWN + Z, or tap', W / 2, 306, '#55639f', 8);
+}
+
+function draw() {
+  const now = AC ? AC.currentTime : performance.now() / 1000;
+
+  cx.save();
+  if (shake > 0) cx.translate((Math.random() - 0.5) * 4, (Math.random() - 0.5) * 4);
+
+  // shaft background — darkens the deeper you fall
+  const deep = state === 'title' ? 0 : Math.min(1, (level - 1) / 8);
+  cx.fillStyle = `rgb(${10 - deep * 6},${16 - deep * 10},${48 - deep * 26})`;
+  cx.fillRect(-4, -4, W + 8, PLAY_H + 8);
+
+  // parallax shaft walls scrolling upward to sell the descent
+  cx.fillStyle = 'rgba(140,170,255,0.06)';
+  const off = (bgScroll * 0.5) % 40;
+  for (let i = -1; i < 9; i++) {
+    const yy = ((i * 40 + off) % (PLAY_H + 40));
+    cx.fillRect(4, yy, 6, 2);
+    cx.fillRect(W - 10, yy, 6, 2);
+  }
+
+  if (state === 'title') {
+    cx.drawImage(HERO2, W / 2 - 13, 62 + Math.sin(now * 2) * 3, 26, 35);
+    text('DOWN', W / 2, 158, '#ffd166', 16);
+    text('ROUND', W / 2, 182, '#ff4d9d', 16);
+    text('a roguelike descent', W / 2, 208, '#8ea2ff', 8);
+    text('through the cap table', W / 2, 222, '#8ea2ff', 8);
+    DIFFS.forEach((d, i) => {
+      const dx2 = W / 6 + i * (W / 3);
+      const sel = i === diffIdx;
+      text(sel ? '>' + d.name + '<' : d.name, dx2, 252, sel ? d.col : '#3a4680', 8);
+    });
+    text(DIFF().sub, W / 2, 266, DIFF().col, 8);
+    if (best > 0) text('BEST ' + String(Math.floor(best)).padStart(6, '0'), W / 2, 281, DIFF().col, 8);
+    if (Math.floor(now * 2) % 2 === 0) text('TAP OR PRESS Z TO FALL', W / 2, 298, '#ffffff', 8);
+    cx.restore();
+    drawSkillBar(now);
+    return;
+  }
+
+  // cash
+  cash.forEach(c => {
+    const cb = Math.sin(now * 4 + c.seed) * 1.2;
+    cx.drawImage(COIN, Math.round(c.x - 2), Math.round(c.y - 2 + cb));
+  });
+
+  // powerups
+  powers.forEach(p => {
+    const s = POWER_SPRITES[p.type];
+    const pb = Math.sin(now * 3 + p.seed) * 1.5;
+    cx.strokeStyle = 'rgba(255,255,255,' + (0.15 + 0.15 * Math.sin(now * 5 + p.seed)) + ')';
+    cx.beginPath();
+    cx.arc(Math.round(p.x), Math.round(p.y + pb), 8, 0, Math.PI * 2);
+    cx.stroke();
+    cx.drawImage(s, Math.round(p.x - s.width / 2), Math.round(p.y + pb - s.height / 2));
+  });
+
+  // hazards
+  hazards.forEach(h => drawHazard(h, now));
+
+  // the founder, falling
+  const inv = AC && now < invulnUntil;
+  if (!inv || Math.floor(now * 10) % 2 === 0) {
+    const frame = HERO_FRAMES[Math.floor(now * 8) % 2];
+    cx.drawImage(frame, Math.round(player.x - frame.width / 2), Math.round(player.y - 6));
+    if (keys['shift'] && state === 'play') {
+      cx.fillStyle = '#ffffff';
+      cx.fillRect(Math.round(player.x) - 1, Math.round(player.y) - 1, 2, 2);
+    }
+  }
+  if (AC && now < shieldUntil) {
+    cx.strokeStyle = 'rgba(142,202,230,' + (0.5 + 0.3 * Math.sin(now * 12)) + ')';
+    cx.beginPath();
+    cx.arc(Math.round(player.x), Math.round(player.y), 11, 0, Math.PI * 2);
+    cx.stroke();
+  }
+  if (AC && now < hoverUntil) {
+    cx.strokeStyle = 'rgba(199,146,234,' + (0.4 + 0.3 * Math.sin(now * 14)) + ')';
+    for (let i = 0; i < 3; i++) {
+      cx.fillStyle = 'rgba(199,146,234,0.5)';
+      cx.fillRect(Math.round(player.x - 4 + i * 4), Math.round(player.y + 8 + (now * 40 % 6)), 2, 3);
+    }
+  }
+
+  sparks.forEach(s => {
+    if (s.txt) {
+      text(s.txt, s.x, s.y, s.col, 8);
+    } else if (s.ring) {
+      cx.strokeStyle = s.col;
+      cx.globalAlpha = Math.max(0, s.life * 2.5);
+      cx.beginPath();
+      cx.arc(Math.round(s.x), Math.round(s.y), Math.max(2, s.ring * (1 - s.life * 2.5)), 0, Math.PI * 2);
+      cx.stroke();
+      cx.globalAlpha = 1;
+    } else {
+      cx.fillStyle = s.col;
+      cx.fillRect(Math.round(s.x), Math.round(s.y), 2, 2);
+    }
+  });
+
+  if (AC && now < slowUntil && state !== 'dead') {
+    cx.fillStyle = 'rgba(120,180,255,0.08)';
+    cx.fillRect(0, 0, W, PLAY_H);
+  }
+
+  // HUD
+  text('SCORE ' + String(Math.floor(score)).padStart(6, '0'), 4, 12, '#ffd166', 8, 'left');
+  const slots = Math.max(3, maxLives());
+  for (let i = 0; i < slots; i++) {
+    cx.drawImage(i < lives ? HEART : HEART_EMPTY, W - 3 - (slots - i) * 9, 5);
+  }
+  text('RND ' + roman(level), 177, 12, 'rgba(142,162,255,0.9)', 8, 'right');
+  cx.fillStyle = '#23306a';
+  cx.fillRect(117, 14, 60, 3);
+  cx.fillStyle = '#ffd166';
+  cx.fillRect(117, 14, Math.round(60 * Math.min(1, depth / DEPTH_PER_ROUND)), 3);
+
+  if (AC && now < bannerUntil && state === 'play') {
+    const big = level >= 8;
+    text(bannerText, W / 2, 140, big ? '#ff4d9d' : '#ffffff', 8);
+    text(bannerSub, W / 2, 158, '#8ea2ff', 8);
+  }
+
+  if (state === 'draft') drawDraft(now);
+
+  if (paused) {
+    cx.fillStyle = 'rgba(5,6,15,0.7)';
+    cx.fillRect(0, 0, W, PLAY_H);
+    text('PAUSED', W / 2, PLAY_H / 2, '#ffffff', 16);
+  }
+
+  if (state === 'dead') {
+    cx.fillStyle = 'rgba(5,6,15,0.8)';
+    cx.fillRect(0, 0, W, PLAY_H);
+    text('ACQUIHIRED', W / 2, 108, '#ff6b9d', 16);
+    text('FOR PARTS', W / 2, 132, '#ff6b9d', 16);
+    text('round ' + roman(level) + ', on ' + DIFF().name, W / 2, 156, DIFF().col, 8);
+    text('SCORE ' + Math.floor(score), W / 2, 178, '#ffd166', 8);
+    text('BEST  ' + Math.floor(best), W / 2, 194, '#4ecdc4', 8);
+    text(dodged + ' hazards dodged', W / 2, 214, '#8ea2ff', 8);
+    text(grazes + ' hype grazes', W / 2, 228, '#8ea2ff', 8);
+    text(Object.values(passives).reduce((a, b) => a + b, 0) + actives.filter(a => a).length
+         + ' clauses signed', W / 2, 242, '#8ea2ff', 8);
+    if (Math.floor(now * 2) % 2 === 0) text('Z / TAP FOR A BRIDGE ROUND', W / 2, 272, '#ffffff', 8);
+    text('X FOR MENU', W / 2, 288, '#55639f', 8);
+  }
+
+  cx.restore();
+  drawSkillBar(now);
+}
+
+// ------------------------------------------------------------------ loop ---
+let last = performance.now();
+function frame(t) {
+  const dt = Math.min(0.033, (t - last) / 1000);
+  last = t;
+  if (!paused) update(dt);
+  draw();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+reset();
+})();
+</script>
+</body>
+</html>
