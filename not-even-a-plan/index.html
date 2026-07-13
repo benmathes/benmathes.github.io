@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>We Must Act Now (Not Even a Plan)</title>
+<meta name="description" content="A statement on AI's transformation of the economy that is not even a plan. Satire of wemustactnow.ai.">
+<meta property="og:title" content="We Must Act Now (Not Even a Plan)">
+<meta property="og:description" content="You can agree with every word. That's the problem.">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#1b2140;
+    --cream:#fbf4d6;
+    --cream-bg:#fcf6de;
+    --slate:#5c7284;
+    --slate-soft:#c9d3da;
+    --ink:#1b2140;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    font-family:'Hanken Grotesk',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+    color:var(--ink);
+    background:var(--cream-bg);
+    line-height:1.4;
+    -webkit-font-smoothing:antialiased;
+  }
+  .band{padding:4vw;}
+  .wrap{max-width:1180px;margin:0 auto;}
+
+  /* Hero */
+  .hero{background:var(--navy);color:var(--cream);padding:6vw 4vw 5vw;}
+  .hero h1{
+    font-weight:800;
+    font-size:clamp(3rem,9vw,7rem);
+    line-height:0.98;
+    letter-spacing:-0.02em;
+  }
+  .hero .sub{
+    font-weight:800;
+    font-size:clamp(1.5rem,4.2vw,3rem);
+    margin-top:0.4em;
+    letter-spacing:-0.01em;
+    line-height:1.05;
+  }
+  .hero .kicker{
+    font-weight:600;
+    font-size:clamp(0.9rem,1.6vw,1.15rem);
+    color:var(--slate-soft);
+    margin-top:1.6em;
+    max-width:52ch;
+  }
+
+  /* Points */
+  .points,.explainer{background:var(--cream-bg);color:var(--ink);position:relative;}
+  .points ol{list-style:none;counter-reset:pt;max-width:1000px;margin:0 auto;}
+  .points li{
+    counter-increment:pt;
+    display:flex;
+    gap:0.9em;
+    font-weight:700;
+    font-size:clamp(1.15rem,2.6vw,1.9rem);
+    line-height:1.28;
+    padding:0.55em 0;
+  }
+  .points li::before{
+    content:counter(pt) ".";
+    font-weight:700;
+    opacity:0.55;
+    font-size:0.8em;
+    flex:0 0 auto;
+    min-width:1.4em;
+    text-align:right;
+    padding-top:0.12em;
+  }
+  .argument{
+    max-width:70ch;margin:2.6em auto 0;
+    font-size:clamp(1rem,1.5vw,1.2rem);
+    font-weight:400;line-height:1.6;
+  }
+  .argument p{margin-bottom:1.1em;}
+  .argument strong{font-weight:800;}
+  .argument .big{
+    font-weight:800;
+    font-size:clamp(1.3rem,3vw,2rem);
+    line-height:1.2;
+    margin:0.4em 0 0.9em;
+    letter-spacing:-0.01em;
+  }
+  .argument .aside{
+    border-left:4px solid var(--slate);
+    padding-left:1.1em;
+    font-style:italic;
+    color:#3a4360;
+  }
+  .argument a{color:#3a4a86;text-decoration:underline;text-underline-offset:2px;}
+
+  /* Signatories */
+  .sigs{background:var(--slate);color:var(--cream);}
+  .sigs h2{
+    font-weight:800;
+    font-size:clamp(2rem,5vw,3.4rem);
+    letter-spacing:-0.01em;
+    margin-bottom:0.2em;
+  }
+  .sigs .lead{
+    max-width:64ch;font-weight:500;
+    font-size:clamp(1rem,1.6vw,1.25rem);
+    color:#eef2ee;margin-bottom:2.2em;line-height:1.5;
+  }
+  .sig-grid{
+    columns:3 260px;
+    column-gap:2.4em;
+  }
+  .sig{
+    font-size:clamp(0.9rem,1.2vw,1.02rem);
+    font-weight:400;
+    color:var(--slate-soft);
+    padding:0.42em 0;
+    break-inside:avoid;
+    line-height:1.35;
+  }
+  .sig strong{color:var(--cream);font-weight:700;}
+  .footnote{
+    margin-top:2.6em;font-size:0.9rem;color:#dbe2e7;
+    font-style:italic;max-width:60ch;
+  }
+
+  /* Footer */
+  .foot{background:var(--navy);color:var(--slate-soft);text-align:center;padding:3.5vw 4vw;}
+  .foot p{max-width:60ch;margin:0 auto 0.9em;font-size:0.98rem;line-height:1.6;}
+  .foot a{color:var(--cream);font-weight:700;text-decoration:underline;text-underline-offset:2px;}
+  .foot .small{font-size:0.82rem;color:#7d8aa8;font-style:italic;}
+</style>
+</head>
+<body>
+
+  <header class="band hero">
+    <div class="wrap">
+      <h1>We Must Act Now</h1>
+      <div class="sub">A Statement That Is Not Even a Plan</div>
+      <p class="kicker">On AI's transformation of the economy. Signed, in a personal capacity, by 200 people who could agree on this much and no more.</p>
+    </div>
+  </header>
+
+  <section class="band points">
+    <div class="wrap">
+      <ol>
+        <li>AI could be big.</li>
+        <li>Quickly.</li>
+        <li>We should do stuff.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="band sigs">
+    <div class="wrap">
+      <h2>Signatories</h2>
+      <p class="lead">Two hundred of them. Ask yourself: how do you get two hundred brilliant, opinionated, mutually citation-warring people to agree on anything? You can't — until you delete every sentence with an edge. What's left is the truism. The length of the list is inversely proportional to the courage of the claim.</p>
+      <div class="sig-grid">
+      <p class="sig"><strong>Acting Committee Member</strong>, Institute for the Obvious</p>
+      <p class="sig"><strong>Ex-Officio Closing-Remarks Deliverer</strong>, Department of Retrospective Foresight</p>
+      <p class="sig"><strong>Ex-Officio Position-Paper Poet</strong>, The Nuance Foundry*</p>
+      <p class="sig"><strong>Perennial Caucus Enthusiast</strong>, The Consensus Lab</p>
+      <p class="sig"><strong>Adjunct Doomsayer</strong>, Bureau of Broad Agreement</p>
+      <p class="sig"><strong>Discussant</strong>, Center for Studying the Problem</p>
+      <p class="sig"><strong>Roving Convener of Conveners</strong>, Center for Applied Hand-Wringing</p>
+      <p class="sig"><strong>Visiting Task-Force Volunteer</strong>, Foundation for Doing Something</p>
+      <p class="sig"><strong>Global Committee Member</strong>, Institute for Agreeable Statements</p>
+      <p class="sig"><strong>Junior Rapporteur</strong>, Working Group on Working Groups*</p>
+      <p class="sig"><strong>Founding Serial Panelist</strong>, Center for Consensus Maintenance</p>
+      <p class="sig"><strong>Honorary Consensus Enjoyer</strong>, Center for Motion Without Movement</p>
+      <p class="sig"><strong>Global Nuance Merchant</strong>, Institute for Strategic Nodding</p>
+      <p class="sig"><strong>Global Op-Ed Machine</strong>, Center for Directionally Correct Thinking</p>
+      <p class="sig"><strong>Perennial Op-Ed Machine</strong>, The Symposium Trust*</p>
+      <p class="sig"><strong>Nuance Merchant</strong>, School of Hedged Bets</p>
+      <p class="sig"><strong>Emeritus Prestige Economist</strong>, Society of Standing Committees</p>
+      <p class="sig"><strong>Substack Cassandra</strong>, Academy of Second Thoughts</p>
+      <p class="sig"><strong>Chief Closing-Remarks Deliverer</strong>, Center for the Bare Minimum</p>
+      <p class="sig"><strong>Tenured Overton Window Washer</strong>, The Manifesto Mill</p>
+      <p class="sig"><strong>Perennial Vibes Economist</strong>, Center for Load-Bearing Adverbs</p>
+      <p class="sig"><strong>Interim Fellow Traveler</strong>, The Overton Foundation</p>
+      <p class="sig"><strong>Honorary Roadmap Gesturer</strong>, Center for Whom It May Concern</p>
+      <p class="sig"><strong>Global Second-Author Specialist</strong>, The Steering Foundation</p>
+      <p class="sig"><strong>Visiting Committee Member</strong>, Bureau of Later</p>
+      <p class="sig"><strong>Honorary Closing-Remarks Deliverer</strong>, The Truism Institute*</p>
+      <p class="sig"><strong>Junior Discussant</strong>, Institute for the Study of Institutes</p>
+      <p class="sig"><strong>Junior Convener of Conveners</strong>, Committee to Form a Committee</p>
+      <p class="sig"><strong>Provisional Serial Panelist</strong>, The Panel Foundation</p>
+      <p class="sig"><strong>Chief Vibes Economist</strong>, Bureau of Strong Feelings</p>
+      <p class="sig"><strong>Adjunct Caucus Enthusiast</strong>, Center for Governance-Shaped Objects</p>
+      <p class="sig"><strong>Interim Second-Author Specialist</strong>, Office of Plausible Deniability</p>
+      <p class="sig"><strong>Junior Applied Hand-Waver</strong>, Institute for Later Discussion</p>
+      <p class="sig"><strong>Interim Portfolio Worrier</strong>, Center for Concern</p>
+      <p class="sig"><strong>Adjunct Closing-Remarks Deliverer</strong>, Center for the Almost-Specific</p>
+      <p class="sig"><strong>Ex-Officio Panel Moderator</strong>, Institute for Nodding Along</p>
+      <p class="sig"><strong>Acting Prestige Economist</strong>, The Roadmap Collective</p>
+      <p class="sig"><strong>Acting Davos Regular</strong>, Council of Vague Alarm</p>
+      <p class="sig"><strong>Tenured Manifesto Signee</strong>, Bureau of Meaningful Nods</p>
+      <p class="sig"><strong>Acting Existential Middle Manager</strong>, Department of Vague Urgency</p>
+      <p class="sig"><strong>Senior Rapporteur</strong>, Institute of Perpetual Preliminaries</p>
+      <p class="sig"><strong>Interim Convener of Conveners</strong>, School of Somewhere</p>
+      <p class="sig"><strong>Honorary Committee Member</strong>, Center for Unfalsifiable Studies</p>
+      <p class="sig"><strong>Tenured Ethics-Adjacent Fellow</strong>, The Caveat Institute</p>
+      <p class="sig"><strong>Deputy Futures Gesturer</strong>, The Hedge Fund of Ideas</p>
+      <p class="sig"><strong>Distinguished Podcast Sage</strong>, Institute of Mixed Feelings</p>
+      <p class="sig"><strong>Committee Member</strong>, Office of Broad Strokes</p>
+      <p class="sig"><strong>Deputy Working Group Chair</strong>, Center for Emergent Consensus</p>
+      <p class="sig"><strong>Interim Task-Force Volunteer</strong>, Faculty of Foregone Conclusions</p>
+      <p class="sig"><strong>Adjunct Serial Panelist</strong>, The Blue Ribbon Bureau*</p>
+      <p class="sig"><strong>Acting Applied Hand-Waver</strong>, Institute for the Obvious</p>
+      <p class="sig"><strong>Ex-Officio Discussant</strong>, Department of Retrospective Foresight</p>
+      <p class="sig"><strong>Adjunct Load-Bearing Adverb Specialist</strong>, The Nuance Foundry</p>
+      <p class="sig"><strong>Ethics-Adjacent Fellow</strong>, The Consensus Lab</p>
+      <p class="sig"><strong>Roving Whitepaper Author</strong>, Bureau of Broad Agreement</p>
+      <p class="sig"><strong>Provisional Thought Leader</strong>, Center for Studying the Problem</p>
+      <p class="sig"><strong>Perennial Byline Accumulator</strong>, Center for Applied Hand-Wringing</p>
+      <p class="sig"><strong>Interim Breakout-Room Facilitator</strong>, Foundation for Doing Something</p>
+      <p class="sig"><strong>Visiting Prestige Economist</strong>, Institute for Agreeable Statements*</p>
+      <p class="sig"><strong>Provisional Caveat Officer</strong>, Working Group on Working Groups</p>
+      <p class="sig"><strong>Junior Prophet of the Obvious</strong>, Center for Consensus Maintenance</p>
+      <p class="sig"><strong>Junior Overton Window Washer</strong>, Center for Motion Without Movement</p>
+      <p class="sig"><strong>Provisional Institute Founder</strong>, Institute for Strategic Nodding</p>
+      <p class="sig"><strong>Acting Byline Accumulator</strong>, Center for Directionally Correct Thinking</p>
+      <p class="sig"><strong>Global Futures Gesturer</strong>, The Symposium Trust*</p>
+      <p class="sig"><strong>Visiting Whitepaper Author</strong>, School of Hedged Bets</p>
+      <p class="sig"><strong>Visiting Fellow Traveler</strong>, Society of Standing Committees</p>
+      <p class="sig"><strong>Visiting Convener of Conveners</strong>, Academy of Second Thoughts</p>
+      <p class="sig"><strong>Visiting Closing-Remarks Deliverer</strong>, Center for the Bare Minimum</p>
+      <p class="sig"><strong>Honorary Caveat Officer</strong>, The Manifesto Mill*</p>
+      <p class="sig"><strong>Senior Prestige Economist</strong>, Center for Load-Bearing Adverbs</p>
+      <p class="sig"><strong>Founding Roundtable Regular</strong>, The Overton Foundation</p>
+      <p class="sig"><strong>Deputy Vibes Economist</strong>, Center for Whom It May Concern</p>
+      <p class="sig"><strong>Junior Provisional Optimist</strong>, The Steering Foundation</p>
+      <p class="sig"><strong>Ex-Officio Task-Force Volunteer</strong>, Bureau of Later*</p>
+      <p class="sig"><strong>Emeritus Existential Middle Manager</strong>, The Truism Institute*</p>
+      <p class="sig"><strong>Visiting Both-Sidesist</strong>, Institute for the Study of Institutes</p>
+      <p class="sig"><strong>Global Task-Force Volunteer</strong>, Committee to Form a Committee</p>
+      <p class="sig"><strong>Deputy Alignment Tourist</strong>, The Panel Foundation*</p>
+      <p class="sig"><strong>Global Prestige Economist</strong>, Bureau of Strong Feelings</p>
+      <p class="sig"><strong>Chief Roadmap Gesturer</strong>, Center for Governance-Shaped Objects</p>
+      <p class="sig"><strong>Emeritus Prophet of the Obvious</strong>, Office of Plausible Deniability</p>
+      <p class="sig"><strong>Adjunct Nuance Merchant</strong>, Institute for Later Discussion</p>
+      <p class="sig"><strong>Deputy Roundtable Regular</strong>, Center for Concern</p>
+      <p class="sig"><strong>Tenured Whitepaper Author</strong>, Center for the Almost-Specific</p>
+      <p class="sig"><strong>Adjunct Convener of Conveners</strong>, Institute for Nodding Along</p>
+      <p class="sig"><strong>Acting Professional Worrier</strong>, The Roadmap Collective</p>
+      <p class="sig"><strong>Visiting Existential Middle Manager</strong>, Council of Vague Alarm</p>
+      <p class="sig"><strong>Regional Position-Paper Poet</strong>, Bureau of Meaningful Nods</p>
+      <p class="sig"><strong>Roving Existential Middle Manager</strong>, Department of Vague Urgency</p>
+      <p class="sig"><strong>Deputy Caucus Enthusiast</strong>, Institute of Perpetual Preliminaries</p>
+      <p class="sig"><strong>Provisional Discussant</strong>, School of Somewhere</p>
+      <p class="sig"><strong>Roving Grant-Cycle Survivor</strong>, Center for Unfalsifiable Studies</p>
+      <p class="sig"><strong>Chief Existential Middle Manager</strong>, The Caveat Institute</p>
+      <p class="sig"><strong>Tenured Hand-Wringer</strong>, The Hedge Fund of Ideas</p>
+      <p class="sig"><strong>Visiting Second-Author Specialist</strong>, Institute of Mixed Feelings</p>
+      <p class="sig"><strong>Regional Caucus Enthusiast</strong>, Office of Broad Strokes</p>
+      <p class="sig"><strong>Honorary Professional Worrier</strong>, Center for Emergent Consensus</p>
+      <p class="sig"><strong>Overton Window Washer</strong>, Faculty of Foregone Conclusions</p>
+      <p class="sig"><strong>Associate Reply-All Statesman</strong>, The Blue Ribbon Bureau</p>
+      <p class="sig"><strong>Emeritus Discussant</strong>, Institute for the Obvious</p>
+      <p class="sig"><strong>Perennial Task-Force Volunteer</strong>, Department of Retrospective Foresight</p>
+      <p class="sig"><strong>Perennial Breakout-Room Facilitator</strong>, The Nuance Foundry</p>
+      <p class="sig"><strong>Deputy Professional Worrier</strong>, The Consensus Lab</p>
+      <p class="sig"><strong>Visiting Working Group Chair</strong>, Bureau of Broad Agreement</p>
+      <p class="sig"><strong>Regional Both-Sidesist</strong>, Center for Studying the Problem</p>
+      <p class="sig"><strong>Rapporteur</strong>, Center for Applied Hand-Wringing</p>
+      <p class="sig"><strong>Honorary Davos Regular</strong>, Foundation for Doing Something</p>
+      <p class="sig"><strong>Emeritus Panel Moderator</strong>, Institute for Agreeable Statements</p>
+      <p class="sig"><strong>Roving Prophet of the Obvious</strong>, Working Group on Working Groups</p>
+      <p class="sig"><strong>Deputy Manifesto Signee</strong>, Center for Consensus Maintenance*</p>
+      <p class="sig"><strong>Regional Stakeholder Convener</strong>, Center for Motion Without Movement</p>
+      <p class="sig"><strong>Futures Gesturer</strong>, Institute for Strategic Nodding</p>
+      <p class="sig"><strong>Tenured Reply-All Statesman</strong>, Center for Directionally Correct Thinking</p>
+      <p class="sig"><strong>Honorary Academic Navelgazer</strong>, The Symposium Trust</p>
+      <p class="sig"><strong>Junior Center Director</strong>, School of Hedged Bets</p>
+      <p class="sig"><strong>Adjunct Stakeholder Convener</strong>, Society of Standing Committees</p>
+      <p class="sig"><strong>Chief Grant-Cycle Survivor</strong>, Academy of Second Thoughts</p>
+      <p class="sig"><strong>Ex-Officio Hand-Wringer</strong>, Center for the Bare Minimum</p>
+      <p class="sig"><strong>Chief Substack Cassandra</strong>, The Manifesto Mill</p>
+      <p class="sig"><strong>Emeritus Rapporteur</strong>, Center for Load-Bearing Adverbs</p>
+      <p class="sig"><strong>Roadmap Gesturer</strong>, The Overton Foundation</p>
+      <p class="sig"><strong>Chief Task-Force Volunteer</strong>, Center for Whom It May Concern</p>
+      <p class="sig"><strong>Adjunct Provisional Optimist</strong>, The Steering Foundation</p>
+      <p class="sig"><strong>Interim Whitepaper Author</strong>, Bureau of Later</p>
+      <p class="sig"><strong>Interim Substack Cassandra</strong>, The Truism Institute</p>
+      <p class="sig"><strong>Deputy Symposium Frequent Flyer</strong>, Institute for the Study of Institutes*</p>
+      <p class="sig"><strong>Provisional Committee Member</strong>, Committee to Form a Committee</p>
+      <p class="sig"><strong>Chief Hedged Bettor</strong>, The Panel Foundation</p>
+      <p class="sig"><strong>Perennial Institute Founder</strong>, Bureau of Strong Feelings</p>
+      <p class="sig"><strong>Roving Podcast Sage</strong>, Center for Governance-Shaped Objects</p>
+      <p class="sig"><strong>Regional Nuance Merchant</strong>, Office of Plausible Deniability</p>
+      <p class="sig"><strong>Tenured Prophet of the Obvious</strong>, Institute for Later Discussion</p>
+      <p class="sig"><strong>Senior Center Director</strong>, Center for Concern</p>
+      <p class="sig"><strong>Founding Fellow Traveler</strong>, Center for the Almost-Specific</p>
+      <p class="sig"><strong>Ex-Officio Caveat Officer</strong>, Institute for Nodding Along</p>
+      <p class="sig"><strong>Junior Serial Panelist</strong>, The Roadmap Collective</p>
+      <p class="sig"><strong>Roving Doomsayer</strong>, Council of Vague Alarm</p>
+      <p class="sig"><strong>Provisional Convener of Conveners</strong>, Bureau of Meaningful Nods</p>
+      <p class="sig"><strong>Panel Moderator</strong>, Department of Vague Urgency</p>
+      <p class="sig"><strong>Distinguished Academic Navelgazer</strong>, Institute of Perpetual Preliminaries</p>
+      <p class="sig"><strong>Chief Stakeholder Convener</strong>, School of Somewhere</p>
+      <p class="sig"><strong>Roving Reply-All Statesman</strong>, Center for Unfalsifiable Studies</p>
+      <p class="sig"><strong>Emeritus Standing Nodder</strong>, The Caveat Institute</p>
+      <p class="sig"><strong>Junior Concern Curator</strong>, The Hedge Fund of Ideas*</p>
+      <p class="sig"><strong>Regional Prestige Economist</strong>, Institute of Mixed Feelings</p>
+      <p class="sig"><strong>Perennial Alignment Tourist</strong>, Office of Broad Strokes</p>
+      <p class="sig"><strong>Ex-Officio Davos Regular</strong>, Center for Emergent Consensus*</p>
+      <p class="sig"><strong>Senior Convener of Conveners</strong>, Faculty of Foregone Conclusions*</p>
+      <p class="sig"><strong>Honorary Reply-All Statesman</strong>, The Blue Ribbon Bureau</p>
+      <p class="sig"><strong>Junior Institute Founder</strong>, Institute for the Obvious</p>
+      <p class="sig"><strong>Acting Center Director</strong>, Department of Retrospective Foresight</p>
+      <p class="sig"><strong>Distinguished Overton Window Washer</strong>, The Nuance Foundry</p>
+      <p class="sig"><strong>Chief Podcast Sage</strong>, The Consensus Lab</p>
+      <p class="sig"><strong>Senior Task-Force Volunteer</strong>, Bureau of Broad Agreement</p>
+      <p class="sig"><strong>Ex-Officio Working Group Chair</strong>, Center for Studying the Problem</p>
+      <p class="sig"><strong>Interim Symposium Frequent Flyer</strong>, Center for Applied Hand-Wringing</p>
+      <p class="sig"><strong>Provisional Roundtable Regular</strong>, Foundation for Doing Something</p>
+      <p class="sig"><strong>Roving Serial Panelist</strong>, Institute for Agreeable Statements</p>
+      <p class="sig"><strong>Junior Position-Paper Poet</strong>, Working Group on Working Groups*</p>
+      <p class="sig"><strong>Founding Preprint Uploader</strong>, Center for Consensus Maintenance</p>
+      <p class="sig"><strong>Junior Substack Cassandra</strong>, Center for Motion Without Movement</p>
+      <p class="sig"><strong>Roving Roundtable Regular</strong>, Institute for Strategic Nodding</p>
+      <p class="sig"><strong>Interim Serial Panelist</strong>, Center for Directionally Correct Thinking*</p>
+      <p class="sig"><strong>Deputy Hedged Bettor</strong>, The Symposium Trust</p>
+      <p class="sig"><strong>Consensus Whisperer</strong>, School of Hedged Bets</p>
+      <p class="sig"><strong>Founding Position-Paper Poet</strong>, Society of Standing Committees</p>
+      <p class="sig"><strong>Adjunct Committee Member</strong>, Academy of Second Thoughts</p>
+      <p class="sig"><strong>Provisional Standing Nodder</strong>, Center for the Bare Minimum</p>
+      <p class="sig"><strong>Honorary Preprint Uploader</strong>, The Manifesto Mill*</p>
+      <p class="sig"><strong>Ex-Officio Both-Sidesist</strong>, Center for Load-Bearing Adverbs</p>
+      <p class="sig"><strong>Tenured Framework Proposer</strong>, The Overton Foundation</p>
+      <p class="sig"><strong>Perennial Steering-Committee Steerer</strong>, Center for Whom It May Concern</p>
+      <p class="sig"><strong>Junior Caveat Officer</strong>, The Steering Foundation</p>
+      <p class="sig"><strong>Interim Nuance Merchant</strong>, Bureau of Later</p>
+      <p class="sig"><strong>Acting Closing-Remarks Deliverer</strong>, The Truism Institute</p>
+      <p class="sig"><strong>Tenured Panel Moderator</strong>, Institute for the Study of Institutes</p>
+      <p class="sig"><strong>Perennial Consensus Enjoyer</strong>, Committee to Form a Committee</p>
+      <p class="sig"><strong>Perennial Futures Gesturer</strong>, The Panel Foundation*</p>
+      <p class="sig"><strong>Interim Preprint Uploader</strong>, Bureau of Strong Feelings*</p>
+      <p class="sig"><strong>Chief Nuance Merchant</strong>, Center for Governance-Shaped Objects*</p>
+      <p class="sig"><strong>Associate Academic Navelgazer</strong>, Office of Plausible Deniability</p>
+      <p class="sig"><strong>Deputy Panel Moderator</strong>, Institute for Later Discussion</p>
+      <p class="sig"><strong>Global Ethics-Adjacent Fellow</strong>, Center for Concern</p>
+      <p class="sig"><strong>Perennial Reply-All Statesman</strong>, Center for the Almost-Specific*</p>
+      <p class="sig"><strong>Associate Doomsayer</strong>, Institute for Nodding Along</p>
+      <p class="sig"><strong>Deputy Podcast Sage</strong>, The Roadmap Collective</p>
+      <p class="sig"><strong>Interim Roadmap Gesturer</strong>, Council of Vague Alarm</p>
+      <p class="sig"><strong>Regional Substack Cassandra</strong>, Bureau of Meaningful Nods</p>
+      <p class="sig"><strong>Adjunct Preprint Uploader</strong>, Department of Vague Urgency</p>
+      <p class="sig"><strong>Emeritus Manifesto Signee</strong>, Institute of Perpetual Preliminaries</p>
+      <p class="sig"><strong>Founding Committee Member</strong>, School of Somewhere</p>
+      <p class="sig"><strong>Ex-Officio Manifesto Signee</strong>, Center for Unfalsifiable Studies</p>
+      <p class="sig"><strong>Senior Professional Worrier</strong>, The Caveat Institute</p>
+      <p class="sig"><strong>Roving Portfolio Worrier</strong>, The Hedge Fund of Ideas</p>
+      <p class="sig"><strong>Founding Panel Moderator</strong>, Institute of Mixed Feelings*</p>
+      <p class="sig"><strong>Visiting Roadmap Gesturer</strong>, Office of Broad Strokes</p>
+      <p class="sig"><strong>Acting Prophet of the Obvious</strong>, Center for Emergent Consensus</p>
+      <p class="sig"><strong>Perennial Load-Bearing Adverb Specialist</strong>, Faculty of Foregone Conclusions</p>
+      <p class="sig"><strong>Acting Doomsayer</strong>, The Blue Ribbon Bureau</p>
+      </div>
+      <p class="footnote">* Signed in a personal capacity, obviously. Institutional endorsement would require a meeting, and the meeting would require an agenda, and the agenda is what we're trying to avoid.</p>
+    </div>
+  </section>
+
+  <section class="band explainer">
+    <div class="wrap">
+      <div class="argument">
+        <p>Go ahead. Read the three points again. Try to disagree with one.</p>
+        <p>You can't, really. AI <em>could</em> be big. It <em>might</em> happen fast. Someone probably <em>should</em> do something. Every clause is true, or true enough, or unfalsifiable in the friendly way that a horoscope is unfalsifiable. And that is precisely the problem.</p>
+        <p class="big">This isn't wrong. It's Not Even a Plan.</p>
+        <p>Karl Popper had a phrase for a claim so slippery it can never be tested against reality: <strong>not even wrong</strong>. A theory that predicts everything predicts nothing. This is the governance cousin of that. A statement you cannot argue with is a statement that asks nothing of you — no target, no threshold, no trade-off, no one on the hook for anything by any date.</p>
+        <p>Distilled, all three bullets say the same thing:</p>
+        <p class="aside">"AI will be a big deal. We should study it and do something smart."</p>
+        <p>Which is not a position. It's the <strong>residue</strong> — the last sentence left standing after every specific claim got edited out because someone, somewhere, objected to it. It reads exactly like the final line of a long email chain: the one clause that survived because it was the only thing no one could bring themselves to reply-all against.</p>
+        <p>And you can tell how it was written by looking at who signed it.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="band foot">
+    <div class="wrap">
+      <p>A loving satire of <a href="https://www.wemustactnow.ai/" target="_blank" rel="noopener">wemustactnow.ai</a> — whose three real points you should read, and can also mostly agree with, which is the whole joke.</p>
+      <p class="small">Agreement is cheap. A plan names a number, a deadline, and someone who loses if it's missed. This has none. Neither, if we're honest, did the original.</p>
+    </div>
+  </footer>
+
+</body>
+</html>
